@@ -1098,7 +1098,7 @@ namespace UnityMeshSimplifier
             int[][] subMeshTriangles = new int[subMeshCount][];
             for (int i = 0; i < subMeshCount; i++)
             {
-                subMeshTriangles[i] = mesh.GetTriangles(i, true);
+                subMeshTriangles[i] = mesh.GetTriangles(i);
             }
             AddSubMeshTriangles(subMeshTriangles);
         }
@@ -1238,11 +1238,14 @@ namespace UnityMeshSimplifier
             var colors = this.Colors;
             var boneWeights = this.BoneWeights;
 
+            var newMesh = new Mesh();
+
+#if UNITY_2017_3
             // TODO: Use baseVertex if all submeshes are within the ushort.MaxValue range even though the total vertex count is above
             bool use32BitIndex = (vertices.Length > ushort.MaxValue);
-
-            var newMesh = new Mesh();
             newMesh.indexFormat = (use32BitIndex ? UnityEngine.Rendering.IndexFormat.UInt32 : UnityEngine.Rendering.IndexFormat.UInt16);
+#endif
+
             newMesh.subMeshCount = subMeshCount;
             newMesh.vertices = this.Vertices;
             if (normals != null) newMesh.normals = normals;
