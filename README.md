@@ -28,3 +28,6 @@ meshSimplifier.SimplifyMesh(quality);
 var newVertices = meshSimplifier.Vertices;
 var newIndices = meshSimplifier.GetSubMeshTriangles(0);
 ```
+
+## Other projects
+If you are interested in mesh simplification in .NET outside of Unity you can visit my other project [MeshDecimator](https://github.com/Whinarn/MeshDecimator).
