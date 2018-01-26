@@ -1069,8 +1069,6 @@ namespace UnityMeshSimplifier
 
                 triangleIndex += subMeshTriangleCount;
             }
-
-            subMeshCount = triangles.Length;
         }
         #endregion
 
