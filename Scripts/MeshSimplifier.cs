@@ -1330,14 +1330,15 @@ namespace UnityMeshSimplifier
                 {
                     vertUV2D[channel] = null;
                 }
-                if (vertUV3D != null)
-                {
-                    vertUV3D[channel] = null;
-                }
-                if (vertUV4D != null)
-                {
-                    vertUV4D[channel] = null;
-                }
+            }
+
+            if (vertUV3D != null)
+            {
+                vertUV3D[channel] = null;
+            }
+            if (vertUV4D != null)
+            {
+                vertUV4D[channel] = null;
             }
         }
 
@@ -1373,18 +1374,19 @@ namespace UnityMeshSimplifier
             }
             else
             {
-                if (vertUV2D != null)
-                {
-                    vertUV2D[channel] = null;
-                }
                 if (vertUV3D != null)
                 {
                     vertUV3D[channel] = null;
                 }
-                if (vertUV4D != null)
-                {
-                    vertUV4D[channel] = null;
-                }
+            }
+
+            if (vertUV2D != null)
+            {
+                vertUV2D[channel] = null;
+            }
+            if (vertUV4D != null)
+            {
+                vertUV4D[channel] = null;
             }
         }
 
@@ -1420,18 +1422,19 @@ namespace UnityMeshSimplifier
             }
             else
             {
-                if (vertUV2D != null)
-                {
-                    vertUV2D[channel] = null;
-                }
-                if (vertUV3D != null)
-                {
-                    vertUV3D[channel] = null;
-                }
                 if (vertUV4D != null)
                 {
                     vertUV4D[channel] = null;
                 }
+            }
+
+            if (vertUV2D != null)
+            {
+                vertUV2D[channel] = null;
+            }
+            if (vertUV3D != null)
+            {
+                vertUV3D[channel] = null;
             }
         }
 
@@ -1471,14 +1474,15 @@ namespace UnityMeshSimplifier
                 {
                     vertUV2D[channel] = null;
                 }
-                if (vertUV3D != null)
-                {
-                    vertUV3D[channel] = null;
-                }
-                if (vertUV4D != null)
-                {
-                    vertUV4D[channel] = null;
-                }
+            }
+
+            if (vertUV3D != null)
+            {
+                vertUV3D[channel] = null;
+            }
+            if (vertUV4D != null)
+            {
+                vertUV4D[channel] = null;
             }
         }
 
@@ -1514,18 +1518,19 @@ namespace UnityMeshSimplifier
             }
             else
             {
-                if (vertUV2D != null)
-                {
-                    vertUV2D[channel] = null;
-                }
                 if (vertUV3D != null)
                 {
                     vertUV3D[channel] = null;
                 }
-                if (vertUV4D != null)
-                {
-                    vertUV4D[channel] = null;
-                }
+            }
+
+            if (vertUV2D != null)
+            {
+                vertUV2D[channel] = null;
+            }
+            if (vertUV4D != null)
+            {
+                vertUV4D[channel] = null;
             }
         }
 
@@ -1561,18 +1566,19 @@ namespace UnityMeshSimplifier
             }
             else
             {
-                if (vertUV2D != null)
-                {
-                    vertUV2D[channel] = null;
-                }
-                if (vertUV3D != null)
-                {
-                    vertUV3D[channel] = null;
-                }
                 if (vertUV4D != null)
                 {
                     vertUV4D[channel] = null;
                 }
+            }
+
+            if (vertUV2D != null)
+            {
+                vertUV2D[channel] = null;
+            }
+            if (vertUV3D != null)
+            {
+                vertUV3D[channel] = null;
             }
         }
         #endregion
