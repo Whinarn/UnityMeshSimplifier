@@ -1019,7 +1019,7 @@ namespace UnityMeshSimplifier
                 triangles[i] = triangle;
             }
 
-            this.vertices.Resize(dst, true);
+            this.vertices.Resize(dst);
             if (vertNormals != null) this.vertNormals.Resize(dst, true);
             if (vertTangents != null) this.vertTangents.Resize(dst, true);
             if (vertUV2D != null) this.vertUV2D.Resize(dst, true);
