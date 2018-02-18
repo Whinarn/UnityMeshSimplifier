@@ -51,6 +51,7 @@ namespace UnityMeshSimplifier
     {
         #region Consts
         private const double DoubleEpsilon = 1.0E-3;
+        private const int UVChannelCount = 4;
         #endregion
 
         #region Classes
@@ -163,6 +164,65 @@ namespace UnityMeshSimplifier
             }
         }
         #endregion
+
+        #region UV Sets
+        private class UVSets<TVec>
+        {
+            private ResizableArray<TVec>[] channels = null;
+            private TVec[][] channelsData = null;
+
+            public TVec[][] Data
+            {
+                get
+                {
+                    for (int i = 0; i < UVChannelCount; i++)
+                    {
+                        if (channels[i] != null)
+                        {
+                            channelsData[i] = channels[i].Data;
+                        }
+                        else
+                        {
+                            channelsData[i] = null;
+                        }
+                    }
+                    return channelsData;
+                }
+            }
+
+            /// <summary>
+            /// Gets or sets a specific channel by index.
+            /// </summary>
+            /// <param name="index">The channel index.</param>
+            public ResizableArray<TVec> this[int index]
+            {
+                get { return channels[index]; }
+                set { channels[index] = value; }
+            }
+
+            public UVSets()
+            {
+                channels = new ResizableArray<TVec>[UVChannelCount];
+                channelsData = new TVec[UVChannelCount][];
+            }
+
+            /// <summary>
+            /// Resizes all channels at once.
+            /// </summary>
+            /// <param name="capacity">The new capacity.</param>
+            /// <param name="trimExess">If exess memory should be trimmed.</param>
+            public void Resize(int capacity, bool trimExess = false)
+            {
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    if (channels[i] != null)
+                    {
+                        channels[i].Resize(capacity, trimExess);
+                    }
+                }
+            }
+        }
+        #endregion
         #endregion
 
         #region Fields
@@ -177,10 +237,9 @@ namespace UnityMeshSimplifier
 
         private ResizableArray<Vector3> vertNormals = null;
         private ResizableArray<Vector4> vertTangents = null;
-        private ResizableArray<Vector2> vertUV1 = null;
-        private ResizableArray<Vector2> vertUV2 = null;
-        private ResizableArray<Vector2> vertUV3 = null;
-        private ResizableArray<Vector2> vertUV4 = null;
+        private UVSets<Vector2> vertUV2D = null;
+        private UVSets<Vector3> vertUV3D = null;
+        private UVSets<Vector4> vertUV4D = null;
         private ResizableArray<Color> vertColors = null;
         private ResizableArray<BoneWeight> vertBoneWeights = null;
 
@@ -283,11 +342,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         public Vector2[] UV1
         {
-            get { return (vertUV1 != null ? vertUV1.Data : null); }
-            set
-            {
-                InitializeVertexAttribute(value, ref vertUV1);
-            }
+            get { return GetUVs2D(0); }
+            set { SetUVs(0, value); }
         }
 
         /// <summary>
@@ -295,11 +351,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         public Vector2[] UV2
         {
-            get { return (vertUV2 != null ? vertUV2.Data : null); }
-            set
-            {
-                InitializeVertexAttribute(value, ref vertUV2);
-            }
+            get { return GetUVs2D(1); }
+            set { SetUVs(1, value); }
         }
 
         /// <summary>
@@ -307,11 +360,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         public Vector2[] UV3
         {
-            get { return (vertUV3 != null ? vertUV3.Data : null); }
-            set
-            {
-                InitializeVertexAttribute(value, ref vertUV3);
-            }
+            get { return GetUVs2D(2); }
+            set { SetUVs(2, value); }
         }
 
         /// <summary>
@@ -319,11 +369,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         public Vector2[] UV4
         {
-            get { return (vertUV4 != null ? vertUV4.Data : null); }
-            set
-            {
-                InitializeVertexAttribute(value, ref vertUV4);
-            }
+            get { return GetUVs2D(3); }
+            set { SetUVs(3, value); }
         }
 
         /// <summary>
@@ -556,21 +603,38 @@ namespace UnityMeshSimplifier
             {
                 vertTangents[i0] = (vertTangents[i0] + vertTangents[i1]) * 0.5f;
             }
-            if (vertUV1 != null)
+            if (vertUV2D != null)
             {
-                vertUV1[i0] = (vertUV1[i0] + vertUV1[i1]) * 0.5f;
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    var vertUV = vertUV2D[i];
+                    if (vertUV != null)
+                    {
+                        vertUV[i0] = (vertUV[i0] + vertUV[i1]) * 0.5f;
+                    }
+                }
             }
-            if (vertUV2 != null)
+            else if (vertUV3D != null)
             {
-                vertUV2[i0] = (vertUV2[i0] + vertUV2[i1]) * 0.5f;
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    var vertUV = vertUV3D[i];
+                    if (vertUV != null)
+                    {
+                        vertUV[i0] = (vertUV[i0] + vertUV[i1]) * 0.5f;
+                    }
+                }
             }
-            if (vertUV3 != null)
+            else if (vertUV4D != null)
             {
-                vertUV3[i0] = (vertUV3[i0] + vertUV3[i1]) * 0.5f;
-            }
-            if (vertUV4 != null)
-            {
-                vertUV4[i0] = (vertUV4[i0] + vertUV4[i1]) * 0.5f;
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    var vertUV = vertUV4D[i];
+                    if (vertUV != null)
+                    {
+                        vertUV[i0] = (vertUV[i0] + vertUV[i1]) * 0.5f;
+                    }
+                }
             }
             if (vertColors != null)
             {
@@ -890,10 +954,9 @@ namespace UnityMeshSimplifier
 
             var vertNormals = (this.vertNormals != null ? this.vertNormals.Data : null);
             var vertTangents = (this.vertTangents != null ? this.vertTangents.Data : null);
-            var vertUV1 = (this.vertUV1 != null ? this.vertUV1.Data : null);
-            var vertUV2 = (this.vertUV2 != null ? this.vertUV2.Data : null);
-            var vertUV3 = (this.vertUV3 != null ? this.vertUV3.Data : null);
-            var vertUV4 = (this.vertUV4 != null ? this.vertUV4.Data : null);
+            var vertUV2D = (this.vertUV2D != null ? this.vertUV2D.Data : null);
+            var vertUV3D = (this.vertUV3D != null ? this.vertUV3D.Data : null);
+            var vertUV4D = (this.vertUV4D != null ? this.vertUV4D.Data : null);
             var vertColors = (this.vertColors != null ? this.vertColors.Data : null);
             var vertBoneWeights = (this.vertBoneWeights != null ? this.vertBoneWeights.Data : null);
             dst = 0;
@@ -910,10 +973,39 @@ namespace UnityMeshSimplifier
                         vertices[dst].p = vert.p;
                         if (vertNormals != null) vertNormals[dst] = vertNormals[i];
                         if (vertTangents != null) vertTangents[dst] = vertTangents[i];
-                        if (vertUV1 != null) vertUV1[dst] = vertUV1[i];
-                        if (vertUV2 != null) vertUV2[dst] = vertUV2[i];
-                        if (vertUV3 != null) vertUV3[dst] = vertUV3[i];
-                        if (vertUV4 != null) vertUV4[dst] = vertUV4[i];
+                        if (vertUV2D != null)
+                        {
+                            for (int j = 0; j < UVChannelCount; j++)
+                            {
+                                var vertUV = vertUV2D[j];
+                                if (vertUV != null)
+                                {
+                                    vertUV[dst] = vertUV[i];
+                                }
+                            }
+                        }
+                        if (vertUV3D != null)
+                        {
+                            for (int j = 0; j < UVChannelCount; j++)
+                            {
+                                var vertUV = vertUV3D[j];
+                                if (vertUV != null)
+                                {
+                                    vertUV[dst] = vertUV[i];
+                                }
+                            }
+                        }
+                        if (vertUV4D != null)
+                        {
+                            for (int j = 0; j < UVChannelCount; j++)
+                            {
+                                var vertUV = vertUV4D[j];
+                                if (vertUV != null)
+                                {
+                                    vertUV[dst] = vertUV[i];
+                                }
+                            }
+                        }
                         if (vertColors != null) vertColors[dst] = vertColors[i];
                         if (vertBoneWeights != null) vertBoneWeights[dst] = vertBoneWeights[i];
                     }
@@ -932,10 +1024,9 @@ namespace UnityMeshSimplifier
             this.vertices.Resize(dst, true);
             if (vertNormals != null) this.vertNormals.Resize(dst, true);
             if (vertTangents != null) this.vertTangents.Resize(dst, true);
-            if (vertUV1 != null) this.vertUV1.Resize(dst, true);
-            if (vertUV2 != null) this.vertUV2.Resize(dst, true);
-            if (vertUV3 != null) this.vertUV3.Resize(dst, true);
-            if (vertUV4 != null) this.vertUV4.Resize(dst, true);
+            if (vertUV2D != null) this.vertUV2D.Resize(dst, true);
+            if (vertUV3D != null) this.vertUV3D.Resize(dst, true);
+            if (vertUV4D != null) this.vertUV4D.Resize(dst, true);
             if (vertColors != null) this.vertColors.Resize(dst, true);
             if (vertBoneWeights != null) this.vertBoneWeights.Resize(dst, true);
         }
@@ -1070,6 +1161,423 @@ namespace UnityMeshSimplifier
                 triangleIndex += subMeshTriangleCount;
             }
         }
+        #endregion
+
+        #region UV Sets
+        #region Getting
+        /// <summary>
+        /// Returns the UVs (2D) from a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <returns>The UVs.</returns>
+        public Vector2[] GetUVs2D(int channel)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+
+            if (vertUV2D != null && vertUV2D[channel] != null)
+            {
+                return vertUV2D[channel].Data;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Returns the UVs (3D) from a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <returns>The UVs.</returns>
+        public Vector3[] GetUVs3D(int channel)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+
+            if (vertUV3D != null && vertUV3D[channel] != null)
+            {
+                return vertUV3D[channel].Data;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Returns the UVs (4D) from a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <returns>The UVs.</returns>
+        public Vector4[] GetUVs4D(int channel)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+
+            if (vertUV4D != null && vertUV4D[channel] != null)
+            {
+                return vertUV4D[channel].Data;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Returns the UVs (2D) from a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <param name="uvs">The UVs.</param>
+        public void GetUVs(int channel, List<Vector2> uvs)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+            else if (uvs == null)
+                throw new ArgumentNullException("uvs");
+
+            uvs.Clear();
+            if (vertUV2D != null && vertUV2D[channel] != null)
+            {
+                var uvData = vertUV2D[channel].Data;
+                if (uvData != null)
+                {
+                    uvs.AddRange(uvData);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Returns the UVs (3D) from a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <param name="uvs">The UVs.</param>
+        public void GetUVs(int channel, List<Vector3> uvs)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+            else if (uvs == null)
+                throw new ArgumentNullException("uvs");
+
+            uvs.Clear();
+            if (vertUV3D != null && vertUV3D[channel] != null)
+            {
+                var uvData = vertUV3D[channel].Data;
+                if (uvData != null)
+                {
+                    uvs.AddRange(uvData);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Returns the UVs (4D) from a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <param name="uvs">The UVs.</param>
+        public void GetUVs(int channel, List<Vector4> uvs)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+            else if (uvs == null)
+                throw new ArgumentNullException("uvs");
+
+            uvs.Clear();
+            if (vertUV4D != null && vertUV4D[channel] != null)
+            {
+                var uvData = vertUV4D[channel].Data;
+                if (uvData != null)
+                {
+                    uvs.AddRange(uvData);
+                }
+            }
+        }
+        #endregion
+
+        #region Setting
+        /// <summary>
+        /// Sets the UVs (2D) for a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <param name="uvs">The UVs.</param>
+        public void SetUVs(int channel, Vector2[] uvs)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+
+            if (uvs != null)
+            {
+                if (vertUV2D == null)
+                    vertUV2D = new UVSets<Vector2>();
+
+                int uvCount = uvs.Length;
+                var uvSet = vertUV2D[channel];
+                if (uvSet != null)
+                {
+                    uvSet.Resize(uvCount);
+                }
+                else
+                {
+                    uvSet = new ResizableArray<Vector2>(uvCount);
+                    vertUV2D[channel] = uvSet;
+                }
+
+                var uvData = uvSet.Data;
+                uvs.CopyTo(uvData, 0);
+            }
+            else
+            {
+                if (vertUV2D != null)
+                {
+                    vertUV2D[channel] = null;
+                }
+                if (vertUV3D != null)
+                {
+                    vertUV3D[channel] = null;
+                }
+                if (vertUV4D != null)
+                {
+                    vertUV4D[channel] = null;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets the UVs (3D) for a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <param name="uvs">The UVs.</param>
+        public void SetUVs(int channel, Vector3[] uvs)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+
+            if (uvs != null)
+            {
+                if (vertUV3D == null)
+                    vertUV3D = new UVSets<Vector3>();
+
+                int uvCount = uvs.Length;
+                var uvSet = vertUV3D[channel];
+                if (uvSet != null)
+                {
+                    uvSet.Resize(uvCount);
+                }
+                else
+                {
+                    uvSet = new ResizableArray<Vector3>(uvCount);
+                    vertUV3D[channel] = uvSet;
+                }
+
+                var uvData = uvSet.Data;
+                uvs.CopyTo(uvData, 0);
+            }
+            else
+            {
+                if (vertUV2D != null)
+                {
+                    vertUV2D[channel] = null;
+                }
+                if (vertUV3D != null)
+                {
+                    vertUV3D[channel] = null;
+                }
+                if (vertUV4D != null)
+                {
+                    vertUV4D[channel] = null;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets the UVs (4D) for a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <param name="uvs">The UVs.</param>
+        public void SetUVs(int channel, Vector4[] uvs)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+
+            if (uvs != null)
+            {
+                if (vertUV4D == null)
+                    vertUV4D = new UVSets<Vector4>();
+
+                int uvCount = uvs.Length;
+                var uvSet = vertUV4D[channel];
+                if (uvSet != null)
+                {
+                    uvSet.Resize(uvCount);
+                }
+                else
+                {
+                    uvSet = new ResizableArray<Vector4>(uvCount);
+                    vertUV4D[channel] = uvSet;
+                }
+
+                var uvData = uvSet.Data;
+                uvs.CopyTo(uvData, 0);
+            }
+            else
+            {
+                if (vertUV2D != null)
+                {
+                    vertUV2D[channel] = null;
+                }
+                if (vertUV3D != null)
+                {
+                    vertUV3D[channel] = null;
+                }
+                if (vertUV4D != null)
+                {
+                    vertUV4D[channel] = null;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets the UVs (2D) for a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <param name="uvs">The UVs.</param>
+        public void SetUVs(int channel, List<Vector2> uvs)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+
+            if (uvs != null)
+            {
+                if (vertUV2D == null)
+                    vertUV2D = new UVSets<Vector2>();
+
+                int uvCount = uvs.Count;
+                var uvSet = vertUV2D[channel];
+                if (uvSet != null)
+                {
+                    uvSet.Resize(uvCount);
+                }
+                else
+                {
+                    uvSet = new ResizableArray<Vector2>(uvCount);
+                    vertUV2D[channel] = uvSet;
+                }
+
+                var uvData = uvSet.Data;
+                uvs.CopyTo(uvData, 0);
+            }
+            else
+            {
+                if (vertUV2D != null)
+                {
+                    vertUV2D[channel] = null;
+                }
+                if (vertUV3D != null)
+                {
+                    vertUV3D[channel] = null;
+                }
+                if (vertUV4D != null)
+                {
+                    vertUV4D[channel] = null;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets the UVs (3D) for a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <param name="uvs">The UVs.</param>
+        public void SetUVs(int channel, List<Vector3> uvs)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+
+            if (uvs != null)
+            {
+                if (vertUV3D == null)
+                    vertUV3D = new UVSets<Vector3>();
+
+                int uvCount = uvs.Count;
+                var uvSet = vertUV3D[channel];
+                if (uvSet != null)
+                {
+                    uvSet.Resize(uvCount);
+                }
+                else
+                {
+                    uvSet = new ResizableArray<Vector3>(uvCount);
+                    vertUV3D[channel] = uvSet;
+                }
+
+                var uvData = uvSet.Data;
+                uvs.CopyTo(uvData, 0);
+            }
+            else
+            {
+                if (vertUV2D != null)
+                {
+                    vertUV2D[channel] = null;
+                }
+                if (vertUV3D != null)
+                {
+                    vertUV3D[channel] = null;
+                }
+                if (vertUV4D != null)
+                {
+                    vertUV4D[channel] = null;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets the UVs (4D) for a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <param name="uvs">The UVs.</param>
+        public void SetUVs(int channel, List<Vector4> uvs)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+
+            if (uvs != null)
+            {
+                if (vertUV4D == null)
+                    vertUV4D = new UVSets<Vector4>();
+
+                int uvCount = uvs.Count;
+                var uvSet = vertUV4D[channel];
+                if (uvSet != null)
+                {
+                    uvSet.Resize(uvCount);
+                }
+                else
+                {
+                    uvSet = new ResizableArray<Vector4>(uvCount);
+                    vertUV4D[channel] = uvSet;
+                }
+
+                var uvData = uvSet.Data;
+                uvs.CopyTo(uvData, 0);
+            }
+            else
+            {
+                if (vertUV2D != null)
+                {
+                    vertUV2D[channel] = null;
+                }
+                if (vertUV3D != null)
+                {
+                    vertUV3D[channel] = null;
+                }
+                if (vertUV4D != null)
+                {
+                    vertUV4D[channel] = null;
+                }
+            }
+        }
+        #endregion
         #endregion
 
         #region Initialize
@@ -1231,10 +1739,6 @@ namespace UnityMeshSimplifier
             var vertices = this.Vertices;
             var normals = this.Normals;
             var tangents = this.Tangents;
-            var uv1 = this.UV1;
-            var uv2 = this.UV2;
-            var uv3 = this.UV3;
-            var uv4 = this.UV4;
             var colors = this.Colors;
             var boneWeights = this.BoneWeights;
 
@@ -1250,10 +1754,55 @@ namespace UnityMeshSimplifier
             newMesh.vertices = this.Vertices;
             if (normals != null) newMesh.normals = normals;
             if (tangents != null) newMesh.tangents = tangents;
-            if (uv1 != null) newMesh.uv = uv1;
-            if (uv2 != null) newMesh.uv2 = uv2;
-            if (uv3 != null) newMesh.uv3 = uv3;
-            if (uv4 != null) newMesh.uv4 = uv4;
+
+            if (vertUV2D != null)
+            {
+                List<Vector2> uvSet = null;
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    if (vertUV2D[i] != null)
+                    {
+                        if (uvSet == null)
+                            uvSet = new List<Vector2>(vertUV2D[i].Length);
+
+                        GetUVs(i, uvSet);
+                        newMesh.SetUVs(i, uvSet);
+                    }
+                }
+            }
+
+            if (vertUV3D != null)
+            {
+                List<Vector3> uvSet = null;
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    if (vertUV3D[i] != null)
+                    {
+                        if (uvSet == null)
+                            uvSet = new List<Vector3>(vertUV3D[i].Length);
+
+                        GetUVs(i, uvSet);
+                        newMesh.SetUVs(i, uvSet);
+                    }
+                }
+            }
+
+            if (vertUV4D != null)
+            {
+                List<Vector4> uvSet = null;
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    if (vertUV4D[i] != null)
+                    {
+                        if (uvSet == null)
+                            uvSet = new List<Vector4>(vertUV4D[i].Length);
+
+                        GetUVs(i, uvSet);
+                        newMesh.SetUVs(i, uvSet);
+                    }
+                }
+            }
+
             if (colors != null) newMesh.colors = colors;
             if (boneWeights != null) newMesh.boneWeights = boneWeights;
 
