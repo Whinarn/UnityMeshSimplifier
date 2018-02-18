@@ -137,7 +137,6 @@ namespace UnityMeshSimplifier
             public int tcount;
             public SymmetricMatrix q;
             public bool border;
-            public bool linked;
 
             public Vertex(Vector3d p)
             {
@@ -146,7 +145,6 @@ namespace UnityMeshSimplifier
                 this.tcount = 0;
                 this.q = new SymmetricMatrix();
                 this.border = true;
-                this.linked = false;
             }
         }
         #endregion
