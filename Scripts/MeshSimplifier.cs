@@ -612,7 +612,7 @@ namespace UnityMeshSimplifier
                     }
                 }
             }
-            else if (vertUV3D != null)
+            if (vertUV3D != null)
             {
                 for (int i = 0; i < UVChannelCount; i++)
                 {
@@ -623,7 +623,7 @@ namespace UnityMeshSimplifier
                     }
                 }
             }
-            else if (vertUV4D != null)
+            if (vertUV4D != null)
             {
                 for (int i = 0; i < UVChannelCount; i++)
                 {
