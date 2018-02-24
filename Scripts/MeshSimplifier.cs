@@ -432,7 +432,7 @@ namespace UnityMeshSimplifier
             {
                 if (attributeArray == null)
                 {
-                    attributeArray = new ResizableArray<T>(attributeValues.Length);
+                    attributeArray = new ResizableArray<T>(attributeValues.Length, attributeValues.Length);
                 }
                 else
                 {
@@ -1317,7 +1317,7 @@ namespace UnityMeshSimplifier
                 }
                 else
                 {
-                    uvSet = new ResizableArray<Vector2>(uvCount);
+                    uvSet = new ResizableArray<Vector2>(uvCount, uvCount);
                     vertUV2D[channel] = uvSet;
                 }
 
@@ -1365,7 +1365,7 @@ namespace UnityMeshSimplifier
                 }
                 else
                 {
-                    uvSet = new ResizableArray<Vector3>(uvCount);
+                    uvSet = new ResizableArray<Vector3>(uvCount, uvCount);
                     vertUV3D[channel] = uvSet;
                 }
 
@@ -1413,7 +1413,7 @@ namespace UnityMeshSimplifier
                 }
                 else
                 {
-                    uvSet = new ResizableArray<Vector4>(uvCount);
+                    uvSet = new ResizableArray<Vector4>(uvCount, uvCount);
                     vertUV4D[channel] = uvSet;
                 }
 
@@ -1461,7 +1461,7 @@ namespace UnityMeshSimplifier
                 }
                 else
                 {
-                    uvSet = new ResizableArray<Vector2>(uvCount);
+                    uvSet = new ResizableArray<Vector2>(uvCount, uvCount);
                     vertUV2D[channel] = uvSet;
                 }
 
@@ -1509,7 +1509,7 @@ namespace UnityMeshSimplifier
                 }
                 else
                 {
-                    uvSet = new ResizableArray<Vector3>(uvCount);
+                    uvSet = new ResizableArray<Vector3>(uvCount, uvCount);
                     vertUV3D[channel] = uvSet;
                 }
 
@@ -1557,7 +1557,7 @@ namespace UnityMeshSimplifier
                 }
                 else
                 {
-                    uvSet = new ResizableArray<Vector4>(uvCount);
+                    uvSet = new ResizableArray<Vector4>(uvCount, uvCount);
                     vertUV4D[channel] = uvSet;
                 }
 
