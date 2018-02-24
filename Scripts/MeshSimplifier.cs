@@ -163,8 +163,8 @@ namespace UnityMeshSimplifier
         }
         #endregion
 
-        #region UV Sets
-        private class UVSets<TVec>
+        #region UV Channels
+        private class UVChannels<TVec>
         {
             private ResizableArray<TVec>[] channels = null;
             private TVec[][] channelsData = null;
@@ -198,7 +198,7 @@ namespace UnityMeshSimplifier
                 set { channels[index] = value; }
             }
 
-            public UVSets()
+            public UVChannels()
             {
                 channels = new ResizableArray<TVec>[UVChannelCount];
                 channelsData = new TVec[UVChannelCount][];
@@ -235,9 +235,9 @@ namespace UnityMeshSimplifier
 
         private ResizableArray<Vector3> vertNormals = null;
         private ResizableArray<Vector4> vertTangents = null;
-        private UVSets<Vector2> vertUV2D = null;
-        private UVSets<Vector3> vertUV3D = null;
-        private UVSets<Vector4> vertUV4D = null;
+        private UVChannels<Vector2> vertUV2D = null;
+        private UVChannels<Vector3> vertUV3D = null;
+        private UVChannels<Vector4> vertUV4D = null;
         private ResizableArray<Color> vertColors = null;
         private ResizableArray<BoneWeight> vertBoneWeights = null;
 
@@ -1311,7 +1311,7 @@ namespace UnityMeshSimplifier
             if (uvs != null && uvs.Length > 0)
             {
                 if (vertUV2D == null)
-                    vertUV2D = new UVSets<Vector2>();
+                    vertUV2D = new UVChannels<Vector2>();
 
                 int uvCount = uvs.Length;
                 var uvSet = vertUV2D[channel];
@@ -1359,7 +1359,7 @@ namespace UnityMeshSimplifier
             if (uvs != null && uvs.Length > 0)
             {
                 if (vertUV3D == null)
-                    vertUV3D = new UVSets<Vector3>();
+                    vertUV3D = new UVChannels<Vector3>();
 
                 int uvCount = uvs.Length;
                 var uvSet = vertUV3D[channel];
@@ -1407,7 +1407,7 @@ namespace UnityMeshSimplifier
             if (uvs != null && uvs.Length > 0)
             {
                 if (vertUV4D == null)
-                    vertUV4D = new UVSets<Vector4>();
+                    vertUV4D = new UVChannels<Vector4>();
 
                 int uvCount = uvs.Length;
                 var uvSet = vertUV4D[channel];
@@ -1455,7 +1455,7 @@ namespace UnityMeshSimplifier
             if (uvs != null && uvs.Count > 0)
             {
                 if (vertUV2D == null)
-                    vertUV2D = new UVSets<Vector2>();
+                    vertUV2D = new UVChannels<Vector2>();
 
                 int uvCount = uvs.Count;
                 var uvSet = vertUV2D[channel];
@@ -1503,7 +1503,7 @@ namespace UnityMeshSimplifier
             if (uvs != null && uvs.Count > 0)
             {
                 if (vertUV3D == null)
-                    vertUV3D = new UVSets<Vector3>();
+                    vertUV3D = new UVChannels<Vector3>();
 
                 int uvCount = uvs.Count;
                 var uvSet = vertUV3D[channel];
@@ -1551,7 +1551,7 @@ namespace UnityMeshSimplifier
             if (uvs != null && uvs.Count > 0)
             {
                 if (vertUV4D == null)
-                    vertUV4D = new UVSets<Vector4>();
+                    vertUV4D = new UVChannels<Vector4>();
 
                 int uvCount = uvs.Count;
                 var uvSet = vertUV4D[channel];
