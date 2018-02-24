@@ -319,7 +319,7 @@ namespace UnityMeshSimplifier
             get { return (vertNormals != null ? vertNormals.Data : null); }
             set
             {
-                InitializeVertexAttribute(value, ref vertNormals);
+                InitializeVertexAttribute(value, ref vertNormals, "normals");
             }
         }
 
@@ -331,7 +331,7 @@ namespace UnityMeshSimplifier
             get { return (vertTangents != null ? vertTangents.Data : null); }
             set
             {
-                InitializeVertexAttribute(value, ref vertTangents);
+                InitializeVertexAttribute(value, ref vertTangents, "tangents");
             }
         }
 
@@ -379,7 +379,7 @@ namespace UnityMeshSimplifier
             get { return (vertColors != null ? vertColors.Data : null); }
             set
             {
-                InitializeVertexAttribute(value, ref vertColors);
+                InitializeVertexAttribute(value, ref vertColors, "colors");
             }
         }
 
@@ -391,7 +391,7 @@ namespace UnityMeshSimplifier
             get { return (vertBoneWeights != null ? vertBoneWeights.Data : null); }
             set
             {
-                InitializeVertexAttribute(value, ref vertBoneWeights);
+                InitializeVertexAttribute(value, ref vertBoneWeights, "boneWeights");
             }
         }
         #endregion
@@ -426,7 +426,7 @@ namespace UnityMeshSimplifier
 
         #region Private Methods
         #region Initialize Vertex Attribute
-        private void InitializeVertexAttribute<T>(T[] attributeValues, ref ResizableArray<T> attributeArray)
+        private void InitializeVertexAttribute<T>(T[] attributeValues, ref ResizableArray<T> attributeArray, string attributeName)
         {
             if (attributeValues != null && attributeValues.Length == vertices.Length)
             {
@@ -444,6 +444,10 @@ namespace UnityMeshSimplifier
             }
             else
             {
+                if (attributeValues != null && attributeValues.Length > 0)
+                {
+                    Debug.LogErrorFormat("Failed to set vertex attribute '{0}' with {1} length of array, when {2} was needed.", attributeName, attributeValues.Length, vertices.Length);
+                }
                 attributeArray = null;
             }
         }
