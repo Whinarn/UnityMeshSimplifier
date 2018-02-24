@@ -1304,7 +1304,7 @@ namespace UnityMeshSimplifier
             if (channel < 0 || channel >= UVChannelCount)
                 throw new ArgumentOutOfRangeException("channel");
 
-            if (uvs != null)
+            if (uvs != null && uvs.Length > 0)
             {
                 if (vertUV2D == null)
                     vertUV2D = new UVSets<Vector2>();
@@ -1352,7 +1352,7 @@ namespace UnityMeshSimplifier
             if (channel < 0 || channel >= UVChannelCount)
                 throw new ArgumentOutOfRangeException("channel");
 
-            if (uvs != null)
+            if (uvs != null && uvs.Length > 0)
             {
                 if (vertUV3D == null)
                     vertUV3D = new UVSets<Vector3>();
@@ -1400,7 +1400,7 @@ namespace UnityMeshSimplifier
             if (channel < 0 || channel >= UVChannelCount)
                 throw new ArgumentOutOfRangeException("channel");
 
-            if (uvs != null)
+            if (uvs != null && uvs.Length > 0)
             {
                 if (vertUV4D == null)
                     vertUV4D = new UVSets<Vector4>();
@@ -1448,7 +1448,7 @@ namespace UnityMeshSimplifier
             if (channel < 0 || channel >= UVChannelCount)
                 throw new ArgumentOutOfRangeException("channel");
 
-            if (uvs != null)
+            if (uvs != null && uvs.Count > 0)
             {
                 if (vertUV2D == null)
                     vertUV2D = new UVSets<Vector2>();
@@ -1496,7 +1496,7 @@ namespace UnityMeshSimplifier
             if (channel < 0 || channel >= UVChannelCount)
                 throw new ArgumentOutOfRangeException("channel");
 
-            if (uvs != null)
+            if (uvs != null && uvs.Count > 0)
             {
                 if (vertUV3D == null)
                     vertUV3D = new UVSets<Vector3>();
@@ -1544,7 +1544,7 @@ namespace UnityMeshSimplifier
             if (channel < 0 || channel >= UVChannelCount)
                 throw new ArgumentOutOfRangeException("channel");
 
-            if (uvs != null)
+            if (uvs != null && uvs.Count > 0)
             {
                 if (vertUV4D == null)
                     vertUV4D = new UVSets<Vector4>();
