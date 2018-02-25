@@ -741,9 +741,8 @@ namespace UnityMeshSimplifier
                     // Border check
                     if (v0.border != v1.border)
                         continue;
-
                     // If borders should be kept
-                    if (keepBorders && (v0.border || v1.border))
+                    else if (keepBorders && v0.border)
                         continue;
 
                     // Compute vertex to collapse to
