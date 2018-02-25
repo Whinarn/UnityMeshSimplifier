@@ -460,7 +460,7 @@ namespace UnityMeshSimplifier
                 + 2 * q.m5 * y * z + 2 * q.m6 * y + q.m7 * z * z + 2 * q.m8 * z + q.m9;
         }
 
-        private double CalculateError(int i0, int i1, out Vector3d result)
+        private double CalculateError(int i0, int i1, out Vector3d result, out int resultIndex)
         {
             // compute interpolated vertex
             var vertices = this.vertices.Data;
@@ -478,6 +478,7 @@ namespace UnityMeshSimplifier
                     1.0 / det * q.Determinant3(),   // vy = A42/det(q_delta)
                     -1.0 / det * q.Determinant4()); // vz = A43/det(q_delta)
                 error = VertexError(ref q, result.x, result.y, result.z);
+                resultIndex = 2;
             }
             else
             {
@@ -490,13 +491,25 @@ namespace UnityMeshSimplifier
                 double error3 = VertexError(ref q, p3.x, p3.y, p3.z);
                 error = MathHelper.Min(error1, error2, error3);
                 if (error == error3)
+                {
                     result = p3;
+                    resultIndex = 2;
+                }
                 else if (error == error2)
+                {
                     result = p2;
+                    resultIndex = 1;
+                }
                 else if (error == error1)
+                {
                     result = p1;
+                    resultIndex = 0;
+                }
                 else
+                {
                     result = p3;
+                    resultIndex = 2;
+                }
             }
             return error;
         }
@@ -564,6 +577,7 @@ namespace UnityMeshSimplifier
         private void UpdateTriangles(int i0, ref Vertex v, ResizableArray<bool> deleted, ref int deletedTriangles)
         {
             Vector3d p;
+            int pIndex;
             int tcount = v.tcount;
             var triangles = this.triangles.Data;
             for (int k = 0; k < tcount; k++)
@@ -584,9 +598,9 @@ namespace UnityMeshSimplifier
                 t[r.tvertex] = i0;
                 t.dirty = true;
                 t.area = CalculateArea(t.v0, t.v1, t.v2);
-                t.err0 = CalculateError(t.v0, t.v1, out p);
-                t.err1 = CalculateError(t.v1, t.v2, out p);
-                t.err2 = CalculateError(t.v2, t.v0, out p);
+                t.err0 = CalculateError(t.v0, t.v1, out p, out pIndex);
+                t.err1 = CalculateError(t.v1, t.v2, out p, out pIndex);
+                t.err2 = CalculateError(t.v2, t.v0, out p, out pIndex);
                 t.err3 = MathHelper.Min(t.err0, t.err1, t.err2);
                 triangles[tid] = t;
                 refs.Add(r);
@@ -594,8 +608,57 @@ namespace UnityMeshSimplifier
         }
         #endregion
 
-        #region Merge Vertices
-        private void MergeVertices(int i0, int i1)
+        #region Move/Merge Vertex Attributes
+        private void MoveVertexAttributes(int i0, int i1)
+        {
+            if (vertNormals != null)
+            {
+                vertNormals[i0] = vertNormals[i1];
+            }
+            if (vertTangents != null)
+            {
+                vertTangents[i0] = vertTangents[i1];
+            }
+            if (vertUV2D != null)
+            {
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    var vertUV = vertUV2D[i];
+                    if (vertUV != null)
+                    {
+                        vertUV[i0] = vertUV[i1];
+                    }
+                }
+            }
+            if (vertUV3D != null)
+            {
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    var vertUV = vertUV3D[i];
+                    if (vertUV != null)
+                    {
+                        vertUV[i0] = vertUV[i1];
+                    }
+                }
+            }
+            if (vertUV4D != null)
+            {
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    var vertUV = vertUV4D[i];
+                    if (vertUV != null)
+                    {
+                        vertUV[i0] = vertUV[i1];
+                    }
+                }
+            }
+            if (vertColors != null)
+            {
+                vertColors[i0] = vertColors[i1];
+            }
+        }
+
+        private void MergeVertexAttributes(int i0, int i1)
         {
             if (vertNormals != null)
             {
@@ -657,6 +720,7 @@ namespace UnityMeshSimplifier
 
             Vertex v0, v1;
             Vector3d p;
+            int pIndex;
             for (int i = 0; i < triangleCount; i++)
             {
                 var t = triangles[i];
@@ -683,7 +747,7 @@ namespace UnityMeshSimplifier
                         continue;
 
                     // Compute vertex to collapse to
-                    CalculateError(i0, i1, out p);
+                    CalculateError(i0, i1, out p, out pIndex);
                     deleted0.Resize(v0.tcount); // normals temporarily
                     deleted1.Resize(v1.tcount); // normals temporarily
 
@@ -697,7 +761,16 @@ namespace UnityMeshSimplifier
                     v0.p = p;
                     v0.q += v1.q;
                     vertices[i0] = v0;
-                    MergeVertices(i0, i1);
+                    if (pIndex == 1)
+                    {
+                        // Move vertex attributes from i1 to i0
+                        MoveVertexAttributes(i0, i1);
+                    }
+                    else if (pIndex == 2)
+                    {
+                        // Merge vertex attributes i0 and i1 into i0
+                        MergeVertexAttributes(i0, i1);
+                    }
 
                     int tstart = refs.Length;
                     UpdateTriangles(i0, ref v0, deleted0, ref deletedTris);
@@ -775,6 +848,7 @@ namespace UnityMeshSimplifier
                 }
 
                 Vector3d n, p0, p1, p2, p10, p20, dummy;
+                int dummy2;
                 SymmetricMatrix sm;
                 for (int i = 0; i < triangleCount; i++)
                 {
@@ -805,9 +879,9 @@ namespace UnityMeshSimplifier
                     // Calc Edge Error
                     var triangle = triangles[i];
                     //triangle.area = CalculateArea(triangle.v0, triangle.v1, triangle.v2);
-                    triangle.err0 = CalculateError(triangle.v0, triangle.v1, out dummy);
-                    triangle.err1 = CalculateError(triangle.v1, triangle.v2, out dummy);
-                    triangle.err2 = CalculateError(triangle.v2, triangle.v0, out dummy);
+                    triangle.err0 = CalculateError(triangle.v0, triangle.v1, out dummy, out dummy2);
+                    triangle.err1 = CalculateError(triangle.v1, triangle.v2, out dummy, out dummy2);
+                    triangle.err2 = CalculateError(triangle.v2, triangle.v0, out dummy, out dummy2);
                     triangle.err3 = MathHelper.Min(triangle.err0, triangle.err1, triangle.err2);
                     triangles[i] = triangle;
                 }
