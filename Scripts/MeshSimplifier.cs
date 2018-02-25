@@ -597,7 +597,7 @@ namespace UnityMeshSimplifier
 
                 t[r.tvertex] = i0;
                 t.dirty = true;
-                t.area = CalculateArea(t.v0, t.v1, t.v2);
+                //t.area = CalculateArea(t.v0, t.v1, t.v2);
                 t.err0 = CalculateError(t.v0, t.v1, out p, out pIndex);
                 t.err1 = CalculateError(t.v1, t.v2, out p, out pIndex);
                 t.err2 = CalculateError(t.v2, t.v0, out p, out pIndex);
