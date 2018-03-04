@@ -886,58 +886,13 @@ namespace UnityMeshSimplifier
                 }
             }
 
-            // Init Reference ID list
-            for (int i = 0; i < vertexCount; i++)
-            {
-                var vertex = vertices[i];
-                vertex.tstart = 0;
-                vertex.tcount = 0;
-                vertices[i] = vertex;
-            }
-
-            for (int i = 0; i < triangleCount; i++)
-            {
-                var triangle = triangles[i];
-                ++vertices[triangle.v0].tcount;
-                ++vertices[triangle.v1].tcount;
-                ++vertices[triangle.v2].tcount;
-            }
-
-            int tstart = 0;
-            for (int i = 0; i < vertexCount; i++)
-            {
-                var vertex = vertices[i];
-                vertex.tstart = tstart;
-                tstart += vertex.tcount;
-                vertex.tcount = 0;
-                vertices[i] = vertex;
-            }
-
-            // Write References
-            this.refs.Resize(tstart);
-            var refs = this.refs.Data;
-            for (int i = 0; i < triangleCount; i++)
-            {
-                var triangle = triangles[i];
-                var vert0 = vertices[triangle.v0];
-                var vert1 = vertices[triangle.v1];
-                var vert2 = vertices[triangle.v2];
-
-                refs[vert0.tstart + vert0.tcount].Set(i, 0);
-                refs[vert1.tstart + vert1.tcount].Set(i, 1);
-                refs[vert2.tstart + vert2.tcount].Set(i, 2);
-                ++vert0.tcount;
-                ++vert1.tcount;
-                ++vert2.tcount;
-
-                vertices[triangle.v0] = vert0;
-                vertices[triangle.v1] = vert1;
-                vertices[triangle.v2] = vert2;
-            }
+            UpdateReferences();
 
             // Identify boundary : vertices[].border=0,1
             if (iteration == 0)
             {
+                var refs = this.refs.Data;
+
                 var vcount = new List<int>(8);
                 var vids = new List<int>(8);
                 for (int i = 0; i < vertexCount; i++)
@@ -992,6 +947,65 @@ namespace UnityMeshSimplifier
                         }
                     }
                 }
+            }
+        }
+        #endregion
+
+        #region Update References
+        private void UpdateReferences()
+        {
+            int triangleCount = this.triangles.Length;
+            int vertexCount = this.vertices.Length;
+            var triangles = this.triangles.Data;
+            var vertices = this.vertices.Data;
+
+            // Init Reference ID list
+            for (int i = 0; i < vertexCount; i++)
+            {
+                var vertex = vertices[i];
+                vertex.tstart = 0;
+                vertex.tcount = 0;
+                vertices[i] = vertex;
+            }
+
+            for (int i = 0; i < triangleCount; i++)
+            {
+                var triangle = triangles[i];
+                ++vertices[triangle.v0].tcount;
+                ++vertices[triangle.v1].tcount;
+                ++vertices[triangle.v2].tcount;
+            }
+
+            int tstart = 0;
+            for (int i = 0; i < vertexCount; i++)
+            {
+                var vertex = vertices[i];
+                vertex.tstart = tstart;
+                tstart += vertex.tcount;
+                vertex.tcount = 0;
+                vertices[i] = vertex;
+            }
+
+            // Write References
+            this.refs.Resize(tstart);
+            var refs = this.refs.Data;
+            for (int i = 0; i < triangleCount; i++)
+            {
+                var triangle = triangles[i];
+                var vert0 = vertices[triangle.v0];
+                var vert1 = vertices[triangle.v1];
+                var vert2 = vertices[triangle.v2];
+
+                refs[vert0.tstart + vert0.tcount].Set(i, 0);
+                refs[vert1.tstart + vert1.tcount].Set(i, 1);
+                refs[vert2.tstart + vert2.tcount].Set(i, 2);
+                ++vert0.tcount;
+                ++vert1.tcount;
+                ++vert2.tcount;
+
+                vertices[triangle.v0] = vert0;
+                vertices[triangle.v1] = vert1;
+                vertices[triangle.v2] = vert2;
             }
         }
         #endregion
