@@ -834,58 +834,6 @@ namespace UnityMeshSimplifier
                 triangleCount = dst;
             }
 
-            // Init Quadrics by Plane & Edge Errors
-            //
-            // required at the beginning ( iteration == 0 )
-            // recomputing during the simplification is not required,
-            // but mostly improves the result for closed meshes
-            if (iteration == 0)
-            {
-                for (int i = 0; i < vertexCount; i++)
-                {
-                    vertices[i].q = new SymmetricMatrix();
-                }
-
-                Vector3d n, p0, p1, p2, p10, p20, dummy;
-                int dummy2;
-                SymmetricMatrix sm;
-                for (int i = 0; i < triangleCount; i++)
-                {
-                    var triangle = triangles[i];
-                    var vert0 = vertices[triangle.v0];
-                    var vert1 = vertices[triangle.v1];
-                    var vert2 = vertices[triangle.v2];
-                    p0 = vert0.p;
-                    p1 = vert1.p;
-                    p2 = vert2.p;
-                    p10 = p1 - p0;
-                    p20 = p2 - p0;
-                    Vector3d.Cross(ref p10, ref p20, out n);
-                    n.Normalize();
-                    triangles[i].n = n;
-
-                    sm = new SymmetricMatrix(n.x, n.y, n.z, -Vector3d.Dot(ref n, ref p0));
-                    vert0.q += sm;
-                    vert1.q += sm;
-                    vert2.q += sm;
-                    vertices[triangle.v0] = vert0;
-                    vertices[triangle.v1] = vert1;
-                    vertices[triangle.v2] = vert2;
-                }
-
-                for (int i = 0; i < triangleCount; i++)
-                {
-                    // Calc Edge Error
-                    var triangle = triangles[i];
-                    //triangle.area = CalculateArea(triangle.v0, triangle.v1, triangle.v2);
-                    triangle.err0 = CalculateError(triangle.v0, triangle.v1, out dummy, out dummy2);
-                    triangle.err1 = CalculateError(triangle.v1, triangle.v2, out dummy, out dummy2);
-                    triangle.err2 = CalculateError(triangle.v2, triangle.v0, out dummy, out dummy2);
-                    triangle.err3 = MathHelper.Min(triangle.err0, triangle.err1, triangle.err2);
-                    triangles[i] = triangle;
-                }
-            }
-
             UpdateReferences();
 
             // Identify boundary : vertices[].border=0,1
@@ -946,6 +894,55 @@ namespace UnityMeshSimplifier
                             vertices[id].border = true;
                         }
                     }
+                }
+
+                // Init Quadrics by Plane & Edge Errors
+                //
+                // required at the beginning ( iteration == 0 )
+                // recomputing during the simplification is not required,
+                // but mostly improves the result for closed meshes
+                for (int i = 0; i < vertexCount; i++)
+                {
+                    vertices[i].q = new SymmetricMatrix();
+                }
+
+                Vector3d n, p0, p1, p2, p10, p20, dummy;
+                int dummy2;
+                SymmetricMatrix sm;
+                for (int i = 0; i < triangleCount; i++)
+                {
+                    var triangle = triangles[i];
+                    var vert0 = vertices[triangle.v0];
+                    var vert1 = vertices[triangle.v1];
+                    var vert2 = vertices[triangle.v2];
+                    p0 = vert0.p;
+                    p1 = vert1.p;
+                    p2 = vert2.p;
+                    p10 = p1 - p0;
+                    p20 = p2 - p0;
+                    Vector3d.Cross(ref p10, ref p20, out n);
+                    n.Normalize();
+                    triangles[i].n = n;
+
+                    sm = new SymmetricMatrix(n.x, n.y, n.z, -Vector3d.Dot(ref n, ref p0));
+                    vert0.q += sm;
+                    vert1.q += sm;
+                    vert2.q += sm;
+                    vertices[triangle.v0] = vert0;
+                    vertices[triangle.v1] = vert1;
+                    vertices[triangle.v2] = vert2;
+                }
+
+                for (int i = 0; i < triangleCount; i++)
+                {
+                    // Calc Edge Error
+                    var triangle = triangles[i];
+                    //triangle.area = CalculateArea(triangle.v0, triangle.v1, triangle.v2);
+                    triangle.err0 = CalculateError(triangle.v0, triangle.v1, out dummy, out dummy2);
+                    triangle.err1 = CalculateError(triangle.v1, triangle.v2, out dummy, out dummy2);
+                    triangle.err2 = CalculateError(triangle.v2, triangle.v0, out dummy, out dummy2);
+                    triangle.err3 = MathHelper.Min(triangle.err0, triangle.err1, triangle.err2);
+                    triangles[i] = triangle;
                 }
             }
         }
