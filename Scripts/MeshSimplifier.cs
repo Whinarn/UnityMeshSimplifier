@@ -991,7 +991,7 @@ namespace UnityMeshSimplifier
                                 continue;
 
                             var otherVertex = vertices[otherIndex];
-                            if ((myVertex.p - otherVertex.p).MagnitudeSqr < vertexLinkDistanceSqr)
+                            if ((myVertex.p - otherVertex.p).MagnitudeSqr <= vertexLinkDistanceSqr)
                             {
                                 borderIndices[j] = -1;
                                 vertices[myIndex].border = false;
