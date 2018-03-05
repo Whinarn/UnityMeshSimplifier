@@ -260,6 +260,7 @@ namespace UnityMeshSimplifier
 
         #region Fields
         private bool keepBorders = false;
+        private bool keepSeams = false;
         private bool preventHoles = true;
         private double agressiveness = 7.0;
         private bool verbose = false;
@@ -286,12 +287,21 @@ namespace UnityMeshSimplifier
 
         #region Properties
         /// <summary>
-        /// Gets or sets if borders should be kept.
+        /// Gets or sets if borders should be preserved.
         /// </summary>
         public bool KeepBorders
         {
             get { return keepBorders; }
             set { keepBorders = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets if seams should be preserved.
+        /// </summary>
+        public bool KeepSeams
+        {
+            get { return keepSeams; }
+            set { keepSeams = value; }
         }
 
         /// <summary>
@@ -808,6 +818,9 @@ namespace UnityMeshSimplifier
                         continue;
                     // If borders should be kept
                     else if (keepBorders && v0.border)
+                        continue;
+                    // If seams should be kept
+                    else if (keepSeams && v0.seam)
                         continue;
 
                     // Compute vertex to collapse to
