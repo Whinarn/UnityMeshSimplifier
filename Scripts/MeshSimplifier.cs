@@ -170,6 +170,7 @@ namespace UnityMeshSimplifier
             public int tcount;
             public SymmetricMatrix q;
             public bool border;
+            public bool seam;
 
             public Vertex(Vector3d p)
             {
@@ -178,6 +179,7 @@ namespace UnityMeshSimplifier
                 this.tcount = 0;
                 this.q = new SymmetricMatrix();
                 this.border = true;
+                this.seam = false;
             }
         }
         #endregion
@@ -801,6 +803,9 @@ namespace UnityMeshSimplifier
                     // Border check
                     if (v0.border != v1.border)
                         continue;
+                    // Seam check
+                    else if (v0.seam != v1.seam)
+                        continue;
                     // If borders should be kept
                     else if (keepBorders && v0.border)
                         continue;
@@ -822,6 +827,7 @@ namespace UnityMeshSimplifier
                     v0.p = p;
                     v0.q += v1.q;
                     vertices[i0] = v0;
+
                     if (pIndex == 1)
                     {
                         // Move vertex attributes from ia1 to ia0
@@ -910,6 +916,7 @@ namespace UnityMeshSimplifier
                 for (int i = 0; i < vertexCount; i++)
                 {
                     vertices[i].border = false;
+                    vertices[i].seam = false;
                 }
 
                 int ofs;
@@ -995,6 +1002,7 @@ namespace UnityMeshSimplifier
                             {
                                 borderIndices[j] = -1;
                                 vertices[myIndex].border = false;
+                                vertices[myIndex].seam = true;
 
                                 for (int k = 0; k < otherVertex.tcount; k++)
                                 {
