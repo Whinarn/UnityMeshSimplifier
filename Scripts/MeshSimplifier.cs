@@ -261,8 +261,9 @@ namespace UnityMeshSimplifier
         #endregion
 
         #region Fields
-        private bool keepBorders = false;
-        private bool keepSeams = false;
+        private bool preserveBorders = false;
+        private bool preserveSeams = false;
+        private bool preserveFoldovers = false;
         private bool preventHoles = true;
         private double agressiveness = 7.0;
         private bool verbose = false;
@@ -291,19 +292,38 @@ namespace UnityMeshSimplifier
         /// <summary>
         /// Gets or sets if borders should be preserved.
         /// </summary>
+        [Obsolete("Use the 'MeshSimplifier.PreserveBorders' property instead.", false)]
         public bool KeepBorders
         {
-            get { return keepBorders; }
-            set { keepBorders = value; }
+            get { return preserveBorders; }
+            set { preserveBorders = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets if borders should be preserved.
+        /// </summary>
+        public bool PreserveBorders
+        {
+            get { return preserveBorders; }
+            set { preserveBorders = value; }
         }
 
         /// <summary>
         /// Gets or sets if seams should be preserved.
         /// </summary>
-        public bool KeepSeams
+        public bool PreserveSeams
         {
-            get { return keepSeams; }
-            set { keepSeams = value; }
+            get { return preserveSeams; }
+            set { preserveSeams = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets if foldovers should be preserved.
+        /// </summary>
+        public bool PreserveFoldovers
+        {
+            get { return preserveFoldovers; }
+            set { preserveFoldovers = value; }
         }
 
         /// <summary>
@@ -864,11 +884,14 @@ namespace UnityMeshSimplifier
                     // Foldover check
                     else if (v0.foldover != v1.foldover)
                         continue;
-                    // If borders should be kept
-                    else if (keepBorders && v0.border)
+                    // If borders should be preserved
+                    else if (preserveBorders && v0.border)
                         continue;
-                    // If seams should be kept
-                    else if (keepSeams && v0.seam)
+                    // If seams should be preserved
+                    else if (preserveSeams && v0.seam)
+                        continue;
+                    // If foldovers should be preserved
+                    else if (preserveFoldovers && v0.foldover)
                         continue;
 
                     // Compute vertex to collapse to
