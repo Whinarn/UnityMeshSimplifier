@@ -51,6 +51,7 @@ namespace UnityMeshSimplifier
     {
         #region Consts
         private const double DoubleEpsilon = 1.0E-3;
+        private const int UVChannelCount = 4;
         #endregion
 
         #region Classes
@@ -62,6 +63,10 @@ namespace UnityMeshSimplifier
             public int v1;
             public int v2;
             public int subMeshIndex;
+
+            public int va0;
+            public int va1;
+            public int va2;
 
             public double area;
 
@@ -110,6 +115,10 @@ namespace UnityMeshSimplifier
                 this.v2 = v2;
                 this.subMeshIndex = subMeshIndex;
 
+                this.va0 = v0;
+                this.va1 = v1;
+                this.va2 = v2;
+
                 area = 0;
                 err0 = err1 = err2 = err3 = 0;
                 deleted = dirty = false;
@@ -118,6 +127,31 @@ namespace UnityMeshSimplifier
             #endregion
 
             #region Public Methods
+            public void GetAttributeIndices(int[] attributeIndices)
+            {
+                attributeIndices[0] = va0;
+                attributeIndices[1] = va1;
+                attributeIndices[2] = va2;
+            }
+
+            public void SetAttributeIndex(int index, int value)
+            {
+                switch (index)
+                {
+                    case 0:
+                        va0 = value;
+                        break;
+                    case 1:
+                        va1 = value;
+                        break;
+                    case 2:
+                        va2 = value;
+                        break;
+                    default:
+                        throw new IndexOutOfRangeException();
+                }
+            }
+
             public void GetErrors(double[] err)
             {
                 err[0] = err0;
@@ -136,7 +170,8 @@ namespace UnityMeshSimplifier
             public int tcount;
             public SymmetricMatrix q;
             public bool border;
-            public bool linked;
+            public bool seam;
+            public bool foldover;
 
             public Vertex(Vector3d p)
             {
@@ -145,7 +180,8 @@ namespace UnityMeshSimplifier
                 this.tcount = 0;
                 this.q = new SymmetricMatrix();
                 this.border = true;
-                this.linked = false;
+                this.seam = false;
+                this.foldover = false;
             }
         }
         #endregion
@@ -163,12 +199,76 @@ namespace UnityMeshSimplifier
             }
         }
         #endregion
+
+        #region UV Channels
+        private class UVChannels<TVec>
+        {
+            private ResizableArray<TVec>[] channels = null;
+            private TVec[][] channelsData = null;
+
+            public TVec[][] Data
+            {
+                get
+                {
+                    for (int i = 0; i < UVChannelCount; i++)
+                    {
+                        if (channels[i] != null)
+                        {
+                            channelsData[i] = channels[i].Data;
+                        }
+                        else
+                        {
+                            channelsData[i] = null;
+                        }
+                    }
+                    return channelsData;
+                }
+            }
+
+            /// <summary>
+            /// Gets or sets a specific channel by index.
+            /// </summary>
+            /// <param name="index">The channel index.</param>
+            public ResizableArray<TVec> this[int index]
+            {
+                get { return channels[index]; }
+                set { channels[index] = value; }
+            }
+
+            public UVChannels()
+            {
+                channels = new ResizableArray<TVec>[UVChannelCount];
+                channelsData = new TVec[UVChannelCount][];
+            }
+
+            /// <summary>
+            /// Resizes all channels at once.
+            /// </summary>
+            /// <param name="capacity">The new capacity.</param>
+            /// <param name="trimExess">If exess memory should be trimmed.</param>
+            public void Resize(int capacity, bool trimExess = false)
+            {
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    if (channels[i] != null)
+                    {
+                        channels[i].Resize(capacity, trimExess);
+                    }
+                }
+            }
+        }
+        #endregion
         #endregion
 
         #region Fields
-        private bool keepBorders = false;
+        private bool preserveBorders = false;
+        private bool preserveSeams = false;
+        private bool preserveFoldovers = false;
+        private bool enableSmartLink = true;
         private double agressiveness = 7.0;
         private bool verbose = false;
+
+        private double vertexLinkDistanceSqr = double.Epsilon;
 
         private int subMeshCount = 0;
         private ResizableArray<Triangle> triangles = null;
@@ -177,25 +277,64 @@ namespace UnityMeshSimplifier
 
         private ResizableArray<Vector3> vertNormals = null;
         private ResizableArray<Vector4> vertTangents = null;
-        private ResizableArray<Vector2> vertUV1 = null;
-        private ResizableArray<Vector2> vertUV2 = null;
-        private ResizableArray<Vector2> vertUV3 = null;
-        private ResizableArray<Vector2> vertUV4 = null;
+        private UVChannels<Vector2> vertUV2D = null;
+        private UVChannels<Vector3> vertUV3D = null;
+        private UVChannels<Vector4> vertUV4D = null;
         private ResizableArray<Color> vertColors = null;
         private ResizableArray<BoneWeight> vertBoneWeights = null;
 
-        // Pre-allocated buffer for error values
+        // Pre-allocated buffers
         private double[] errArr = new double[3];
+        private int[] attributeIndexArr = new int[3];
         #endregion
 
         #region Properties
         /// <summary>
-        /// Gets or sets if borders should be kept.
+        /// Gets or sets if borders should be preserved.
         /// </summary>
+        [Obsolete("Use the 'MeshSimplifier.PreserveBorders' property instead.", false)]
         public bool KeepBorders
         {
-            get { return keepBorders; }
-            set { keepBorders = value; }
+            get { return preserveBorders; }
+            set { preserveBorders = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets if borders should be preserved.
+        /// </summary>
+        public bool PreserveBorders
+        {
+            get { return preserveBorders; }
+            set { preserveBorders = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets if seams should be preserved.
+        /// </summary>
+        public bool PreserveSeams
+        {
+            get { return preserveSeams; }
+            set { preserveSeams = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets if foldovers should be preserved.
+        /// </summary>
+        public bool PreserveFoldovers
+        {
+            get { return preserveFoldovers; }
+            set { preserveFoldovers = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets if a feature for smarter vertex linking should be enabled, reducing artifacts in the
+        /// decimated result at the cost of a slightly more expensive initialization by treating vertices at
+        /// the same position as the same vertex while separating the attributes.
+        /// </summary>
+        public bool EnableSmartLink
+        {
+            get { return enableSmartLink; }
+            set { enableSmartLink = value; }
         }
 
         /// <summary>
@@ -214,6 +353,16 @@ namespace UnityMeshSimplifier
         {
             get { return verbose; }
             set { verbose = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the maximum squared distance between two vertices in order to link them.
+        /// Note that this value is only used if PreventHoles is true.
+        /// </summary>
+        public double VertexLinkDistanceSqr
+        {
+            get { return vertexLinkDistanceSqr; }
+            set { vertexLinkDistanceSqr = value; }
         }
 
         /// <summary>
@@ -262,7 +411,7 @@ namespace UnityMeshSimplifier
             get { return (vertNormals != null ? vertNormals.Data : null); }
             set
             {
-                InitializeVertexAttribute(value, ref vertNormals);
+                InitializeVertexAttribute(value, ref vertNormals, "normals");
             }
         }
 
@@ -274,7 +423,7 @@ namespace UnityMeshSimplifier
             get { return (vertTangents != null ? vertTangents.Data : null); }
             set
             {
-                InitializeVertexAttribute(value, ref vertTangents);
+                InitializeVertexAttribute(value, ref vertTangents, "tangents");
             }
         }
 
@@ -283,11 +432,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         public Vector2[] UV1
         {
-            get { return (vertUV1 != null ? vertUV1.Data : null); }
-            set
-            {
-                InitializeVertexAttribute(value, ref vertUV1);
-            }
+            get { return GetUVs2D(0); }
+            set { SetUVs(0, value); }
         }
 
         /// <summary>
@@ -295,11 +441,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         public Vector2[] UV2
         {
-            get { return (vertUV2 != null ? vertUV2.Data : null); }
-            set
-            {
-                InitializeVertexAttribute(value, ref vertUV2);
-            }
+            get { return GetUVs2D(1); }
+            set { SetUVs(1, value); }
         }
 
         /// <summary>
@@ -307,11 +450,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         public Vector2[] UV3
         {
-            get { return (vertUV3 != null ? vertUV3.Data : null); }
-            set
-            {
-                InitializeVertexAttribute(value, ref vertUV3);
-            }
+            get { return GetUVs2D(2); }
+            set { SetUVs(2, value); }
         }
 
         /// <summary>
@@ -319,11 +459,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         public Vector2[] UV4
         {
-            get { return (vertUV4 != null ? vertUV4.Data : null); }
-            set
-            {
-                InitializeVertexAttribute(value, ref vertUV4);
-            }
+            get { return GetUVs2D(3); }
+            set { SetUVs(3, value); }
         }
 
         /// <summary>
@@ -334,7 +471,7 @@ namespace UnityMeshSimplifier
             get { return (vertColors != null ? vertColors.Data : null); }
             set
             {
-                InitializeVertexAttribute(value, ref vertColors);
+                InitializeVertexAttribute(value, ref vertColors, "colors");
             }
         }
 
@@ -346,7 +483,7 @@ namespace UnityMeshSimplifier
             get { return (vertBoneWeights != null ? vertBoneWeights.Data : null); }
             set
             {
-                InitializeVertexAttribute(value, ref vertBoneWeights);
+                InitializeVertexAttribute(value, ref vertBoneWeights, "boneWeights");
             }
         }
         #endregion
@@ -381,13 +518,13 @@ namespace UnityMeshSimplifier
 
         #region Private Methods
         #region Initialize Vertex Attribute
-        private void InitializeVertexAttribute<T>(T[] attributeValues, ref ResizableArray<T> attributeArray)
+        private void InitializeVertexAttribute<T>(T[] attributeValues, ref ResizableArray<T> attributeArray, string attributeName)
         {
             if (attributeValues != null && attributeValues.Length == vertices.Length)
             {
                 if (attributeArray == null)
                 {
-                    attributeArray = new ResizableArray<T>(attributeValues.Length);
+                    attributeArray = new ResizableArray<T>(attributeValues.Length, attributeValues.Length);
                 }
                 else
                 {
@@ -399,6 +536,10 @@ namespace UnityMeshSimplifier
             }
             else
             {
+                if (attributeValues != null && attributeValues.Length > 0)
+                {
+                    Debug.LogErrorFormat("Failed to set vertex attribute '{0}' with {1} length of array, when {2} was needed.", attributeName, attributeValues.Length, vertices.Length);
+                }
                 attributeArray = null;
             }
         }
@@ -411,7 +552,7 @@ namespace UnityMeshSimplifier
                 + 2 * q.m5 * y * z + 2 * q.m6 * y + q.m7 * z * z + 2 * q.m8 * z + q.m9;
         }
 
-        private double CalculateError(int i0, int i1, out Vector3d result)
+        private double CalculateError(int i0, int i1, out Vector3d result, out int resultIndex)
         {
             // compute interpolated vertex
             var vertices = this.vertices.Data;
@@ -429,6 +570,7 @@ namespace UnityMeshSimplifier
                     1.0 / det * q.Determinant3(),   // vy = A42/det(q_delta)
                     -1.0 / det * q.Determinant4()); // vz = A43/det(q_delta)
                 error = VertexError(ref q, result.x, result.y, result.z);
+                resultIndex = 2;
             }
             else
             {
@@ -441,13 +583,25 @@ namespace UnityMeshSimplifier
                 double error3 = VertexError(ref q, p3.x, p3.y, p3.z);
                 error = MathHelper.Min(error1, error2, error3);
                 if (error == error3)
+                {
                     result = p3;
+                    resultIndex = 2;
+                }
                 else if (error == error2)
+                {
                     result = p2;
+                    resultIndex = 1;
+                }
                 else if (error == error1)
+                {
                     result = p1;
+                    resultIndex = 0;
+                }
                 else
+                {
                     result = p3;
+                    resultIndex = 2;
+                }
             }
             return error;
         }
@@ -512,9 +666,10 @@ namespace UnityMeshSimplifier
         /// <summary>
         /// Update triangle connections and edge error after a edge is collapsed.
         /// </summary>
-        private void UpdateTriangles(int i0, ref Vertex v, ResizableArray<bool> deleted, ref int deletedTriangles)
+        private void UpdateTriangles(int i0, int ia0, ref Vertex v, ResizableArray<bool> deleted, ref int deletedTriangles)
         {
             Vector3d p;
+            int pIndex;
             int tcount = v.tcount;
             var triangles = this.triangles.Data;
             for (int k = 0; k < tcount; k++)
@@ -533,11 +688,16 @@ namespace UnityMeshSimplifier
                 }
 
                 t[r.tvertex] = i0;
+                if (ia0 != -1)
+                {
+                    t.SetAttributeIndex(r.tvertex, ia0);
+                }
+
                 t.dirty = true;
-                t.area = CalculateArea(t.v0, t.v1, t.v2);
-                t.err0 = CalculateError(t.v0, t.v1, out p);
-                t.err1 = CalculateError(t.v1, t.v2, out p);
-                t.err2 = CalculateError(t.v2, t.v0, out p);
+                //t.area = CalculateArea(t.v0, t.v1, t.v2);
+                t.err0 = CalculateError(t.v0, t.v1, out p, out pIndex);
+                t.err1 = CalculateError(t.v1, t.v2, out p, out pIndex);
+                t.err2 = CalculateError(t.v2, t.v0, out p, out pIndex);
                 t.err3 = MathHelper.Min(t.err0, t.err1, t.err2);
                 triangles[tid] = t;
                 refs.Add(r);
@@ -545,8 +705,57 @@ namespace UnityMeshSimplifier
         }
         #endregion
 
-        #region Merge Vertices
-        private void MergeVertices(int i0, int i1)
+        #region Move/Merge Vertex Attributes
+        private void MoveVertexAttributes(int i0, int i1)
+        {
+            if (vertNormals != null)
+            {
+                vertNormals[i0] = vertNormals[i1];
+            }
+            if (vertTangents != null)
+            {
+                vertTangents[i0] = vertTangents[i1];
+            }
+            if (vertUV2D != null)
+            {
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    var vertUV = vertUV2D[i];
+                    if (vertUV != null)
+                    {
+                        vertUV[i0] = vertUV[i1];
+                    }
+                }
+            }
+            if (vertUV3D != null)
+            {
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    var vertUV = vertUV3D[i];
+                    if (vertUV != null)
+                    {
+                        vertUV[i0] = vertUV[i1];
+                    }
+                }
+            }
+            if (vertUV4D != null)
+            {
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    var vertUV = vertUV4D[i];
+                    if (vertUV != null)
+                    {
+                        vertUV[i0] = vertUV[i1];
+                    }
+                }
+            }
+            if (vertColors != null)
+            {
+                vertColors[i0] = vertColors[i1];
+            }
+        }
+
+        private void MergeVertexAttributes(int i0, int i1)
         {
             if (vertNormals != null)
             {
@@ -556,26 +765,83 @@ namespace UnityMeshSimplifier
             {
                 vertTangents[i0] = (vertTangents[i0] + vertTangents[i1]) * 0.5f;
             }
-            if (vertUV1 != null)
+            if (vertUV2D != null)
             {
-                vertUV1[i0] = (vertUV1[i0] + vertUV1[i1]) * 0.5f;
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    var vertUV = vertUV2D[i];
+                    if (vertUV != null)
+                    {
+                        vertUV[i0] = (vertUV[i0] + vertUV[i1]) * 0.5f;
+                    }
+                }
             }
-            if (vertUV2 != null)
+            if (vertUV3D != null)
             {
-                vertUV2[i0] = (vertUV2[i0] + vertUV2[i1]) * 0.5f;
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    var vertUV = vertUV3D[i];
+                    if (vertUV != null)
+                    {
+                        vertUV[i0] = (vertUV[i0] + vertUV[i1]) * 0.5f;
+                    }
+                }
             }
-            if (vertUV3 != null)
+            if (vertUV4D != null)
             {
-                vertUV3[i0] = (vertUV3[i0] + vertUV3[i1]) * 0.5f;
-            }
-            if (vertUV4 != null)
-            {
-                vertUV4[i0] = (vertUV4[i0] + vertUV4[i1]) * 0.5f;
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    var vertUV = vertUV4D[i];
+                    if (vertUV != null)
+                    {
+                        vertUV[i0] = (vertUV[i0] + vertUV[i1]) * 0.5f;
+                    }
+                }
             }
             if (vertColors != null)
             {
                 vertColors[i0] = (vertColors[i0] + vertColors[i1]) * 0.5f;
             }
+        }
+        #endregion
+
+        #region Are UVs The Same
+        private bool AreUVsTheSame(int channel, int indexA, int indexB)
+        {
+            if (vertUV2D != null)
+            {
+                var vertUV = vertUV2D[channel];
+                if (vertUV != null)
+                {
+                    var uvA = vertUV[indexA];
+                    var uvB = vertUV[indexB];
+                    return uvA == uvB;
+                }
+            }
+
+            if (vertUV3D != null)
+            {
+                var vertUV = vertUV3D[channel];
+                if (vertUV != null)
+                {
+                    var uvA = vertUV[indexA];
+                    var uvB = vertUV[indexB];
+                    return uvA == uvB;
+                }
+            }
+
+            if (vertUV4D != null)
+            {
+                var vertUV = vertUV4D[channel];
+                if (vertUV != null)
+                {
+                    var uvA = vertUV[indexA];
+                    var uvB = vertUV[indexB];
+                    return uvA == uvB;
+                }
+            }
+
+            return false;
         }
         #endregion
 
@@ -591,6 +857,7 @@ namespace UnityMeshSimplifier
 
             Vertex v0, v1;
             Vector3d p;
+            int pIndex;
             for (int i = 0; i < triangleCount; i++)
             {
                 var t = triangles[i];
@@ -598,26 +865,39 @@ namespace UnityMeshSimplifier
                     continue;
 
                 t.GetErrors(errArr);
+                t.GetAttributeIndices(attributeIndexArr);
                 for (int j = 0; j < 3; j++)
                 {
                     if (errArr[j] > threshold)
                         continue;
 
+                    int k = ((j + 1) % 3);
                     int i0 = t[j];
-                    int i1 = t[(j + 1) % 3];
+                    int i1 = t[k];
                     v0 = vertices[i0];
                     v1 = vertices[i1];
 
                     // Border check
                     if (v0.border != v1.border)
                         continue;
-
-                    // If borders should be kept
-                    if (keepBorders && (v0.border || v1.border))
+                    // Seam check
+                    else if (v0.seam != v1.seam)
+                        continue;
+                    // Foldover check
+                    else if (v0.foldover != v1.foldover)
+                        continue;
+                    // If borders should be preserved
+                    else if (preserveBorders && v0.border)
+                        continue;
+                    // If seams should be preserved
+                    else if (preserveSeams && v0.seam)
+                        continue;
+                    // If foldovers should be preserved
+                    else if (preserveFoldovers && v0.foldover)
                         continue;
 
                     // Compute vertex to collapse to
-                    CalculateError(i0, i1, out p);
+                    CalculateError(i0, i1, out p, out pIndex);
                     deleted0.Resize(v0.tcount); // normals temporarily
                     deleted1.Resize(v1.tcount); // normals temporarily
 
@@ -627,15 +907,34 @@ namespace UnityMeshSimplifier
                     if (Flipped(p, i1, i0, ref v1, deleted1))
                         continue;
 
+                    int ia0 = attributeIndexArr[j];
+
                     // Not flipped, so remove edge
                     v0.p = p;
                     v0.q += v1.q;
                     vertices[i0] = v0;
-                    MergeVertices(i0, i1);
+
+                    if (pIndex == 1)
+                    {
+                        // Move vertex attributes from ia1 to ia0
+                        int ia1 = attributeIndexArr[k];
+                        MoveVertexAttributes(ia0, ia1);
+                    }
+                    else if (pIndex == 2)
+                    {
+                        // Merge vertex attributes ia0 and ia1 into ia0
+                        int ia1 = attributeIndexArr[k];
+                        MergeVertexAttributes(ia0, ia1);
+                    }
+
+                    if (v0.seam)
+                    {
+                        ia0 = -1;
+                    }
 
                     int tstart = refs.Length;
-                    UpdateTriangles(i0, ref v0, deleted0, ref deletedTris);
-                    UpdateTriangles(i0, ref v1, deleted1, ref deletedTris);
+                    UpdateTriangles(i0, ia0, ref v0, deleted0, ref deletedTris);
+                    UpdateTriangles(i0, ia0, ref v1, deleted1, ref deletedTris);
 
                     int tcount = refs.Length - tstart;
                     if (tcount <= v0.tcount)
@@ -696,19 +995,143 @@ namespace UnityMeshSimplifier
                 triangleCount = dst;
             }
 
-            // Init Quadrics by Plane & Edge Errors
-            //
-            // required at the beginning ( iteration == 0 )
-            // recomputing during the simplification is not required,
-            // but mostly improves the result for closed meshes
+            UpdateReferences();
+
+            // Identify boundary : vertices[].border=0,1
             if (iteration == 0)
             {
+                var refs = this.refs.Data;
+
+                var vcount = new List<int>(8);
+                var vids = new List<int>(8);
+                for (int i = 0; i < vertexCount; i++)
+                {
+                    vertices[i].border = false;
+                    vertices[i].seam = false;
+                    vertices[i].foldover = false;
+                }
+
+                int ofs;
+                int id;
+                int borderVertexCount = 0;
+                for (int i = 0; i < vertexCount; i++)
+                {
+                    var vertex = vertices[i];
+                    vcount.Clear();
+                    vids.Clear();
+
+                    int tcount = vertex.tcount;
+                    for (int j = 0; j < tcount; j++)
+                    {
+                        int k = refs[vertex.tstart + j].tid;
+                        Triangle t = triangles[k];
+                        for (k = 0; k < 3; k++)
+                        {
+                            ofs = 0;
+                            id = t[k];
+                            while (ofs < vcount.Count)
+                            {
+                                if (vids[ofs] == id)
+                                    break;
+
+                                ++ofs;
+                            }
+
+                            if (ofs == vcount.Count)
+                            {
+                                vcount.Add(1);
+                                vids.Add(id);
+                            }
+                            else
+                            {
+                                ++vcount[ofs];
+                            }
+                        }
+                    }
+
+                    int vcountCount = vcount.Count;
+                    for (int j = 0; j < vcountCount; j++)
+                    {
+                        if (vcount[j] == 1)
+                        {
+                            id = vids[j];
+                            vertices[id].border = true;
+                            ++borderVertexCount;
+                        }
+                    }
+                }
+
+                if (enableSmartLink)
+                {
+                    // First find all border vertices
+                    var borderIndices = new int[borderVertexCount];
+                    int borderIndexCount = 0;
+                    for (int i = 0; i < vertexCount; i++)
+                    {
+                        var v0 = vertices[i];
+                        if (!v0.border)
+                            continue;
+
+                        borderIndices[borderIndexCount++] = i;
+                    }
+
+                    // Then find identical border vertices and bind them together as one
+                    for (int i = 0; i < borderIndexCount; i++)
+                    {
+                        var myIndex = borderIndices[i];
+                        if (myIndex == -1)
+                            continue;
+
+                        var myVertex = vertices[myIndex];
+                        for (int j = i + 1; j < borderIndexCount; j++)
+                        {
+                            var otherIndex = borderIndices[j];
+                            if (otherIndex == -1)
+                                continue;
+
+                            var otherVertex = vertices[otherIndex];
+                            if ((myVertex.p - otherVertex.p).MagnitudeSqr <= vertexLinkDistanceSqr)
+                            {
+                                borderIndices[j] = -1;
+                                vertices[myIndex].border = false;
+                                vertices[otherIndex].border = false;
+
+                                if (AreUVsTheSame(0, myIndex, otherIndex))
+                                {
+                                    vertices[myIndex].foldover = true;
+                                    vertices[otherIndex].foldover = true;
+                                }
+                                else
+                                {
+                                    vertices[myIndex].seam = true;
+                                    vertices[otherIndex].seam = true;
+                                }
+
+                                for (int k = 0; k < otherVertex.tcount; k++)
+                                {
+                                    var r = refs[otherVertex.tstart + k];
+                                    triangles[r.tid][r.tvertex] = myIndex;
+                                }
+                            }
+                        }
+                    }
+
+                    // Update the references again
+                    UpdateReferences();
+                }
+
+                // Init Quadrics by Plane & Edge Errors
+                //
+                // required at the beginning ( iteration == 0 )
+                // recomputing during the simplification is not required,
+                // but mostly improves the result for closed meshes
                 for (int i = 0; i < vertexCount; i++)
                 {
                     vertices[i].q = new SymmetricMatrix();
                 }
 
                 Vector3d n, p0, p1, p2, p10, p20, dummy;
+                int dummy2;
                 SymmetricMatrix sm;
                 for (int i = 0; i < triangleCount; i++)
                 {
@@ -739,13 +1162,23 @@ namespace UnityMeshSimplifier
                     // Calc Edge Error
                     var triangle = triangles[i];
                     //triangle.area = CalculateArea(triangle.v0, triangle.v1, triangle.v2);
-                    triangle.err0 = CalculateError(triangle.v0, triangle.v1, out dummy);
-                    triangle.err1 = CalculateError(triangle.v1, triangle.v2, out dummy);
-                    triangle.err2 = CalculateError(triangle.v2, triangle.v0, out dummy);
+                    triangle.err0 = CalculateError(triangle.v0, triangle.v1, out dummy, out dummy2);
+                    triangle.err1 = CalculateError(triangle.v1, triangle.v2, out dummy, out dummy2);
+                    triangle.err2 = CalculateError(triangle.v2, triangle.v0, out dummy, out dummy2);
                     triangle.err3 = MathHelper.Min(triangle.err0, triangle.err1, triangle.err2);
                     triangles[i] = triangle;
                 }
             }
+        }
+        #endregion
+
+        #region Update References
+        private void UpdateReferences()
+        {
+            int triangleCount = this.triangles.Length;
+            int vertexCount = this.vertices.Length;
+            var triangles = this.triangles.Data;
+            var vertices = this.vertices.Data;
 
             // Init Reference ID list
             for (int i = 0; i < vertexCount; i++)
@@ -795,65 +1228,6 @@ namespace UnityMeshSimplifier
                 vertices[triangle.v1] = vert1;
                 vertices[triangle.v2] = vert2;
             }
-
-            // Identify boundary : vertices[].border=0,1
-            if (iteration == 0)
-            {
-                List<int> vcount = new List<int>();
-                List<int> vids = new List<int>();
-                for (int i = 0; i < vertexCount; i++)
-                {
-                    vertices[i].border = false;
-                }
-
-                int ofs;
-                int id;
-                for (int i = 0; i < vertexCount; i++)
-                {
-                    var vertex = vertices[i];
-                    vcount.Clear();
-                    vids.Clear();
-
-                    int tcount = vertex.tcount;
-                    for (int j = 0; j < tcount; j++)
-                    {
-                        int k = refs[vertex.tstart + j].tid;
-                        Triangle t = triangles[k];
-                        for (k = 0; k < 3; k++)
-                        {
-                            ofs = 0;
-                            id = t[k];
-                            while (ofs < vcount.Count)
-                            {
-                                if (vids[ofs] == id)
-                                    break;
-
-                                ++ofs;
-                            }
-
-                            if (ofs == vcount.Count)
-                            {
-                                vcount.Add(1);
-                                vids.Add(id);
-                            }
-                            else
-                            {
-                                ++vcount[ofs];
-                            }
-                        }
-                    }
-
-                    int vcountCount = vcount.Count;
-                    for (int j = 0; j < vcountCount; j++)
-                    {
-                        if (vcount[j] == 1)
-                        {
-                            id = vids[j];
-                            vertices[id].border = true;
-                        }
-                    }
-                }
-            }
         }
         #endregion
 
@@ -878,24 +1252,41 @@ namespace UnityMeshSimplifier
                 var triangle = triangles[i];
                 if (!triangle.deleted)
                 {
+                    if (triangle.va0 != triangle.v0)
+                    {
+                        vertices[triangle.va0].p = vertices[triangle.v0].p;
+                        triangle.v0 = triangle.va0;
+                    }
+                    if (triangle.va1 != triangle.v1)
+                    {
+                        vertices[triangle.va1].p = vertices[triangle.v1].p;
+                        triangle.v1 = triangle.va1;
+                    }
+                    if (triangle.va2 != triangle.v2)
+                    {
+                        vertices[triangle.va2].p = vertices[triangle.v2].p;
+                        triangle.v2 = triangle.va2;
+                    }
                     triangles[dst++] = triangle;
+
                     vertices[triangle.v0].tcount = 1;
                     vertices[triangle.v1].tcount = 1;
                     vertices[triangle.v2].tcount = 1;
                 }
             }
+
             this.triangles.Resize(dst);
             triangles = this.triangles.Data;
             triangleCount = dst;
 
             var vertNormals = (this.vertNormals != null ? this.vertNormals.Data : null);
             var vertTangents = (this.vertTangents != null ? this.vertTangents.Data : null);
-            var vertUV1 = (this.vertUV1 != null ? this.vertUV1.Data : null);
-            var vertUV2 = (this.vertUV2 != null ? this.vertUV2.Data : null);
-            var vertUV3 = (this.vertUV3 != null ? this.vertUV3.Data : null);
-            var vertUV4 = (this.vertUV4 != null ? this.vertUV4.Data : null);
+            var vertUV2D = (this.vertUV2D != null ? this.vertUV2D.Data : null);
+            var vertUV3D = (this.vertUV3D != null ? this.vertUV3D.Data : null);
+            var vertUV4D = (this.vertUV4D != null ? this.vertUV4D.Data : null);
             var vertColors = (this.vertColors != null ? this.vertColors.Data : null);
             var vertBoneWeights = (this.vertBoneWeights != null ? this.vertBoneWeights.Data : null);
+
             dst = 0;
             for (int i = 0; i < vertexCount; i++)
             {
@@ -910,16 +1301,46 @@ namespace UnityMeshSimplifier
                         vertices[dst].p = vert.p;
                         if (vertNormals != null) vertNormals[dst] = vertNormals[i];
                         if (vertTangents != null) vertTangents[dst] = vertTangents[i];
-                        if (vertUV1 != null) vertUV1[dst] = vertUV1[i];
-                        if (vertUV2 != null) vertUV2[dst] = vertUV2[i];
-                        if (vertUV3 != null) vertUV3[dst] = vertUV3[i];
-                        if (vertUV4 != null) vertUV4[dst] = vertUV4[i];
+                        if (vertUV2D != null)
+                        {
+                            for (int j = 0; j < UVChannelCount; j++)
+                            {
+                                var vertUV = vertUV2D[j];
+                                if (vertUV != null)
+                                {
+                                    vertUV[dst] = vertUV[i];
+                                }
+                            }
+                        }
+                        if (vertUV3D != null)
+                        {
+                            for (int j = 0; j < UVChannelCount; j++)
+                            {
+                                var vertUV = vertUV3D[j];
+                                if (vertUV != null)
+                                {
+                                    vertUV[dst] = vertUV[i];
+                                }
+                            }
+                        }
+                        if (vertUV4D != null)
+                        {
+                            for (int j = 0; j < UVChannelCount; j++)
+                            {
+                                var vertUV = vertUV4D[j];
+                                if (vertUV != null)
+                                {
+                                    vertUV[dst] = vertUV[i];
+                                }
+                            }
+                        }
                         if (vertColors != null) vertColors[dst] = vertColors[i];
                         if (vertBoneWeights != null) vertBoneWeights[dst] = vertBoneWeights[i];
                     }
                     ++dst;
                 }
             }
+
             for (int i = 0; i < triangleCount; i++)
             {
                 var triangle = triangles[i];
@@ -929,13 +1350,12 @@ namespace UnityMeshSimplifier
                 triangles[i] = triangle;
             }
 
-            this.vertices.Resize(dst, true);
+            this.vertices.Resize(dst);
             if (vertNormals != null) this.vertNormals.Resize(dst, true);
             if (vertTangents != null) this.vertTangents.Resize(dst, true);
-            if (vertUV1 != null) this.vertUV1.Resize(dst, true);
-            if (vertUV2 != null) this.vertUV2.Resize(dst, true);
-            if (vertUV3 != null) this.vertUV3.Resize(dst, true);
-            if (vertUV4 != null) this.vertUV4.Resize(dst, true);
+            if (vertUV2D != null) this.vertUV2D.Resize(dst, true);
+            if (vertUV3D != null) this.vertUV3D.Resize(dst, true);
+            if (vertUV4D != null) this.vertUV4D.Resize(dst, true);
             if (vertColors != null) this.vertColors.Resize(dst, true);
             if (vertBoneWeights != null) this.vertBoneWeights.Resize(dst, true);
         }
@@ -1070,6 +1490,429 @@ namespace UnityMeshSimplifier
                 triangleIndex += subMeshTriangleCount;
             }
         }
+        #endregion
+
+        #region UV Sets
+        #region Getting
+        /// <summary>
+        /// Returns the UVs (2D) from a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <returns>The UVs.</returns>
+        public Vector2[] GetUVs2D(int channel)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+
+            if (vertUV2D != null && vertUV2D[channel] != null)
+            {
+                return vertUV2D[channel].Data;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Returns the UVs (3D) from a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <returns>The UVs.</returns>
+        public Vector3[] GetUVs3D(int channel)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+
+            if (vertUV3D != null && vertUV3D[channel] != null)
+            {
+                return vertUV3D[channel].Data;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Returns the UVs (4D) from a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <returns>The UVs.</returns>
+        public Vector4[] GetUVs4D(int channel)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+
+            if (vertUV4D != null && vertUV4D[channel] != null)
+            {
+                return vertUV4D[channel].Data;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Returns the UVs (2D) from a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <param name="uvs">The UVs.</param>
+        public void GetUVs(int channel, List<Vector2> uvs)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+            else if (uvs == null)
+                throw new ArgumentNullException("uvs");
+
+            uvs.Clear();
+            if (vertUV2D != null && vertUV2D[channel] != null)
+            {
+                var uvData = vertUV2D[channel].Data;
+                if (uvData != null)
+                {
+                    uvs.AddRange(uvData);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Returns the UVs (3D) from a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <param name="uvs">The UVs.</param>
+        public void GetUVs(int channel, List<Vector3> uvs)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+            else if (uvs == null)
+                throw new ArgumentNullException("uvs");
+
+            uvs.Clear();
+            if (vertUV3D != null && vertUV3D[channel] != null)
+            {
+                var uvData = vertUV3D[channel].Data;
+                if (uvData != null)
+                {
+                    uvs.AddRange(uvData);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Returns the UVs (4D) from a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <param name="uvs">The UVs.</param>
+        public void GetUVs(int channel, List<Vector4> uvs)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+            else if (uvs == null)
+                throw new ArgumentNullException("uvs");
+
+            uvs.Clear();
+            if (vertUV4D != null && vertUV4D[channel] != null)
+            {
+                var uvData = vertUV4D[channel].Data;
+                if (uvData != null)
+                {
+                    uvs.AddRange(uvData);
+                }
+            }
+        }
+        #endregion
+
+        #region Setting
+        /// <summary>
+        /// Sets the UVs (2D) for a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <param name="uvs">The UVs.</param>
+        public void SetUVs(int channel, Vector2[] uvs)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+
+            if (uvs != null && uvs.Length > 0)
+            {
+                if (vertUV2D == null)
+                    vertUV2D = new UVChannels<Vector2>();
+
+                int uvCount = uvs.Length;
+                var uvSet = vertUV2D[channel];
+                if (uvSet != null)
+                {
+                    uvSet.Resize(uvCount);
+                }
+                else
+                {
+                    uvSet = new ResizableArray<Vector2>(uvCount, uvCount);
+                    vertUV2D[channel] = uvSet;
+                }
+
+                var uvData = uvSet.Data;
+                uvs.CopyTo(uvData, 0);
+            }
+            else
+            {
+                if (vertUV2D != null)
+                {
+                    vertUV2D[channel] = null;
+                }
+            }
+
+            if (vertUV3D != null)
+            {
+                vertUV3D[channel] = null;
+            }
+            if (vertUV4D != null)
+            {
+                vertUV4D[channel] = null;
+            }
+        }
+
+        /// <summary>
+        /// Sets the UVs (3D) for a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <param name="uvs">The UVs.</param>
+        public void SetUVs(int channel, Vector3[] uvs)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+
+            if (uvs != null && uvs.Length > 0)
+            {
+                if (vertUV3D == null)
+                    vertUV3D = new UVChannels<Vector3>();
+
+                int uvCount = uvs.Length;
+                var uvSet = vertUV3D[channel];
+                if (uvSet != null)
+                {
+                    uvSet.Resize(uvCount);
+                }
+                else
+                {
+                    uvSet = new ResizableArray<Vector3>(uvCount, uvCount);
+                    vertUV3D[channel] = uvSet;
+                }
+
+                var uvData = uvSet.Data;
+                uvs.CopyTo(uvData, 0);
+            }
+            else
+            {
+                if (vertUV3D != null)
+                {
+                    vertUV3D[channel] = null;
+                }
+            }
+
+            if (vertUV2D != null)
+            {
+                vertUV2D[channel] = null;
+            }
+            if (vertUV4D != null)
+            {
+                vertUV4D[channel] = null;
+            }
+        }
+
+        /// <summary>
+        /// Sets the UVs (4D) for a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <param name="uvs">The UVs.</param>
+        public void SetUVs(int channel, Vector4[] uvs)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+
+            if (uvs != null && uvs.Length > 0)
+            {
+                if (vertUV4D == null)
+                    vertUV4D = new UVChannels<Vector4>();
+
+                int uvCount = uvs.Length;
+                var uvSet = vertUV4D[channel];
+                if (uvSet != null)
+                {
+                    uvSet.Resize(uvCount);
+                }
+                else
+                {
+                    uvSet = new ResizableArray<Vector4>(uvCount, uvCount);
+                    vertUV4D[channel] = uvSet;
+                }
+
+                var uvData = uvSet.Data;
+                uvs.CopyTo(uvData, 0);
+            }
+            else
+            {
+                if (vertUV4D != null)
+                {
+                    vertUV4D[channel] = null;
+                }
+            }
+
+            if (vertUV2D != null)
+            {
+                vertUV2D[channel] = null;
+            }
+            if (vertUV3D != null)
+            {
+                vertUV3D[channel] = null;
+            }
+        }
+
+        /// <summary>
+        /// Sets the UVs (2D) for a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <param name="uvs">The UVs.</param>
+        public void SetUVs(int channel, List<Vector2> uvs)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+
+            if (uvs != null && uvs.Count > 0)
+            {
+                if (vertUV2D == null)
+                    vertUV2D = new UVChannels<Vector2>();
+
+                int uvCount = uvs.Count;
+                var uvSet = vertUV2D[channel];
+                if (uvSet != null)
+                {
+                    uvSet.Resize(uvCount);
+                }
+                else
+                {
+                    uvSet = new ResizableArray<Vector2>(uvCount, uvCount);
+                    vertUV2D[channel] = uvSet;
+                }
+
+                var uvData = uvSet.Data;
+                uvs.CopyTo(uvData, 0);
+            }
+            else
+            {
+                if (vertUV2D != null)
+                {
+                    vertUV2D[channel] = null;
+                }
+            }
+
+            if (vertUV3D != null)
+            {
+                vertUV3D[channel] = null;
+            }
+            if (vertUV4D != null)
+            {
+                vertUV4D[channel] = null;
+            }
+        }
+
+        /// <summary>
+        /// Sets the UVs (3D) for a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <param name="uvs">The UVs.</param>
+        public void SetUVs(int channel, List<Vector3> uvs)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+
+            if (uvs != null && uvs.Count > 0)
+            {
+                if (vertUV3D == null)
+                    vertUV3D = new UVChannels<Vector3>();
+
+                int uvCount = uvs.Count;
+                var uvSet = vertUV3D[channel];
+                if (uvSet != null)
+                {
+                    uvSet.Resize(uvCount);
+                }
+                else
+                {
+                    uvSet = new ResizableArray<Vector3>(uvCount, uvCount);
+                    vertUV3D[channel] = uvSet;
+                }
+
+                var uvData = uvSet.Data;
+                uvs.CopyTo(uvData, 0);
+            }
+            else
+            {
+                if (vertUV3D != null)
+                {
+                    vertUV3D[channel] = null;
+                }
+            }
+
+            if (vertUV2D != null)
+            {
+                vertUV2D[channel] = null;
+            }
+            if (vertUV4D != null)
+            {
+                vertUV4D[channel] = null;
+            }
+        }
+
+        /// <summary>
+        /// Sets the UVs (4D) for a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <param name="uvs">The UVs.</param>
+        public void SetUVs(int channel, List<Vector4> uvs)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+
+            if (uvs != null && uvs.Count > 0)
+            {
+                if (vertUV4D == null)
+                    vertUV4D = new UVChannels<Vector4>();
+
+                int uvCount = uvs.Count;
+                var uvSet = vertUV4D[channel];
+                if (uvSet != null)
+                {
+                    uvSet.Resize(uvCount);
+                }
+                else
+                {
+                    uvSet = new ResizableArray<Vector4>(uvCount, uvCount);
+                    vertUV4D[channel] = uvSet;
+                }
+
+                var uvData = uvSet.Data;
+                uvs.CopyTo(uvData, 0);
+            }
+            else
+            {
+                if (vertUV4D != null)
+                {
+                    vertUV4D[channel] = null;
+                }
+            }
+
+            if (vertUV2D != null)
+            {
+                vertUV2D[channel] = null;
+            }
+            if (vertUV3D != null)
+            {
+                vertUV3D[channel] = null;
+            }
+        }
+        #endregion
         #endregion
 
         #region Initialize
@@ -1231,10 +2074,6 @@ namespace UnityMeshSimplifier
             var vertices = this.Vertices;
             var normals = this.Normals;
             var tangents = this.Tangents;
-            var uv1 = this.UV1;
-            var uv2 = this.UV2;
-            var uv3 = this.UV3;
-            var uv4 = this.UV4;
             var colors = this.Colors;
             var boneWeights = this.BoneWeights;
 
@@ -1250,10 +2089,55 @@ namespace UnityMeshSimplifier
             newMesh.vertices = this.Vertices;
             if (normals != null) newMesh.normals = normals;
             if (tangents != null) newMesh.tangents = tangents;
-            if (uv1 != null) newMesh.uv = uv1;
-            if (uv2 != null) newMesh.uv2 = uv2;
-            if (uv3 != null) newMesh.uv3 = uv3;
-            if (uv4 != null) newMesh.uv4 = uv4;
+
+            if (vertUV2D != null)
+            {
+                List<Vector2> uvSet = null;
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    if (vertUV2D[i] != null)
+                    {
+                        if (uvSet == null)
+                            uvSet = new List<Vector2>(vertUV2D[i].Length);
+
+                        GetUVs(i, uvSet);
+                        newMesh.SetUVs(i, uvSet);
+                    }
+                }
+            }
+
+            if (vertUV3D != null)
+            {
+                List<Vector3> uvSet = null;
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    if (vertUV3D[i] != null)
+                    {
+                        if (uvSet == null)
+                            uvSet = new List<Vector3>(vertUV3D[i].Length);
+
+                        GetUVs(i, uvSet);
+                        newMesh.SetUVs(i, uvSet);
+                    }
+                }
+            }
+
+            if (vertUV4D != null)
+            {
+                List<Vector4> uvSet = null;
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    if (vertUV4D[i] != null)
+                    {
+                        if (uvSet == null)
+                            uvSet = new List<Vector4>(vertUV4D[i].Length);
+
+                        GetUVs(i, uvSet);
+                        newMesh.SetUVs(i, uvSet);
+                    }
+                }
+            }
+
             if (colors != null) newMesh.colors = colors;
             if (boneWeights != null) newMesh.boneWeights = boneWeights;
 
