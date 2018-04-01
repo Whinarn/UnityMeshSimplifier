@@ -124,23 +124,23 @@ namespace UnityMeshSimplifier
         /// <summary>
         /// Resizes this array.
         /// </summary>
-        /// <param name="capacity">The new capacity.</param>
+        /// <param name="length">The new length.</param>
         /// <param name="trimExess">If exess memory should be trimmed.</param>
-        public void Resize(int capacity, bool trimExess = false)
+        public void Resize(int length, bool trimExess = false)
         {
-            if (capacity < 0)
+            if (length < 0)
                 throw new ArgumentOutOfRangeException("capacity");
 
-            if (capacity > items.Length)
+            if (length > items.Length)
             {
-                IncreaseCapacity(capacity);
+                IncreaseCapacity(length);
             }
-            else if (capacity < length)
+            else if (length < this.length)
             {
                 //Array.Clear(items, capacity, length - capacity);
             }
 
-            length = capacity;
+            this.length = length;
 
             if (trimExess)
             {
