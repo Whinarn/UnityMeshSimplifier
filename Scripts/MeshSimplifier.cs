@@ -264,7 +264,7 @@ namespace UnityMeshSimplifier
         private bool preserveBorders = false;
         private bool preserveSeams = false;
         private bool preserveFoldovers = false;
-        private bool preventHoles = true;
+        private bool enableSmartLink = true;
         private double agressiveness = 7.0;
         private bool verbose = false;
 
@@ -327,12 +327,14 @@ namespace UnityMeshSimplifier
         }
 
         /// <summary>
-        /// Gets or sets if holes should be prevented as much as possible.
+        /// Gets or sets if a feature for smarter vertex linking should be enabled, reducing artifacts in the
+        /// decimated result at the cost of a slightly more expensive initialization by treating vertices at
+        /// the same position as the same vertex while separating the attributes.
         /// </summary>
-        public bool PreventHoles
+        public bool EnableSmartLink
         {
-            get { return preventHoles; }
-            set { preventHoles = value; }
+            get { return enableSmartLink; }
+            set { enableSmartLink = value; }
         }
 
         /// <summary>
@@ -1059,7 +1061,7 @@ namespace UnityMeshSimplifier
                     }
                 }
 
-                if (preventHoles)
+                if (enableSmartLink)
                 {
                     // First find all border vertices
                     var borderIndices = new int[borderVertexCount];
