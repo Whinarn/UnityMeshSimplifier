@@ -171,6 +171,7 @@ namespace UnityMeshSimplifier
             public SymmetricMatrix q;
             public bool border;
             public bool seam;
+            public bool foldover;
 
             public Vertex(Vector3d p)
             {
@@ -180,6 +181,7 @@ namespace UnityMeshSimplifier
                 this.q = new SymmetricMatrix();
                 this.border = true;
                 this.seam = false;
+                this.foldover = false;
             }
         }
         #endregion
@@ -778,6 +780,46 @@ namespace UnityMeshSimplifier
         }
         #endregion
 
+        #region Are UVs The Same
+        private bool AreUVsTheSame(int channel, int indexA, int indexB)
+        {
+            if (vertUV2D != null)
+            {
+                var vertUV = vertUV2D[channel];
+                if (vertUV != null)
+                {
+                    var uvA = vertUV[indexA];
+                    var uvB = vertUV[indexB];
+                    return uvA == uvB;
+                }
+            }
+
+            if (vertUV3D != null)
+            {
+                var vertUV = vertUV3D[channel];
+                if (vertUV != null)
+                {
+                    var uvA = vertUV[indexA];
+                    var uvB = vertUV[indexB];
+                    return uvA == uvB;
+                }
+            }
+
+            if (vertUV4D != null)
+            {
+                var vertUV = vertUV4D[channel];
+                if (vertUV != null)
+                {
+                    var uvA = vertUV[indexA];
+                    var uvB = vertUV[indexB];
+                    return uvA == uvB;
+                }
+            }
+
+            return false;
+        }
+        #endregion
+
         #region Remove Vertex Pass
         /// <summary>
         /// Remove vertices and mark deleted triangles
@@ -815,6 +857,9 @@ namespace UnityMeshSimplifier
                         continue;
                     // Seam check
                     else if (v0.seam != v1.seam)
+                        continue;
+                    // Foldover check
+                    else if (v0.foldover != v1.foldover)
                         continue;
                     // If borders should be kept
                     else if (keepBorders && v0.border)
@@ -930,6 +975,7 @@ namespace UnityMeshSimplifier
                 {
                     vertices[i].border = false;
                     vertices[i].seam = false;
+                    vertices[i].foldover = false;
                 }
 
                 int ofs;
@@ -1015,7 +1061,18 @@ namespace UnityMeshSimplifier
                             {
                                 borderIndices[j] = -1;
                                 vertices[myIndex].border = false;
-                                vertices[myIndex].seam = true;
+                                vertices[otherIndex].border = false;
+
+                                if (AreUVsTheSame(0, myIndex, otherIndex))
+                                {
+                                    vertices[myIndex].foldover = true;
+                                    vertices[otherIndex].foldover = true;
+                                }
+                                else
+                                {
+                                    vertices[myIndex].seam = true;
+                                    vertices[otherIndex].seam = true;
+                                }
 
                                 for (int k = 0; k < otherVertex.tcount; k++)
                                 {
