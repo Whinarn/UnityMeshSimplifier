@@ -666,7 +666,10 @@ namespace UnityMeshSimplifier
                 }
 
                 t[r.tvertex] = i0;
-                t.SetAttributeIndex(r.tvertex, ia0);
+                if (ia0 != -1)
+                {
+                    t.SetAttributeIndex(r.tvertex, ia0);
+                }
 
                 t.dirty = true;
                 //t.area = CalculateArea(t.v0, t.v1, t.v2);
@@ -897,6 +900,11 @@ namespace UnityMeshSimplifier
                         // Merge vertex attributes ia0 and ia1 into ia0
                         int ia1 = attributeIndexArr[k];
                         MergeVertexAttributes(ia0, ia1);
+                    }
+
+                    if (v0.seam)
+                    {
+                        ia0 = -1;
                     }
 
                     int tstart = refs.Length;
