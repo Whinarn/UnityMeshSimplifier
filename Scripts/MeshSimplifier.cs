@@ -265,6 +265,7 @@ namespace UnityMeshSimplifier
         private bool preserveSeams = false;
         private bool preserveFoldovers = false;
         private bool enableSmartLink = true;
+        private int maxIterationCount = 100;
         private double agressiveness = 7.0;
         private bool verbose = false;
 
@@ -337,6 +338,17 @@ namespace UnityMeshSimplifier
         {
             get { return enableSmartLink; }
             set { enableSmartLink = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the maximum iteration count. Higher number is more expensive but can bring you closer to your target quality.
+        /// Sometimes a lower maximum count might be desired in order to lower the performance cost.
+        /// Default value: 100
+        /// </summary>
+        public int MaxIterationCount
+        {
+            get { return maxIterationCount; }
+            set { maxIterationCount = value; }
         }
 
         /// <summary>
@@ -1992,7 +2004,7 @@ namespace UnityMeshSimplifier
             var vertices = this.vertices.Data;
             int targetTrisCount = Mathf.RoundToInt(triangleCount * quality);
 
-            for (int iteration = 0; iteration < 100; iteration++)
+            for (int iteration = 0; iteration < maxIterationCount; iteration++)
             {
                 if ((startTrisCount - deletedTris) <= targetTrisCount)
                     break;
