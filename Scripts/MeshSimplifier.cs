@@ -265,6 +265,7 @@ namespace UnityMeshSimplifier
         private bool preserveSeams = false;
         private bool preserveFoldovers = false;
         private bool enableSmartLink = true;
+        private int maxIterationCount = 100;
         private double agressiveness = 7.0;
         private bool verbose = false;
 
@@ -293,6 +294,7 @@ namespace UnityMeshSimplifier
         #region Properties
         /// <summary>
         /// Gets or sets if borders should be preserved.
+        /// Default value: false
         /// </summary>
         [Obsolete("Use the 'MeshSimplifier.PreserveBorders' property instead.", false)]
         public bool KeepBorders
@@ -303,6 +305,7 @@ namespace UnityMeshSimplifier
 
         /// <summary>
         /// Gets or sets if borders should be preserved.
+        /// Default value: false
         /// </summary>
         public bool PreserveBorders
         {
@@ -312,6 +315,7 @@ namespace UnityMeshSimplifier
 
         /// <summary>
         /// Gets or sets if seams should be preserved.
+        /// Default value: false
         /// </summary>
         public bool PreserveSeams
         {
@@ -321,6 +325,7 @@ namespace UnityMeshSimplifier
 
         /// <summary>
         /// Gets or sets if foldovers should be preserved.
+        /// Default value: false
         /// </summary>
         public bool PreserveFoldovers
         {
@@ -332,6 +337,7 @@ namespace UnityMeshSimplifier
         /// Gets or sets if a feature for smarter vertex linking should be enabled, reducing artifacts in the
         /// decimated result at the cost of a slightly more expensive initialization by treating vertices at
         /// the same position as the same vertex while separating the attributes.
+        /// Default value: true
         /// </summary>
         public bool EnableSmartLink
         {
@@ -340,7 +346,19 @@ namespace UnityMeshSimplifier
         }
 
         /// <summary>
+        /// Gets or sets the maximum iteration count. Higher number is more expensive but can bring you closer to your target quality.
+        /// Sometimes a lower maximum count might be desired in order to lower the performance cost.
+        /// Default value: 100
+        /// </summary>
+        public int MaxIterationCount
+        {
+            get { return maxIterationCount; }
+            set { maxIterationCount = value; }
+        }
+
+        /// <summary>
         /// Gets or sets the agressiveness of the mesh simplification. Higher number equals higher quality, but more expensive to run.
+        /// Default value: 7.0
         /// </summary>
         public double Agressiveness
         {
@@ -350,6 +368,7 @@ namespace UnityMeshSimplifier
 
         /// <summary>
         /// Gets or sets if verbose information should be printed to the console.
+        /// Default value: false
         /// </summary>
         public bool Verbose
         {
@@ -360,6 +379,7 @@ namespace UnityMeshSimplifier
         /// <summary>
         /// Gets or sets the maximum squared distance between two vertices in order to link them.
         /// Note that this value is only used if PreventHoles is true.
+        /// Default value: double.Epsilon
         /// </summary>
         public double VertexLinkDistanceSqr
         {
@@ -1992,7 +2012,7 @@ namespace UnityMeshSimplifier
             var vertices = this.vertices.Data;
             int targetTrisCount = Mathf.RoundToInt(triangleCount * quality);
 
-            for (int iteration = 0; iteration < 100; iteration++)
+            for (int iteration = 0; iteration < maxIterationCount; iteration++)
             {
                 if ((startTrisCount - deletedTris) <= targetTrisCount)
                     break;
