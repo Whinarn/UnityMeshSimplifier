@@ -753,6 +753,10 @@ namespace UnityMeshSimplifier
             {
                 vertColors[i0] = vertColors[i1];
             }
+            if (vertBoneWeights != null)
+            {
+                vertBoneWeights[i0] = vertBoneWeights[i1];
+            }
         }
 
         private void MergeVertexAttributes(int i0, int i1)
@@ -802,6 +806,8 @@ namespace UnityMeshSimplifier
             {
                 vertColors[i0] = (vertColors[i0] + vertColors[i1]) * 0.5f;
             }
+
+            // TODO: Do we have to blend bone weights at all or can we just keep them as it is in this scenario?
         }
         #endregion
 
@@ -1092,7 +1098,7 @@ namespace UnityMeshSimplifier
                             var otherVertex = vertices[otherIndex];
                             if ((myVertex.p - otherVertex.p).MagnitudeSqr <= vertexLinkDistanceSqr)
                             {
-                                borderIndices[j] = -1;
+                                borderIndices[j] = -1; // NOTE: This makes sure that the "other" vertex is not processed again
                                 vertices[myIndex].border = false;
                                 vertices[otherIndex].border = false;
 
@@ -1245,6 +1251,14 @@ namespace UnityMeshSimplifier
                 vertices[i].tcount = 0;
             }
 
+            var vertNormals = (this.vertNormals != null ? this.vertNormals.Data : null);
+            var vertTangents = (this.vertTangents != null ? this.vertTangents.Data : null);
+            var vertUV2D = (this.vertUV2D != null ? this.vertUV2D.Data : null);
+            var vertUV3D = (this.vertUV3D != null ? this.vertUV3D.Data : null);
+            var vertUV4D = (this.vertUV4D != null ? this.vertUV4D.Data : null);
+            var vertColors = (this.vertColors != null ? this.vertColors.Data : null);
+            var vertBoneWeights = (this.vertBoneWeights != null ? this.vertBoneWeights.Data : null);
+
             var triangles = this.triangles.Data;
             int triangleCount = this.triangles.Length;
             for (int i = 0; i < triangleCount; i++)
@@ -1254,17 +1268,35 @@ namespace UnityMeshSimplifier
                 {
                     if (triangle.va0 != triangle.v0)
                     {
-                        vertices[triangle.va0].p = vertices[triangle.v0].p;
+                        int iDest = triangle.va0;
+                        int iSrc = triangle.v0;
+                        vertices[iDest].p = vertices[iSrc].p;
+                        if (vertBoneWeights != null)
+                        {
+                            vertBoneWeights[iDest] = vertBoneWeights[iSrc];
+                        }
                         triangle.v0 = triangle.va0;
                     }
                     if (triangle.va1 != triangle.v1)
                     {
-                        vertices[triangle.va1].p = vertices[triangle.v1].p;
+                        int iDest = triangle.va1;
+                        int iSrc = triangle.v1;
+                        vertices[iDest].p = vertices[iSrc].p;
+                        if (vertBoneWeights != null)
+                        {
+                            vertBoneWeights[iDest] = vertBoneWeights[iSrc];
+                        }
                         triangle.v1 = triangle.va1;
                     }
                     if (triangle.va2 != triangle.v2)
                     {
-                        vertices[triangle.va2].p = vertices[triangle.v2].p;
+                        int iDest = triangle.va2;
+                        int iSrc = triangle.v2;
+                        vertices[iDest].p = vertices[iSrc].p;
+                        if (vertBoneWeights != null)
+                        {
+                            vertBoneWeights[iDest] = vertBoneWeights[iSrc];
+                        }
                         triangle.v2 = triangle.va2;
                     }
                     triangles[dst++] = triangle;
@@ -1278,14 +1310,6 @@ namespace UnityMeshSimplifier
             this.triangles.Resize(dst);
             triangles = this.triangles.Data;
             triangleCount = dst;
-
-            var vertNormals = (this.vertNormals != null ? this.vertNormals.Data : null);
-            var vertTangents = (this.vertTangents != null ? this.vertTangents.Data : null);
-            var vertUV2D = (this.vertUV2D != null ? this.vertUV2D.Data : null);
-            var vertUV3D = (this.vertUV3D != null ? this.vertUV3D.Data : null);
-            var vertUV4D = (this.vertUV4D != null ? this.vertUV4D.Data : null);
-            var vertColors = (this.vertColors != null ? this.vertColors.Data : null);
-            var vertBoneWeights = (this.vertBoneWeights != null ? this.vertBoneWeights.Data : null);
 
             dst = 0;
             for (int i = 0; i < vertexCount; i++)
