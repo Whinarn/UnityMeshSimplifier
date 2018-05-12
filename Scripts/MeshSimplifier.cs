@@ -753,6 +753,10 @@ namespace UnityMeshSimplifier
             {
                 vertColors[i0] = vertColors[i1];
             }
+            if (vertBoneWeights != null)
+            {
+                vertBoneWeights[i0] = vertBoneWeights[i1];
+            }
         }
 
         private void MergeVertexAttributes(int i0, int i1)
@@ -802,6 +806,8 @@ namespace UnityMeshSimplifier
             {
                 vertColors[i0] = (vertColors[i0] + vertColors[i1]) * 0.5f;
             }
+
+            // TODO: Do we have to blend bone weights at all or can we just keep them as it is in this scenario?
         }
         #endregion
 
