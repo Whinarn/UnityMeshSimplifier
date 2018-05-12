@@ -408,6 +408,7 @@ namespace UnityMeshSimplifier
                 if (value == null)
                     throw new ArgumentNullException("value");
 
+                bindposes = null;
                 vertices.Resize(value.Length);
                 var vertArr = vertices.Data;
                 for (int i = 0; i < value.Length; i++)
