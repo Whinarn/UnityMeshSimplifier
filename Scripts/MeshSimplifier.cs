@@ -283,6 +283,8 @@ namespace UnityMeshSimplifier
         private ResizableArray<Color> vertColors = null;
         private ResizableArray<BoneWeight> vertBoneWeights = null;
 
+        private Matrix4x4[] bindposes = null;
+
         // Pre-allocated buffers
         private double[] errArr = new double[3];
         private int[] attributeIndexArr = new int[3];
@@ -1958,6 +1960,7 @@ namespace UnityMeshSimplifier
             this.UV4 = mesh.uv4;
             this.Colors = mesh.colors;
             this.BoneWeights = mesh.boneWeights;
+            this.bindposes = mesh.bindposes;
 
             ClearSubMeshes();
 
@@ -2108,6 +2111,11 @@ namespace UnityMeshSimplifier
             bool use32BitIndex = (vertices.Length > ushort.MaxValue);
             newMesh.indexFormat = (use32BitIndex ? UnityEngine.Rendering.IndexFormat.UInt32 : UnityEngine.Rendering.IndexFormat.UInt16);
 #endif
+
+            if (bindposes != null && bindposes.Length > 0)
+            {
+                newMesh.bindposes = bindposes;
+            }
 
             newMesh.subMeshCount = subMeshCount;
             newMesh.vertices = this.Vertices;
