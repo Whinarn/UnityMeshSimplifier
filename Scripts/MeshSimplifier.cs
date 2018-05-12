@@ -2106,7 +2106,7 @@ namespace UnityMeshSimplifier
 
             var newMesh = new Mesh();
 
-#if UNITY_2017_3
+#if UNITY_2017_3 || UNITY_2017_4 || UNITY_2018 
             // TODO: Use baseVertex if all submeshes are within the ushort.MaxValue range even though the total vertex count is above
             bool use32BitIndex = (vertices.Length > ushort.MaxValue);
             newMesh.indexFormat = (use32BitIndex ? UnityEngine.Rendering.IndexFormat.UInt32 : UnityEngine.Rendering.IndexFormat.UInt16);
