@@ -1508,6 +1508,7 @@ namespace UnityMeshSimplifier
         public void ClearSubMeshes()
         {
             subMeshCount = 0;
+            subMeshOffsets = null;
             triangles.Resize(0);
         }
 
