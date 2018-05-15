@@ -1427,6 +1427,35 @@ namespace UnityMeshSimplifier
             if (vertBoneWeights != null) this.vertBoneWeights.Resize(dst, true);
         }
         #endregion
+
+        #region Calculate Sub Mesh Offsets
+        private void CalculateSubMeshOffsets()
+        {
+            int lastSubMeshIndex = -1;
+            subMeshOffsets = new int[subMeshCount];
+
+            var triangles = this.triangles.Data;
+            int triangleCount = this.triangles.Length;
+            for (int i = 0; i < triangleCount; i++)
+            {
+                var triangle = triangles[i];
+                if (triangle.subMeshIndex > lastSubMeshIndex)
+                {
+                    for (int j = lastSubMeshIndex + 1; j < triangle.subMeshIndex; j++)
+                    {
+                        subMeshOffsets[j] = i - 1;
+                    }
+                    subMeshOffsets[triangle.subMeshIndex] = i;
+                    lastSubMeshIndex = triangle.subMeshIndex;
+                }
+            }
+
+            for (int i = lastSubMeshIndex + 1; i < subMeshCount; i++)
+            {
+                subMeshOffsets[i] = triangleCount;
+            }
+        }
+        #endregion
         #endregion
 
         #region Public Methods
@@ -1440,6 +1469,12 @@ namespace UnityMeshSimplifier
         {
             if (subMeshIndex < 0)
                 throw new ArgumentOutOfRangeException("subMeshIndex", "The sub mesh index is negative.");
+
+            // First get the sub-mesh offsets
+            if (subMeshOffsets == null)
+            {
+                CalculateSubMeshOffsets();
+            }
 
             if (subMeshIndex >= subMeshOffsets.Length)
                 throw new ArgumentOutOfRangeException("subMeshIndex", "The sub mesh index is greater than or equals to the sub mesh count.");
