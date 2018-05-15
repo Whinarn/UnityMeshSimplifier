@@ -272,6 +272,7 @@ namespace UnityMeshSimplifier
         private double vertexLinkDistanceSqr = double.Epsilon;
 
         private int subMeshCount = 0;
+        private int[] subMeshOffsets = null;
         private ResizableArray<Triangle> triangles = null;
         private ResizableArray<Vertex> vertices = null;
         private ResizableArray<Ref> refs = null;
@@ -1282,6 +1283,9 @@ namespace UnityMeshSimplifier
             var vertColors = (this.vertColors != null ? this.vertColors.Data : null);
             var vertBoneWeights = (this.vertBoneWeights != null ? this.vertBoneWeights.Data : null);
 
+            int lastSubMeshIndex = -1;
+            subMeshOffsets = new int[subMeshCount];
+
             var triangles = this.triangles.Data;
             int triangleCount = this.triangles.Length;
             for (int i = 0; i < triangleCount; i++)
@@ -1322,12 +1326,28 @@ namespace UnityMeshSimplifier
                         }
                         triangle.v2 = triangle.va2;
                     }
-                    triangles[dst++] = triangle;
+                    int newTriangleIndex = dst++;
+                    triangles[newTriangleIndex] = triangle;
 
                     vertices[triangle.v0].tcount = 1;
                     vertices[triangle.v1].tcount = 1;
                     vertices[triangle.v2].tcount = 1;
+
+                    if (triangle.subMeshIndex > lastSubMeshIndex)
+                    {
+                        for (int j = lastSubMeshIndex + 1; j < triangle.subMeshIndex; j++)
+                        {
+                            subMeshOffsets[j] = newTriangleIndex - 1;
+                        }
+                        subMeshOffsets[triangle.subMeshIndex] = newTriangleIndex;
+                        lastSubMeshIndex = triangle.subMeshIndex;
+                    }
                 }
+            }
+
+            for (int i = lastSubMeshIndex + 1; i < subMeshCount; i++)
+            {
+                subMeshOffsets[i] = triangleCount;
             }
 
             this.triangles.Resize(dst);
@@ -1418,30 +1438,14 @@ namespace UnityMeshSimplifier
         /// <returns>The triangle indices.</returns>
         public int[] GetSubMeshTriangles(int subMeshIndex)
         {
-            // First get the sub-mesh offsets
+            if (subMeshIndex < 0)
+                throw new ArgumentOutOfRangeException("subMeshIndex", "The sub mesh index is negative.");
+
+            if (subMeshIndex >= subMeshOffsets.Length)
+                throw new ArgumentOutOfRangeException("subMeshIndex", "The sub mesh index is greater than or equals to the sub mesh count.");
+
+            var triangles = this.triangles.Data;
             int triangleCount = this.triangles.Length;
-            var triArr = this.triangles.Data;
-            int[] subMeshOffsets = new int[subMeshCount];
-            int lastSubMeshOffset = -1;
-            for (int i = 0; i < triangleCount; i++)
-            {
-                var triangle = triArr[i];
-                if (triangle.subMeshIndex >= subMeshIndex && triangle.subMeshIndex != lastSubMeshOffset)
-                {
-                    for (int j = lastSubMeshOffset + 1; j < triangle.subMeshIndex; j++)
-                    {
-                        subMeshOffsets[j] = i - 1;
-                    }
-                    subMeshOffsets[triangle.subMeshIndex] = i;
-                    lastSubMeshOffset = triangle.subMeshIndex;
-                    if (lastSubMeshOffset >= (subMeshIndex + 1))
-                        break;
-                }
-            }
-            for (int i = lastSubMeshOffset + 1; i < subMeshCount; i++)
-            {
-                subMeshOffsets[i] = triangleCount;
-            }
 
             int startOffset = subMeshOffsets[subMeshIndex];
             int endOffset = ((subMeshIndex + 1) < subMeshCount ? subMeshOffsets[subMeshIndex + 1] : triangleCount) - 1;
@@ -1451,7 +1455,7 @@ namespace UnityMeshSimplifier
 
             for (int triangleIndex = startOffset; triangleIndex <= endOffset; triangleIndex++)
             {
-                var triangle = triArr[triangleIndex];
+                var triangle = triangles[triangleIndex];
                 int offset = (triangleIndex - startOffset) * 3;
                 subMeshIndices[offset] = triangle.v0;
                 subMeshIndices[offset + 1] = triangle.v1;
