@@ -1468,7 +1468,7 @@ namespace UnityMeshSimplifier
         public int[] GetSubMeshTriangles(int subMeshIndex)
         {
             if (subMeshIndex < 0)
-                throw new ArgumentOutOfRangeException("subMeshIndex", "The sub mesh index is negative.");
+                throw new ArgumentOutOfRangeException("subMeshIndex", "The sub-mesh index is negative.");
 
             // First get the sub-mesh offsets
             if (subMeshOffsets == null)
@@ -1477,7 +1477,9 @@ namespace UnityMeshSimplifier
             }
 
             if (subMeshIndex >= subMeshOffsets.Length)
-                throw new ArgumentOutOfRangeException("subMeshIndex", "The sub mesh index is greater than or equals to the sub mesh count.");
+                throw new ArgumentOutOfRangeException("subMeshIndex", "The sub-mesh index is greater than or equals to the sub mesh count.");
+            else if (subMeshOffsets.Length != subMeshCount)
+                throw new InvalidOperationException("The sub-mesh triangle offsets array is not the same size as the count of sub-meshes. This should not be possible to happen.");
 
             var triangles = this.triangles.Data;
             int triangleCount = this.triangles.Length;
@@ -1549,7 +1551,9 @@ namespace UnityMeshSimplifier
             int totalTriangleCount = 0;
             for (int i = 0; i < triangles.Length; i++)
             {
-                if ((triangles[i].Length % 3) != 0)
+                if (triangles[i] == null)
+                    throw new ArgumentException(string.Format("The index array at index {0} is null.", i));
+                else if ((triangles[i].Length % 3) != 0)
                     throw new ArgumentException(string.Format("The index array length at index {0} must be a multiple of 3 in order to represent triangles.", i), "triangles");
 
                 totalTriangleCount += triangles[i].Length / 3;
