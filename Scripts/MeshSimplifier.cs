@@ -1417,14 +1417,15 @@ namespace UnityMeshSimplifier
                 triangles[i] = triangle;
             }
 
-            this.vertices.Resize(dst);
-            if (vertNormals != null) this.vertNormals.Resize(dst, true);
-            if (vertTangents != null) this.vertTangents.Resize(dst, true);
-            if (vertUV2D != null) this.vertUV2D.Resize(dst, true);
-            if (vertUV3D != null) this.vertUV3D.Resize(dst, true);
-            if (vertUV4D != null) this.vertUV4D.Resize(dst, true);
-            if (vertColors != null) this.vertColors.Resize(dst, true);
-            if (vertBoneWeights != null) this.vertBoneWeights.Resize(dst, true);
+            vertexCount = dst;
+            this.vertices.Resize(vertexCount);
+            if (vertNormals != null) this.vertNormals.Resize(vertexCount, true);
+            if (vertTangents != null) this.vertTangents.Resize(vertexCount, true);
+            if (vertUV2D != null) this.vertUV2D.Resize(vertexCount, true);
+            if (vertUV3D != null) this.vertUV3D.Resize(vertexCount, true);
+            if (vertUV4D != null) this.vertUV4D.Resize(vertexCount, true);
+            if (vertColors != null) this.vertColors.Resize(vertexCount, true);
+            if (vertBoneWeights != null) this.vertBoneWeights.Resize(vertexCount, true);
         }
         #endregion
 
