@@ -1337,7 +1337,7 @@ namespace UnityMeshSimplifier
                     {
                         for (int j = lastSubMeshIndex + 1; j < triangle.subMeshIndex; j++)
                         {
-                            subMeshOffsets[j] = newTriangleIndex - 1;
+                            subMeshOffsets[j] = newTriangleIndex;
                         }
                         subMeshOffsets[triangle.subMeshIndex] = newTriangleIndex;
                         lastSubMeshIndex = triangle.subMeshIndex;
@@ -1345,14 +1345,14 @@ namespace UnityMeshSimplifier
                 }
             }
 
+            triangleCount = dst;
             for (int i = lastSubMeshIndex + 1; i < subMeshCount; i++)
             {
                 subMeshOffsets[i] = triangleCount;
             }
 
-            this.triangles.Resize(dst);
+            this.triangles.Resize(triangleCount);
             triangles = this.triangles.Data;
-            triangleCount = dst;
 
             dst = 0;
             for (int i = 0; i < vertexCount; i++)
@@ -1443,7 +1443,7 @@ namespace UnityMeshSimplifier
                 {
                     for (int j = lastSubMeshIndex + 1; j < triangle.subMeshIndex; j++)
                     {
-                        subMeshOffsets[j] = i - 1;
+                        subMeshOffsets[j] = i;
                     }
                     subMeshOffsets[triangle.subMeshIndex] = i;
                     lastSubMeshIndex = triangle.subMeshIndex;
@@ -1485,12 +1485,12 @@ namespace UnityMeshSimplifier
             int triangleCount = this.triangles.Length;
 
             int startOffset = subMeshOffsets[subMeshIndex];
-            int endOffset = ((subMeshIndex + 1) < subMeshCount ? subMeshOffsets[subMeshIndex + 1] : triangleCount) - 1;
-            int subMeshTriangleCount = endOffset - startOffset + 1;
+            int endOffset = ((subMeshIndex + 1) < subMeshCount ? subMeshOffsets[subMeshIndex + 1] : triangleCount);
+            int subMeshTriangleCount = endOffset - startOffset;
             if (subMeshTriangleCount < 0) subMeshTriangleCount = 0;
             int[] subMeshIndices = new int[subMeshTriangleCount * 3];
 
-            for (int triangleIndex = startOffset; triangleIndex <= endOffset; triangleIndex++)
+            for (int triangleIndex = startOffset; triangleIndex < endOffset; triangleIndex++)
             {
                 var triangle = triangles[triangleIndex];
                 int offset = (triangleIndex - startOffset) * 3;
