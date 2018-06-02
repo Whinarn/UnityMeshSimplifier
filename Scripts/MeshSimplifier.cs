@@ -1486,6 +1486,9 @@ namespace UnityMeshSimplifier
             int triangleCount = this.triangles.Length;
 
             int startOffset = subMeshOffsets[subMeshIndex];
+            if (startOffset >= triangleCount)
+                return new int[0];
+
             int endOffset = ((subMeshIndex + 1) < subMeshCount ? subMeshOffsets[subMeshIndex + 1] : triangleCount);
             int subMeshTriangleCount = endOffset - startOffset;
             if (subMeshTriangleCount < 0) subMeshTriangleCount = 0;
