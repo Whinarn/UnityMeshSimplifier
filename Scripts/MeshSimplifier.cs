@@ -1128,7 +1128,7 @@ namespace UnityMeshSimplifier
                     }
 
                     // Sort the border vertices by hash
-                    Array.Sort(borderVertices, 0, borderVertices.Length, BorderVertexComparer.instance);
+                    Array.Sort(borderVertices, 0, borderIndexCount, BorderVertexComparer.instance);
 
                     // Then find identical border vertices and bind them together as one
                     for (int i = 0; i < borderIndexCount; i++)
