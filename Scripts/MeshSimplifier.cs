@@ -1212,10 +1212,9 @@ namespace UnityMeshSimplifier
 
             for (int i = 0; i < triangleCount; i++)
             {
-                var triangle = triangles[i];
-                ++vertices[triangle.v0].tcount;
-                ++vertices[triangle.v1].tcount;
-                ++vertices[triangle.v2].tcount;
+                ++vertices[triangles[i].v0].tcount;
+                ++vertices[triangles[i].v1].tcount;
+                ++vertices[triangles[i].v2].tcount;
             }
 
             int tstart = 0;
@@ -1231,21 +1230,23 @@ namespace UnityMeshSimplifier
             var refs = this.refs.Data;
             for (int i = 0; i < triangleCount; i++)
             {
-                var triangle = triangles[i];
-                int start0 = vertices[triangle.v0].tstart;
-                int count0 = vertices[triangle.v0].tcount;
-                int start1 = vertices[triangle.v1].tstart;
-                int count1 = vertices[triangle.v1].tcount;
-                int start2 = vertices[triangle.v2].tstart;
-                int count2 = vertices[triangle.v2].tcount;
+                int v0 = triangles[i].v0;
+                int v1 = triangles[i].v1;
+                int v2 = triangles[i].v2;
+                int start0 = vertices[v0].tstart;
+                int count0 = vertices[v0].tcount;
+                int start1 = vertices[v1].tstart;
+                int count1 = vertices[v1].tcount;
+                int start2 = vertices[v2].tstart;
+                int count2 = vertices[v2].tcount;
 
                 refs[start0 + count0].Set(i, 0);
                 refs[start1 + count1].Set(i, 1);
                 refs[start2 + count2].Set(i, 2);
 
-                ++vertices[triangle.v0].tcount;
-                ++vertices[triangle.v1].tcount;
-                ++vertices[triangle.v2].tcount;
+                ++vertices[v0].tcount;
+                ++vertices[v1].tcount;
+                ++vertices[v2].tcount;
             }
         }
         #endregion
