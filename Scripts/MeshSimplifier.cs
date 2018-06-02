@@ -1096,11 +1096,10 @@ namespace UnityMeshSimplifier
                     int borderIndexCount = 0;
                     for (int i = 0; i < vertexCount; i++)
                     {
-                        var v0 = vertices[i];
-                        if (!v0.border)
-                            continue;
-
-                        borderIndices[borderIndexCount++] = i;
+                        if (vertices[i].border)
+                        {
+                            borderIndices[borderIndexCount++] = i;
+                        }
                     }
 
                     // Then find identical border vertices and bind them together as one
