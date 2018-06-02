@@ -68,8 +68,6 @@ namespace UnityMeshSimplifier
             public int va1;
             public int va2;
 
-            public double area;
-
             public double err0;
             public double err1;
             public double err2;
@@ -119,7 +117,6 @@ namespace UnityMeshSimplifier
                 this.va1 = v1;
                 this.va2 = v2;
 
-                area = 0;
                 err0 = err1 = err2 = err3 = 0;
                 deleted = dirty = false;
                 n = new Vector3d();
@@ -674,14 +671,6 @@ namespace UnityMeshSimplifier
         }
         #endregion
 
-        #region Calculate Area
-        private double CalculateArea(int i0, int i1, int i2)
-        {
-            var vertices = this.vertices.Data;
-            return MathHelper.TriangleArea(ref vertices[i0].p, ref vertices[i1].p, ref vertices[i2].p);
-        }
-        #endregion
-
         #region Update Triangles
         /// <summary>
         /// Update triangle connections and edge error after a edge is collapsed.
@@ -715,7 +704,6 @@ namespace UnityMeshSimplifier
                 }
 
                 t.dirty = true;
-                //t.area = CalculateArea(t.v0, t.v1, t.v2);
                 t.err0 = CalculateError(ref vertices[t.v0], ref vertices[t.v1], out p, out pIndex);
                 t.err1 = CalculateError(ref vertices[t.v1], ref vertices[t.v2], out p, out pIndex);
                 t.err2 = CalculateError(ref vertices[t.v2], ref vertices[t.v0], out p, out pIndex);
