@@ -1091,15 +1091,23 @@ namespace UnityMeshSimplifier
                         if (myIndex == -1)
                             continue;
 
-                        var myVertex = vertices[myIndex];
+                        var myPoint = vertices[myIndex].p;
                         for (int j = i + 1; j < borderIndexCount; j++)
                         {
                             var otherIndex = borderIndices[j];
                             if (otherIndex == -1)
                                 continue;
 
-                            var otherVertex = vertices[otherIndex];
-                            if ((myVertex.p - otherVertex.p).MagnitudeSqr <= vertexLinkDistanceSqr)
+                            var otherPoint = vertices[otherIndex].p;
+                            var sqrX = ((myPoint.x - otherPoint.x) * (myPoint.x - otherPoint.x));
+                            if (sqrX > vertexLinkDistanceSqr)
+                                continue;
+
+                            var sqrY = ((myPoint.y - otherPoint.y) * (myPoint.y - otherPoint.y));
+                            var sqrZ = ((myPoint.z - otherPoint.z) * (myPoint.z - otherPoint.z));
+                            var sqrMagnitude = sqrX + sqrY + sqrZ;
+
+                            if (sqrMagnitude <= vertexLinkDistanceSqr)
                             {
                                 borderIndices[j] = -1; // NOTE: This makes sure that the "other" vertex is not processed again
                                 vertices[myIndex].border = false;
@@ -1116,9 +1124,11 @@ namespace UnityMeshSimplifier
                                     vertices[otherIndex].seam = true;
                                 }
 
-                                for (int k = 0; k < otherVertex.tcount; k++)
+                                int otherTriangleCount = vertices[otherIndex].tcount;
+                                int otherTriangleStart = vertices[otherIndex].tstart;
+                                for (int k = 0; k < otherTriangleCount; k++)
                                 {
-                                    var r = refs[otherVertex.tstart + k];
+                                    var r = refs[otherTriangleStart + k];
                                     triangles[r.tid][r.tvertex] = myIndex;
                                 }
                             }
