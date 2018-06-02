@@ -1213,10 +1213,8 @@ namespace UnityMeshSimplifier
             // Init Reference ID list
             for (int i = 0; i < vertexCount; i++)
             {
-                var vertex = vertices[i];
-                vertex.tstart = 0;
-                vertex.tcount = 0;
-                vertices[i] = vertex;
+                vertices[i].tstart = 0;
+                vertices[i].tcount = 0;
             }
 
             for (int i = 0; i < triangleCount; i++)
@@ -1230,11 +1228,9 @@ namespace UnityMeshSimplifier
             int tstart = 0;
             for (int i = 0; i < vertexCount; i++)
             {
-                var vertex = vertices[i];
-                vertex.tstart = tstart;
-                tstart += vertex.tcount;
-                vertex.tcount = 0;
-                vertices[i] = vertex;
+                vertices[i].tstart = tstart;
+                tstart += vertices[i].tcount;
+                vertices[i].tcount = 0;
             }
 
             // Write References
@@ -1243,20 +1239,20 @@ namespace UnityMeshSimplifier
             for (int i = 0; i < triangleCount; i++)
             {
                 var triangle = triangles[i];
-                var vert0 = vertices[triangle.v0];
-                var vert1 = vertices[triangle.v1];
-                var vert2 = vertices[triangle.v2];
+                int start0 = vertices[triangle.v0].tstart;
+                int count0 = vertices[triangle.v0].tcount;
+                int start1 = vertices[triangle.v1].tstart;
+                int count1 = vertices[triangle.v1].tcount;
+                int start2 = vertices[triangle.v2].tstart;
+                int count2 = vertices[triangle.v2].tcount;
 
-                refs[vert0.tstart + vert0.tcount].Set(i, 0);
-                refs[vert1.tstart + vert1.tcount].Set(i, 1);
-                refs[vert2.tstart + vert2.tcount].Set(i, 2);
-                ++vert0.tcount;
-                ++vert1.tcount;
-                ++vert2.tcount;
+                refs[start0 + count0].Set(i, 0);
+                refs[start1 + count1].Set(i, 1);
+                refs[start2 + count2].Set(i, 2);
 
-                vertices[triangle.v0] = vert0;
-                vertices[triangle.v1] = vert1;
-                vertices[triangle.v2] = vert2;
+                ++vertices[triangle.v0].tcount;
+                ++vertices[triangle.v1].tcount;
+                ++vertices[triangle.v2].tcount;
             }
         }
         #endregion
