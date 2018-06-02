@@ -1007,12 +1007,11 @@ namespace UnityMeshSimplifier
                 int dst = 0;
                 for (int i = 0; i < triangleCount; i++)
                 {
-                    var triangle = triangles[i];
-                    if (!triangle.deleted)
+                    if (!triangles[i].deleted)
                     {
                         if (dst != i)
                         {
-                            triangles[dst] = triangle;
+                            triangles[dst] = triangles[i];
                         }
                         dst++;
                     }
