@@ -1491,6 +1491,11 @@ namespace UnityMeshSimplifier
             if (subMeshTriangleCount < 0) subMeshTriangleCount = 0;
             int[] subMeshIndices = new int[subMeshTriangleCount * 3];
 
+            Debug.AssertFormat(startOffset >= 0, "The start sub mesh offset at index {0} was below zero ({1}).", subMeshIndex, startOffset);
+            Debug.AssertFormat(endOffset >= 0, "The end sub mesh offset at index {0} was below zero ({1}).", subMeshIndex + 1, endOffset);
+            Debug.AssertFormat(startOffset < triangleCount, "The start sub mesh offset at index {0} was higher or equal to the triangle count ({1} >= {2}).", subMeshIndex, startOffset, triangleCount);
+            Debug.AssertFormat(endOffset <= triangleCount, "The end sub mesh offset at index {0} was higher than the triangle count ({1} > {2}).", subMeshIndex + 1, endOffset, triangleCount);
+
             for (int triangleIndex = startOffset; triangleIndex < endOffset; triangleIndex++)
             {
                 var triangle = triangles[triangleIndex];
