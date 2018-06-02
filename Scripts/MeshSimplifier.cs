@@ -576,14 +576,11 @@ namespace UnityMeshSimplifier
                 + 2 * q.m5 * y * z + 2 * q.m6 * y + q.m7 * z * z + 2 * q.m8 * z + q.m9;
         }
 
-        private double CalculateError(int i0, int i1, out Vector3d result, out int resultIndex)
+        private double CalculateError(ref Vertex vert0, ref Vertex vert1, out Vector3d result, out int resultIndex)
         {
             // compute interpolated vertex
-            var vertices = this.vertices.Data;
-            Vertex v0 = vertices[i0];
-            Vertex v1 = vertices[i1];
-            SymmetricMatrix q = v0.q + v1.q;
-            bool border = (v0.border & v1.border);
+            SymmetricMatrix q = (vert0.q + vert1.q);
+            bool border = (vert0.border & vert1.border);
             double error = 0.0;
             double det = q.Determinant1();
             if (det != 0.0 && !border)
@@ -599,8 +596,8 @@ namespace UnityMeshSimplifier
             else
             {
                 // det = 0 -> try to find best result
-                Vector3d p1 = v0.p;
-                Vector3d p2 = v1.p;
+                Vector3d p1 = vert0.p;
+                Vector3d p2 = vert1.p;
                 Vector3d p3 = (p1 + p2) * 0.5f;
                 double error1 = VertexError(ref q, p1.x, p1.y, p1.z);
                 double error2 = VertexError(ref q, p2.x, p2.y, p2.z);
@@ -696,6 +693,7 @@ namespace UnityMeshSimplifier
             int pIndex;
             int tcount = v.tcount;
             var triangles = this.triangles.Data;
+            var vertices = this.vertices.Data;
             for (int k = 0; k < tcount; k++)
             {
                 Ref r = refs[v.tstart + k];
@@ -719,9 +717,9 @@ namespace UnityMeshSimplifier
 
                 t.dirty = true;
                 //t.area = CalculateArea(t.v0, t.v1, t.v2);
-                t.err0 = CalculateError(t.v0, t.v1, out p, out pIndex);
-                t.err1 = CalculateError(t.v1, t.v2, out p, out pIndex);
-                t.err2 = CalculateError(t.v2, t.v0, out p, out pIndex);
+                t.err0 = CalculateError(ref vertices[t.v0], ref vertices[t.v1], out p, out pIndex);
+                t.err1 = CalculateError(ref vertices[t.v1], ref vertices[t.v2], out p, out pIndex);
+                t.err2 = CalculateError(ref vertices[t.v2], ref vertices[t.v0], out p, out pIndex);
                 t.err3 = MathHelper.Min(t.err0, t.err1, t.err2);
                 triangles[tid] = t;
                 refs.Add(r);
@@ -927,7 +925,7 @@ namespace UnityMeshSimplifier
                         continue;
 
                     // Compute vertex to collapse to
-                    CalculateError(i0, i1, out p, out pIndex);
+                    CalculateError(ref v0, ref v1, out p, out pIndex);
                     deleted0.Resize(v0.tcount); // normals temporarily
                     deleted1.Resize(v1.tcount); // normals temporarily
 
@@ -1189,12 +1187,10 @@ namespace UnityMeshSimplifier
                 {
                     // Calc Edge Error
                     var triangle = triangles[i];
-                    //triangle.area = CalculateArea(triangle.v0, triangle.v1, triangle.v2);
-                    triangle.err0 = CalculateError(triangle.v0, triangle.v1, out dummy, out dummy2);
-                    triangle.err1 = CalculateError(triangle.v1, triangle.v2, out dummy, out dummy2);
-                    triangle.err2 = CalculateError(triangle.v2, triangle.v0, out dummy, out dummy2);
-                    triangle.err3 = MathHelper.Min(triangle.err0, triangle.err1, triangle.err2);
-                    triangles[i] = triangle;
+                    triangles[i].err0 = CalculateError(ref vertices[triangle.v0], ref vertices[triangle.v1], out dummy, out dummy2);
+                    triangles[i].err1 = CalculateError(ref vertices[triangle.v1], ref vertices[triangle.v2], out dummy, out dummy2);
+                    triangles[i].err2 = CalculateError(ref vertices[triangle.v2], ref vertices[triangle.v0], out dummy, out dummy2);
+                    triangles[i].err3 = MathHelper.Min(triangles[i].err0, triangles[i].err1, triangles[i].err2);
                 }
             }
         }
