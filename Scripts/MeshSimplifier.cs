@@ -882,95 +882,90 @@ namespace UnityMeshSimplifier
             int triangleCount = this.triangles.Length;
             var vertices = this.vertices.Data;
 
-            Vertex v0, v1;
             Vector3d p;
             int pIndex;
-            for (int i = 0; i < triangleCount; i++)
+            for (int tid = 0; tid < triangleCount; tid++)
             {
-                var t = triangles[i];
-                if (t.dirty || t.deleted || t.err3 > threshold)
+                if (triangles[tid].dirty || triangles[tid].deleted || triangles[tid].err3 > threshold)
                     continue;
 
-                t.GetErrors(errArr);
-                t.GetAttributeIndices(attributeIndexArr);
-                for (int j = 0; j < 3; j++)
+                triangles[tid].GetErrors(errArr);
+                triangles[tid].GetAttributeIndices(attributeIndexArr);
+                for (int edgeIndex = 0; edgeIndex < 3; edgeIndex++)
                 {
-                    if (errArr[j] > threshold)
+                    if (errArr[edgeIndex] > threshold)
                         continue;
 
-                    int k = ((j + 1) % 3);
-                    int i0 = t[j];
-                    int i1 = t[k];
-                    v0 = vertices[i0];
-                    v1 = vertices[i1];
+                    int nextEdgeIndex = ((edgeIndex + 1) % 3);
+                    int i0 = triangles[tid][edgeIndex];
+                    int i1 = triangles[tid][nextEdgeIndex];
 
                     // Border check
-                    if (v0.border != v1.border)
+                    if (vertices[i0].border != vertices[i1].border)
                         continue;
                     // Seam check
-                    else if (v0.seam != v1.seam)
+                    else if (vertices[i0].seam != vertices[i1].seam)
                         continue;
                     // Foldover check
-                    else if (v0.foldover != v1.foldover)
+                    else if (vertices[i0].foldover != vertices[i1].foldover)
                         continue;
                     // If borders should be preserved
-                    else if (preserveBorders && v0.border)
+                    else if (preserveBorders && vertices[i0].border)
                         continue;
                     // If seams should be preserved
-                    else if (preserveSeams && v0.seam)
+                    else if (preserveSeams && vertices[i0].seam)
                         continue;
                     // If foldovers should be preserved
-                    else if (preserveFoldovers && v0.foldover)
+                    else if (preserveFoldovers && vertices[i0].foldover)
                         continue;
 
                     // Compute vertex to collapse to
-                    CalculateError(ref v0, ref v1, out p, out pIndex);
-                    deleted0.Resize(v0.tcount); // normals temporarily
-                    deleted1.Resize(v1.tcount); // normals temporarily
+                    CalculateError(ref vertices[i0], ref vertices[i1], out p, out pIndex);
+                    deleted0.Resize(vertices[i0].tcount); // normals temporarily
+                    deleted1.Resize(vertices[i1].tcount); // normals temporarily
 
                     // Don't remove if flipped
-                    if (Flipped(ref p, i0, i1, ref v0, deleted0.Data))
+                    if (Flipped(ref p, i0, i1, ref vertices[i0], deleted0.Data))
                         continue;
-                    if (Flipped(ref p, i1, i0, ref v1, deleted1.Data))
+                    if (Flipped(ref p, i1, i0, ref vertices[i1], deleted1.Data))
                         continue;
 
-                    int ia0 = attributeIndexArr[j];
+                    int ia0 = attributeIndexArr[edgeIndex];
 
                     // Not flipped, so remove edge
-                    v0.p = p;
-                    v0.q += v1.q;
-                    vertices[i0] = v0;
+                    vertices[i0].p = p;
+                    vertices[i0].q += vertices[i1].q;
 
                     if (pIndex == 1)
                     {
                         // Move vertex attributes from ia1 to ia0
-                        int ia1 = attributeIndexArr[k];
+                        int ia1 = attributeIndexArr[nextEdgeIndex];
                         MoveVertexAttributes(ia0, ia1);
                     }
                     else if (pIndex == 2)
                     {
                         // Merge vertex attributes ia0 and ia1 into ia0
-                        int ia1 = attributeIndexArr[k];
+                        int ia1 = attributeIndexArr[nextEdgeIndex];
                         MergeVertexAttributes(ia0, ia1);
                     }
 
-                    if (v0.seam)
+                    if (vertices[i0].seam)
                     {
                         ia0 = -1;
                     }
 
                     int tstart = refs.Length;
-                    UpdateTriangles(i0, ia0, ref v0, deleted0, ref deletedTris);
-                    UpdateTriangles(i0, ia0, ref v1, deleted1, ref deletedTris);
+                    UpdateTriangles(i0, ia0, ref vertices[i0], deleted0, ref deletedTris);
+                    UpdateTriangles(i0, ia0, ref vertices[i1], deleted1, ref deletedTris);
 
                     int tcount = refs.Length - tstart;
-                    if (tcount <= v0.tcount)
+                    if (tcount <= vertices[i0].tcount)
                     {
                         // save ram
                         if (tcount > 0)
                         {
                             var refsArr = refs.Data;
-                            Array.Copy(refsArr, tstart, refsArr, v0.tstart, tcount);
+                            Array.Copy(refsArr, tstart, refsArr, vertices[i0].tstart, tcount);
                         }
                     }
                     else
