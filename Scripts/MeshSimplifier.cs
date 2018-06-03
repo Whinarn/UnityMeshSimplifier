@@ -1050,8 +1050,8 @@ namespace UnityMeshSimplifier
                 int ofs;
                 int id;
                 int borderVertexCount = 0;
-                double borderMinX = float.MaxValue;
-                double borderMaxX = float.MinValue;
+                double borderMinX = double.MaxValue;
+                double borderMaxX = double.MinValue;
                 for (int i = 0; i < vertexCount; i++)
                 {
                     int tstart = vertices[i].tstart;
