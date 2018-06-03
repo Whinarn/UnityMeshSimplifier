@@ -1,4 +1,12 @@
-# Changelog
+# Change Log
+
+## [v1.0.1] - 2018-06-03
+
+### Fixed
+- Added more exception throwing on invalid parameters that wasn't previously handled.
+- Added assertions when getting the triangle indices for a sub-mesh, to detect a faulty state more easily.
+- Optimized the retrieving of sub-mesh triangles when having a large number of sub-meshes.
+- Heavily optimized the initialization and simplification process.
 
 ## [v1.0.0] - 2018-05-12
 
@@ -18,4 +26,5 @@
 - Support for static and skinned meshes.
 - Support for 2D, 3D and 4D UVs.
 
+[v1.0.1]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v1.0.0...v1.0.1
 [v1.0.0]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v0.1.0...v1.0.0
