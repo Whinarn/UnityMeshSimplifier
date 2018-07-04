@@ -402,7 +402,7 @@ namespace UnityMeshSimplifier
 
         /// <summary>
         /// Gets or sets the maximum squared distance between two vertices in order to link them.
-        /// Note that this value is only used if PreventHoles is true.
+        /// Note that this value is only used if EnableSmartLink is true.
         /// Default value: double.Epsilon
         /// </summary>
         public double VertexLinkDistanceSqr
