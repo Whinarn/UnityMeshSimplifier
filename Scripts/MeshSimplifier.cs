@@ -1121,7 +1121,7 @@ namespace UnityMeshSimplifier
                     {
                         if (vertices[i].border)
                         {
-                            int vertexHash = (int)((((vertices[i].p.x - borderMinX) / borderAreaWidth) - 0.5) * int.MaxValue);
+                            int vertexHash = (int)(((((vertices[i].p.x - borderMinX) / borderAreaWidth) * 2.0) - 1.0) * int.MaxValue);
                             borderVertices[borderIndexCount] = new BorderVertex(i, vertexHash);
                             ++borderIndexCount;
                         }
