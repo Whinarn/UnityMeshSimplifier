@@ -75,7 +75,7 @@ namespace UnityMeshSimplifier
         /// <returns>The minimum value.</returns>
         public static double Min(double val1, double val2, double val3)
         {
-            return (val1 < val2 ? (val1 < val3 ? val1 : (val2 < val3 ? val2 : val3)) : (val2 < val3 ? val2 : val3));
+            return (val1 < val2 ? (val1 < val3 ? val1 : val3) : (val2 < val3 ? val2 : val3));
         }
         #endregion
 
