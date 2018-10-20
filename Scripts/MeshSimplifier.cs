@@ -1121,7 +1121,7 @@ namespace UnityMeshSimplifier
                     {
                         if (vertices[i].border)
                         {
-                            int vertexHash = (int)((((vertices[i].p.x - borderMinX) / borderAreaWidth) - 0.5) * int.MaxValue);
+                            int vertexHash = (int)(((((vertices[i].p.x - borderMinX) / borderAreaWidth) * 2.0) - 1.0) * int.MaxValue);
                             borderVertices[borderIndexCount] = new BorderVertex(i, vertexHash);
                             ++borderIndexCount;
                         }
@@ -1129,6 +1129,10 @@ namespace UnityMeshSimplifier
 
                     // Sort the border vertices by hash
                     Array.Sort(borderVertices, 0, borderIndexCount, BorderVertexComparer.instance);
+
+                    // Calculate the maximum hash distance based on the maximum vertex link distance
+                    double vertexLinkDistance = Math.Sqrt(vertexLinkDistanceSqr);
+                    int hashMaxDistance = Math.Max((int)((vertexLinkDistance / borderAreaWidth) * int.MaxValue), 1);
 
                     // Then find identical border vertices and bind them together as one
                     for (int i = 0; i < borderIndexCount; i++)
@@ -1143,7 +1147,7 @@ namespace UnityMeshSimplifier
                             int otherIndex = borderVertices[j].index;
                             if (otherIndex == -1)
                                 continue;
-                            else if ((borderVertices[j].hash - borderVertices[i].hash) > 1) // There is no point to continue beyond this point
+                            else if ((borderVertices[j].hash - borderVertices[i].hash) > hashMaxDistance) // There is no point to continue beyond this point
                                 break;
 
                             var otherPoint = vertices[otherIndex].p;
