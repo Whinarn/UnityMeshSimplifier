@@ -1,5 +1,11 @@
 # Change Log
 
+## [v1.0.3] - 2018-10-20
+
+### Fixed
+- The maximum hash distance is now calculated based on the VertexLinkDistanceSqr property value instead of being hardcoded to 1.
+- Fixed an issue with the vertex hashes not using the entire integer range, but instead was using only half of it.
+
 ## [v1.0.2] - 2018-07-05
 
 ### Fixed
@@ -31,6 +37,7 @@
 - Support for static and skinned meshes.
 - Support for 2D, 3D and 4D UVs.
 
+[v1.0.3]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v1.0.2...v1.0.3
 [v1.0.2]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v1.0.1...v1.0.2
 [v1.0.1]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v1.0.0...v1.0.1
 [v1.0.0]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v0.1.0...v1.0.0
