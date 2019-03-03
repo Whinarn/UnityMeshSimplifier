@@ -599,7 +599,7 @@ namespace UnityMeshSimplifier
                 + 2 * q.m5 * y * z + 2 * q.m6 * y + q.m7 * z * z + 2 * q.m8 * z + q.m9;
         }
 
-        private double CalculateError(ref Vertex vert0, ref Vertex vert1, out Vector3d result, out int resultIndex)
+        private double CalculateError(ref Vertex vert0, ref Vertex vert1, out Vector3d result)
         {
             // compute interpolated vertex
             SymmetricMatrix q = (vert0.q + vert1.q);
@@ -614,7 +614,6 @@ namespace UnityMeshSimplifier
                     1.0 / det * q.Determinant3(),   // vy = A42/det(q_delta)
                     -1.0 / det * q.Determinant4()); // vz = A43/det(q_delta)
                 error = VertexError(ref q, result.x, result.y, result.z);
-                resultIndex = 2;
             }
             else
             {
@@ -629,25 +628,38 @@ namespace UnityMeshSimplifier
                 if (error == error3)
                 {
                     result = p3;
-                    resultIndex = 2;
                 }
                 else if (error == error2)
                 {
                     result = p2;
-                    resultIndex = 1;
                 }
                 else if (error == error1)
                 {
                     result = p1;
-                    resultIndex = 0;
                 }
                 else
                 {
                     result = p3;
-                    resultIndex = 2;
                 }
             }
             return error;
+        }
+        #endregion
+
+        #region Calculate Barycentric Coordinates
+        private static void CalculateBarycentricCoords(ref Vector3d point, ref Vector3d a, ref Vector3d b, ref Vector3d c, out Vector3 result)
+        {
+            Vector3 v0 = (Vector3)(b - a), v1 = (Vector3)(c - a), v2 = (Vector3)(point - a);
+            float d00 = Vector3.Dot(v0, v0);
+            float d01 = Vector3.Dot(v0, v1);
+            float d11 = Vector3.Dot(v1, v1);
+            float d20 = Vector3.Dot(v2, v0);
+            float d21 = Vector3.Dot(v2, v1);
+            float denom = d00 * d11 - d01 * d01;
+            float v = (d11 * d20 - d01 * d21) / denom;
+            float w = (d00 * d21 - d01 * d20) / denom;
+            float u = 1f - v - w;
+            result = new Vector3(u, v, w);
         }
         #endregion
 
@@ -704,7 +716,6 @@ namespace UnityMeshSimplifier
         private void UpdateTriangles(int i0, int ia0, ref Vertex v, ResizableArray<bool> deleted, ref int deletedTriangles)
         {
             Vector3d p;
-            int pIndex;
             int tcount = v.tcount;
             var triangles = this.triangles.Data;
             var vertices = this.vertices.Data;
@@ -730,9 +741,9 @@ namespace UnityMeshSimplifier
                 }
 
                 t.dirty = true;
-                t.err0 = CalculateError(ref vertices[t.v0], ref vertices[t.v1], out p, out pIndex);
-                t.err1 = CalculateError(ref vertices[t.v1], ref vertices[t.v2], out p, out pIndex);
-                t.err2 = CalculateError(ref vertices[t.v2], ref vertices[t.v0], out p, out pIndex);
+                t.err0 = CalculateError(ref vertices[t.v0], ref vertices[t.v1], out p);
+                t.err1 = CalculateError(ref vertices[t.v1], ref vertices[t.v2], out p);
+                t.err2 = CalculateError(ref vertices[t.v2], ref vertices[t.v0], out p);
                 t.err3 = MathHelper.Min(t.err0, t.err1, t.err2);
                 triangles[tid] = t;
                 refs.Add(r);
@@ -740,7 +751,7 @@ namespace UnityMeshSimplifier
         }
         #endregion
 
-        #region Move/Merge Vertex Attributes
+        #region Move/Merge/Interpolate Vertex Attributes
         private void MoveVertexAttributes(int i0, int i1)
         {
             if (vertNormals != null)
@@ -844,6 +855,57 @@ namespace UnityMeshSimplifier
 
             // TODO: Do we have to blend bone weights at all or can we just keep them as it is in this scenario?
         }
+
+        private void InterpolateVertexAttributes(int i0, int i1, int i2, ref Vector3 barycentricCoord)
+        {
+            if (vertNormals != null)
+            {
+                vertNormals[i0] = (vertNormals[i0] * barycentricCoord.x) + (vertNormals[i1] * barycentricCoord.y) + (vertNormals[i2] * barycentricCoord.z);
+            }
+            if (vertTangents != null)
+            {
+                vertTangents[i0] = (vertTangents[i0] * barycentricCoord.x) + (vertTangents[i1] * barycentricCoord.y) + (vertTangents[i2] * barycentricCoord.z);
+            }
+            if (vertUV2D != null)
+            {
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    var vertUV = vertUV2D[i];
+                    if (vertUV != null)
+                    {
+                        vertUV[i0] = (vertUV[i0] * barycentricCoord.x) + (vertUV[i1] * barycentricCoord.y) + (vertUV[i2] * barycentricCoord.z);
+                    }
+                }
+            }
+            if (vertUV3D != null)
+            {
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    var vertUV = vertUV3D[i];
+                    if (vertUV != null)
+                    {
+                        vertUV[i0] = (vertUV[i0] * barycentricCoord.x) + (vertUV[i1] * barycentricCoord.y) + (vertUV[i2] * barycentricCoord.z);
+                    }
+                }
+            }
+            if (vertUV4D != null)
+            {
+                for (int i = 0; i < UVChannelCount; i++)
+                {
+                    var vertUV = vertUV4D[i];
+                    if (vertUV != null)
+                    {
+                        vertUV[i0] = (vertUV[i0] * barycentricCoord.x) + (vertUV[i1] * barycentricCoord.y) + (vertUV[i2] * barycentricCoord.z);
+                    }
+                }
+            }
+            if (vertColors != null)
+            {
+                vertColors[i0] = (vertColors[i0] * barycentricCoord.x) + (vertColors[i1] * barycentricCoord.y) + (vertColors[i2] * barycentricCoord.z);
+            }
+
+            // TODO: How do we interpolate the bone weights? Do we have to?
+        }
         #endregion
 
         #region Are UVs The Same
@@ -897,7 +959,7 @@ namespace UnityMeshSimplifier
             var vertices = this.vertices.Data;
 
             Vector3d p;
-            int pIndex;
+            Vector3 barycentricCoord;
             for (int tid = 0; tid < triangleCount; tid++)
             {
                 if (triangles[tid].dirty || triangles[tid].deleted || triangles[tid].err3 > threshold)
@@ -934,7 +996,7 @@ namespace UnityMeshSimplifier
                         continue;
 
                     // Compute vertex to collapse to
-                    CalculateError(ref vertices[i0], ref vertices[i1], out p, out pIndex);
+                    CalculateError(ref vertices[i0], ref vertices[i1], out p);
                     deleted0.Resize(vertices[i0].tcount); // normals temporarily
                     deleted1.Resize(vertices[i1].tcount); // normals temporarily
 
@@ -944,24 +1006,20 @@ namespace UnityMeshSimplifier
                     if (Flipped(ref p, i1, i0, ref vertices[i1], deleted1.Data))
                         continue;
 
-                    int ia0 = attributeIndexArr[edgeIndex];
+                    // Calculate the barycentric coordinates within the triangle
+                    int nextNextEdgeIndex = ((edgeIndex + 2) % 3);
+                    int i2 = triangles[tid][nextNextEdgeIndex];
+                    CalculateBarycentricCoords(ref p, ref vertices[i0].p, ref vertices[i1].p, ref vertices[i2].p, out barycentricCoord);
 
                     // Not flipped, so remove edge
                     vertices[i0].p = p;
                     vertices[i0].q += vertices[i1].q;
 
-                    if (pIndex == 1)
-                    {
-                        // Move vertex attributes from ia1 to ia0
-                        int ia1 = attributeIndexArr[nextEdgeIndex];
-                        MoveVertexAttributes(ia0, ia1);
-                    }
-                    else if (pIndex == 2)
-                    {
-                        // Merge vertex attributes ia0 and ia1 into ia0
-                        int ia1 = attributeIndexArr[nextEdgeIndex];
-                        MergeVertexAttributes(ia0, ia1);
-                    }
+                    // Interpolate the vertex attributes
+                    int ia0 = attributeIndexArr[edgeIndex];
+                    int ia1 = attributeIndexArr[nextEdgeIndex];
+                    int ia2 = attributeIndexArr[nextNextEdgeIndex];
+                    InterpolateVertexAttributes(ia0, ia1, ia2, ref barycentricCoord);
 
                     if (vertices[i0].seam)
                     {
@@ -1200,7 +1258,6 @@ namespace UnityMeshSimplifier
 
                 int v0, v1, v2;
                 Vector3d n, p0, p1, p2, p10, p20, dummy;
-                int dummy2;
                 SymmetricMatrix sm;
                 for (int i = 0; i < triangleCount; i++)
                 {
@@ -1227,9 +1284,9 @@ namespace UnityMeshSimplifier
                 {
                     // Calc Edge Error
                     var triangle = triangles[i];
-                    triangles[i].err0 = CalculateError(ref vertices[triangle.v0], ref vertices[triangle.v1], out dummy, out dummy2);
-                    triangles[i].err1 = CalculateError(ref vertices[triangle.v1], ref vertices[triangle.v2], out dummy, out dummy2);
-                    triangles[i].err2 = CalculateError(ref vertices[triangle.v2], ref vertices[triangle.v0], out dummy, out dummy2);
+                    triangles[i].err0 = CalculateError(ref vertices[triangle.v0], ref vertices[triangle.v1], out dummy);
+                    triangles[i].err1 = CalculateError(ref vertices[triangle.v1], ref vertices[triangle.v2], out dummy);
+                    triangles[i].err2 = CalculateError(ref vertices[triangle.v2], ref vertices[triangle.v0], out dummy);
                     triangles[i].err3 = MathHelper.Min(triangles[i].err0, triangles[i].err1, triangles[i].err2);
                 }
             }
