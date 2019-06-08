@@ -4,7 +4,7 @@ Mesh simplification for [Unity](https://unity3d.com/). The project is deeply bas
 Because of the fact that this project is entirely in C# it *should* work on all platforms that Unity officially supports, as well as both in the editor and at runtime in builds.
 
 ## Compatibility
-These scripts have been tested and confirmed working with Unity 5.6.0f3, Unity 2017.1.0f3, Unity 2017.2.1f1, Unity 2017.3.0f3, Unity 2017.4.0f1 and Unity 2018.1.2f1.
+These scripts have been tested and confirmed working with Unity 5.6.0f3, Unity 2017.1.0f3, Unity 2017.2.1f1, Unity 2017.3.0f3, Unity 2017.4.0f1, Unity 2018.1.2f1 and Unity 2019.1.4f1.
 
 ## Installation into Unity project
 1. Copy the contents of this repository into a folder named *UnityMeshSimplifier* in your Assets directory within your Unity project.
