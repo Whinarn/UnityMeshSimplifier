@@ -34,49 +34,98 @@ namespace UnityMeshSimplifier
     [AddComponentMenu("Rendering/LOD Generator")]
     public sealed class LODGenerator : MonoBehaviour
     {
-        #region LOD Level
-        /// <summary>
-        /// A LOD (level of detail) level.
-        /// </summary>
-        [System.Serializable]
-        public struct Level
-        {
-            [SerializeField, Range(0f, 1f), Tooltip("The desired quality for this level.")]
-            private float quality;
-
-            /// <summary>
-            /// Gets or sets the quality of this level between 0 and 1.
-            /// </summary>
-            public float Quality
-            {
-                get { return quality; }
-                set { quality = Mathf.Clamp01(value); }
-            }
-
-            /// <summary>
-            /// Creates a new LOD level.
-            /// </summary>
-            /// <param name="quality">The quality of this level between 0 and 1.</param>
-            public Level(float quality)
-            {
-                this.quality = Mathf.Clamp01(quality);
-            }
-        }
-        #endregion
-
         #region Fields
+        [SerializeField, Tooltip("The fade mode used by the created LOD group.")]
+        private LODFadeMode fadeMode = LODFadeMode.None;
+        [SerializeField, Tooltip("If the cross-fading should be animated by time.")]
+        private bool animateCrossFading = false;
+
+        [SerializeField, Tooltip("If the renderers under this game object and any children should be automatically collected.")]
+        private bool autoCollectRenderers = true;
+
         [SerializeField, Tooltip("The LOD levels.")]
-        private Level[] levels = null;
+        private LODLevel[] levels = null;
         #endregion
 
         #region Properties
         /// <summary>
+        /// Gets or sets the fade mode used by the created LOD group.
+        /// </summary>
+        public LODFadeMode FadeMode
+        {
+            get { return fadeMode; }
+            set { fadeMode = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets if the cross-fading should be animated by time. The animation duration
+        /// is specified globally as crossFadeAnimationDuration.
+        /// </summary>
+        public bool AnimateCrossFading
+        {
+            get { return animateCrossFading; }
+            set { animateCrossFading = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets if the renderers under this game object and any children should be automatically collected.
+        /// </summary>
+        public bool AutoCollectRenderers
+        {
+            get { return autoCollectRenderers; }
+            set { autoCollectRenderers = value; }
+        }
+
+        /// <summary>
         /// Gets or sets the LOD levels for this generator.
         /// </summary>
-        public Level[] Levels
+        public LODLevel[] Levels
         {
             get { return levels; }
             set { levels = value; }
+        }
+        #endregion
+
+        #region Unity Events
+        private void Reset()
+        {
+            fadeMode = LODFadeMode.None;
+            animateCrossFading = false;
+            autoCollectRenderers = true;
+
+            levels = new LODLevel[]
+            {
+                new LODLevel(0.6f, 1f)
+                {
+                    CombineMeshes = false,
+                    SkinQuality = SkinQuality.Auto,
+                    ShadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On,
+                    ReceiveShadows = true,
+                    SkinnedMotionVectors = true,
+                    LightProbeUsage = UnityEngine.Rendering.LightProbeUsage.BlendProbes,
+                    ReflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.BlendProbes,
+                },
+                new LODLevel(0.3f, 0.65f)
+                {
+                    CombineMeshes = true,
+                    SkinQuality = SkinQuality.Auto,
+                    ShadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On,
+                    ReceiveShadows = true,
+                    SkinnedMotionVectors = true,
+                    LightProbeUsage = UnityEngine.Rendering.LightProbeUsage.BlendProbes,
+                    ReflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Simple
+                },
+                new LODLevel(0.1f, 0.4225f)
+                {
+                    CombineMeshes = true,
+                    SkinQuality = SkinQuality.Bone2,
+                    ShadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off,
+                    ReceiveShadows = false,
+                    SkinnedMotionVectors = false,
+                    LightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off,
+                    ReflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Off
+                }
+            };
         }
         #endregion
     }
