@@ -31,8 +31,8 @@ using UnityEditor;
 
 namespace UnityMeshSimplifier.Editor
 {
-    [CustomEditor(typeof(LODGenerator))]
-    internal sealed class LODGeneratorEditor : UnityEditor.Editor
+    [CustomEditor(typeof(LODGeneratorHelper))]
+    internal sealed class LODGeneratorHelperEditor : UnityEditor.Editor
     {
         private const string FadeModeFieldName = "fadeMode";
         private const string AnimateCrossFadingFieldName = "animateCrossFading";
@@ -52,7 +52,7 @@ namespace UnityMeshSimplifier.Editor
         private SerializedProperty levelsProperty = null;
 
         private bool[] settingsExpanded = null;
-        private LODGenerator lodGenerator = null;
+        private LODGeneratorHelper lodGeneratorHelper = null;
 
         private static readonly GUIContent createLevelButtonContent = new GUIContent("Create Level", "Creates a new LOD level.");
         private static readonly GUIContent deleteLevelButtonContent = new GUIContent("X", "Deletes this LOD level.");
@@ -72,7 +72,7 @@ namespace UnityMeshSimplifier.Editor
             autoCollectRenderersProperty = serializedObject.FindProperty(AutoCollectRenderersFieldName);
             levelsProperty = serializedObject.FindProperty(LevelsFieldName);
 
-            lodGenerator = target as LODGenerator;
+            lodGeneratorHelper = target as LODGeneratorHelper;
         }
 
         public override void OnInspectorGUI()
@@ -414,7 +414,7 @@ namespace UnityMeshSimplifier.Editor
         private Renderer[] GetRenderers(IEnumerable<GameObject> gameObjects, bool searchChildren)
         {
             // Filter out game objects that aren't children of the generator
-            var ourTransform = lodGenerator.transform;
+            var ourTransform = lodGeneratorHelper.transform;
             var childGameObjects = from go in gameObjects
                           where go.transform.IsChildOf(ourTransform)
                           select go;

@@ -29,10 +29,10 @@ using UnityEngine;
 namespace UnityMeshSimplifier
 {
     /// <summary>
-    /// A LOD (level of detail) generator.
+    /// A LOD (level of detail) generator helper.
     /// </summary>
-    [AddComponentMenu("Rendering/LOD Generator")]
-    public sealed class LODGenerator : MonoBehaviour
+    [AddComponentMenu("Rendering/LOD Generator Helper")]
+    public sealed class LODGeneratorHelper : MonoBehaviour
     {
         #region Fields
         [SerializeField, Tooltip("The fade mode used by the created LOD group.")]
