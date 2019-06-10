@@ -56,6 +56,7 @@ namespace UnityMeshSimplifier.Editor
         private static readonly GUIContent deleteLevelButtonContent = new GUIContent("-", "Deletes this LOD level.");
         private static readonly GUIContent generateLODButtonContent = new GUIContent("Generate LODs", "Generates the LOD levels.");
         private static readonly GUIContent settingsContent = new GUIContent("Settings", "The settings for the LOD level.");
+        private static readonly GUIContent renderersHeaderContent = new GUIContent("Renderers:", "The renderers used for this LOD level.");
         private static readonly GUIContent removeRendererButtonContent = new GUIContent("-", "Removes this renderer.");
         private static readonly GUIContent addRendererButtonContent = new GUIContent("Add", "Adds a renderer to this LOD level.");
 
@@ -184,6 +185,8 @@ namespace UnityMeshSimplifier.Editor
 
         private void DrawRendererList(SerializedProperty renderersProperty, float availableWidth)
         {
+            GUILayout.Label(renderersHeaderContent, EditorStyles.boldLabel);
+
             int rendererCount = renderersProperty.arraySize;
             int renderersPerRow = Mathf.Max(1, Mathf.FloorToInt(availableWidth / RendererButtonWidth));
             int rendererRowCount = Mathf.CeilToInt((float)(rendererCount + 1) / (float)renderersPerRow);
