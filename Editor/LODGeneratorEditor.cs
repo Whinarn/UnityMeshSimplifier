@@ -42,7 +42,9 @@ namespace UnityMeshSimplifier.Editor
         private const string LevelFadeTransitionWidthFieldName = "fadeTransitionWidth";
         private const string LevelQualityFieldName = "quality";
         private const string LevelRenderersFieldName = "renderers";
+        private const float RemoveLevelButtonSize = 20f;
         private const float RendererButtonWidth = 60f;
+        private const float RemoveRendererButtonSize = 20f;
 
         private SerializedProperty fadeModeProperty = null;
         private SerializedProperty animateCrossFadingProperty = null;
@@ -53,12 +55,13 @@ namespace UnityMeshSimplifier.Editor
         private LODGenerator lodGenerator = null;
 
         private static readonly GUIContent createLevelButtonContent = new GUIContent("Create Level", "Creates a new LOD level.");
-        private static readonly GUIContent deleteLevelButtonContent = new GUIContent("-", "Deletes this LOD level.");
+        private static readonly GUIContent deleteLevelButtonContent = new GUIContent("X", "Deletes this LOD level.");
         private static readonly GUIContent generateLODButtonContent = new GUIContent("Generate LODs", "Generates the LOD levels.");
         private static readonly GUIContent settingsContent = new GUIContent("Settings", "The settings for the LOD level.");
         private static readonly GUIContent renderersHeaderContent = new GUIContent("Renderers:", "The renderers used for this LOD level.");
-        private static readonly GUIContent removeRendererButtonContent = new GUIContent("-", "Removes this renderer.");
+        private static readonly GUIContent removeRendererButtonContent = new GUIContent("X", "Removes this renderer.");
         private static readonly GUIContent addRendererButtonContent = new GUIContent("Add", "Adds a renderer to this LOD level.");
+        private static readonly Color removeColor = new Color(1f, 0.6f, 0.6f, 1f);
 
         private static readonly int ObjectPickerControlID = "LODGeneratorSelector".GetHashCode();
 
@@ -122,10 +125,13 @@ namespace UnityMeshSimplifier.Editor
             EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
             GUILayout.Label(string.Format("Level {0}", index + 1), EditorStyles.boldLabel);
 
-            if (GUILayout.Button(deleteLevelButtonContent, GUILayout.Width(16f)))
+            var previousBackgroundColor = GUI.backgroundColor;
+            GUI.backgroundColor = removeColor;
+            if (GUILayout.Button(deleteLevelButtonContent, GUILayout.Width(RemoveLevelButtonSize)))
             {
                 DeleteLevel(index);
             }
+            GUI.backgroundColor = previousBackgroundColor;
             EditorGUILayout.EndHorizontal();
 
             ++EditorGUI.indentLevel;
@@ -219,7 +225,7 @@ namespace UnityMeshSimplifier.Editor
         {
             var current = Event.current;
             var currentEvent = current.type;
-            var removeButtonPosition = new Rect(position.xMax - 20f, position.yMax - 20f, 20f, 20f);
+            var removeButtonPosition = new Rect(position.xMax - RemoveRendererButtonSize, position.yMax - RemoveRendererButtonSize, RemoveRendererButtonSize, RemoveRendererButtonSize);
 
             if (currentEvent != EventType.Repaint)
             {
@@ -275,7 +281,10 @@ namespace UnityMeshSimplifier.Editor
                     GUI.Box(position, GUIContent.none, EditorStyles.helpBox);
                 }
 
-                GUI.Box(removeButtonPosition, removeRendererButtonContent, EditorStyles.toolbarButton);
+                var previousBackgroundColor = GUI.backgroundColor;
+                GUI.backgroundColor = removeColor;
+                GUI.Box(removeButtonPosition, removeRendererButtonContent, EditorStyles.miniButton);
+                GUI.backgroundColor = previousBackgroundColor;
             }
         }
 
