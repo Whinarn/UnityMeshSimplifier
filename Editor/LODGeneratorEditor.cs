@@ -141,9 +141,8 @@ namespace UnityMeshSimplifier.Editor
             {
                 ++EditorGUI.indentLevel;
 
-                int exitDepth = levelProperty.depth;
-                var childProperty = levelProperty.Copy();
-                while (childProperty.NextVisible(true) && childProperty.depth > exitDepth)
+                var childProperties = levelProperty.GetChildProperties();
+                foreach (var childProperty in childProperties)
                 {
                     if (string.Equals(childProperty.name, LevelScreenRelativeHeightFieldName) || string.Equals(childProperty.name, LevelQualityFieldName) ||
                         string.Equals(childProperty.name, LevelRenderersFieldName))
