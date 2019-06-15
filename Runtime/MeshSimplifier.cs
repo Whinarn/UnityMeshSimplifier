@@ -1019,15 +1019,15 @@ namespace UnityMeshSimplifier
             // TODO: Do we have to blend bone weights at all or can we just keep them as they are in this scenario?
         }
 
-        private void InterpolateVertexAttributes(int i0, int i1, int i2, ref Vector3 barycentricCoord)
+        private void InterpolateVertexAttributes(int dst, int i0, int i1, int i2, ref Vector3 barycentricCoord)
         {
             if (vertNormals != null)
             {
-                vertNormals[i0] = (vertNormals[i0] * barycentricCoord.x) + (vertNormals[i1] * barycentricCoord.y) + (vertNormals[i2] * barycentricCoord.z);
+                vertNormals[dst] = (vertNormals[i0] * barycentricCoord.x) + (vertNormals[i1] * barycentricCoord.y) + (vertNormals[i2] * barycentricCoord.z);
             }
             if (vertTangents != null)
             {
-                vertTangents[i0] = (vertTangents[i0] * barycentricCoord.x) + (vertTangents[i1] * barycentricCoord.y) + (vertTangents[i2] * barycentricCoord.z);
+                vertTangents[dst] = (vertTangents[i0] * barycentricCoord.x) + (vertTangents[i1] * barycentricCoord.y) + (vertTangents[i2] * barycentricCoord.z);
             }
             if (vertUV2D != null)
             {
@@ -1036,7 +1036,7 @@ namespace UnityMeshSimplifier
                     var vertUV = vertUV2D[i];
                     if (vertUV != null)
                     {
-                        vertUV[i0] = (vertUV[i0] * barycentricCoord.x) + (vertUV[i1] * barycentricCoord.y) + (vertUV[i2] * barycentricCoord.z);
+                        vertUV[dst] = (vertUV[i0] * barycentricCoord.x) + (vertUV[i1] * barycentricCoord.y) + (vertUV[i2] * barycentricCoord.z);
                     }
                 }
             }
@@ -1047,7 +1047,7 @@ namespace UnityMeshSimplifier
                     var vertUV = vertUV3D[i];
                     if (vertUV != null)
                     {
-                        vertUV[i0] = (vertUV[i0] * barycentricCoord.x) + (vertUV[i1] * barycentricCoord.y) + (vertUV[i2] * barycentricCoord.z);
+                        vertUV[dst] = (vertUV[i0] * barycentricCoord.x) + (vertUV[i1] * barycentricCoord.y) + (vertUV[i2] * barycentricCoord.z);
                     }
                 }
             }
@@ -1058,13 +1058,13 @@ namespace UnityMeshSimplifier
                     var vertUV = vertUV4D[i];
                     if (vertUV != null)
                     {
-                        vertUV[i0] = (vertUV[i0] * barycentricCoord.x) + (vertUV[i1] * barycentricCoord.y) + (vertUV[i2] * barycentricCoord.z);
+                        vertUV[dst] = (vertUV[i0] * barycentricCoord.x) + (vertUV[i1] * barycentricCoord.y) + (vertUV[i2] * barycentricCoord.z);
                     }
                 }
             }
             if (vertColors != null)
             {
-                vertColors[i0] = (vertColors[i0] * barycentricCoord.x) + (vertColors[i1] * barycentricCoord.y) + (vertColors[i2] * barycentricCoord.z);
+                vertColors[dst] = (vertColors[i0] * barycentricCoord.x) + (vertColors[i1] * barycentricCoord.y) + (vertColors[i2] * barycentricCoord.z);
             }
 
             // TODO: How do we interpolate the bone weights? Do we have to?
@@ -1182,7 +1182,7 @@ namespace UnityMeshSimplifier
                     int ia0 = attributeIndexArr[edgeIndex];
                     int ia1 = attributeIndexArr[nextEdgeIndex];
                     int ia2 = attributeIndexArr[nextNextEdgeIndex];
-                    InterpolateVertexAttributes(ia0, ia1, ia2, ref barycentricCoord);
+                    InterpolateVertexAttributes(ia0, ia0, ia1, ia2, ref barycentricCoord);
 
                     if (vertices[i0].seam)
                     {
