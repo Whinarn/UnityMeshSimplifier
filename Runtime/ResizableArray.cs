@@ -100,6 +100,28 @@ namespace UnityMeshSimplifier
 
             this.length = length;
         }
+
+        /// <summary>
+        /// Creates a new resizable array.
+        /// </summary>
+        /// <param name="initialArray">The initial array.</param>
+        public ResizableArray(T[] initialArray)
+        {
+            if (initialArray == null)
+                throw new ArgumentNullException(nameof(initialArray));
+
+            if (initialArray.Length > 0)
+            {
+                items = new T[initialArray.Length];
+                length = initialArray.Length;
+                Array.Copy(initialArray, 0, items, 0, initialArray.Length);
+            }
+            else
+            {
+                items = emptyArr;
+                length = 0;
+            }
+        }
         #endregion
 
         #region Private Methods
