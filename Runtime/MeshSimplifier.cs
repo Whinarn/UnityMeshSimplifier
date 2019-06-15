@@ -264,6 +264,103 @@ namespace UnityMeshSimplifier
         }
         #endregion
 
+        #region Blend Shape
+        private class BlendShapeContainer
+        {
+            private string shapeName;
+            private BlendShapeFrameContainer[] frames;
+
+            public BlendShapeContainer(BlendShape blendShape)
+            {
+                shapeName = blendShape.ShapeName;
+                frames = new BlendShapeFrameContainer[blendShape.Frames.Length];
+                for (int i = 0; i < frames.Length; i++)
+                {
+                    frames[i] = new BlendShapeFrameContainer(blendShape.Frames[i]);
+                }
+            }
+
+            public void MoveVertexElement(int dst, int src)
+            {
+                for (int i = 0; i < frames.Length; i++)
+                {
+                    frames[i].MoveVertexElement(dst, src);
+                }
+            }
+
+            public void MergeVertexAttributes(int dst, int i0, int i1)
+            {
+                for (int i = 0; i < frames.Length; i++)
+                {
+                    frames[i].MergeVertexAttributes(dst, i0, i1);
+                }
+            }
+
+            public void Resize(int length, bool trimExess = false)
+            {
+                for (int i = 0; i < frames.Length; i++)
+                {
+                    frames[i].Resize(length, trimExess);
+                }
+            }
+
+            public BlendShape ToBlendShape()
+            {
+                var shapeFrames = new BlendShapeFrame[frames.Length];
+                for (int i = 0; i < shapeFrames.Length; i++)
+                {
+                    shapeFrames[i] = frames[i].ToBlendShapeFrame();
+                }
+                return new BlendShape(shapeName, shapeFrames);
+            }
+        }
+
+        private class BlendShapeFrameContainer
+        {
+            private float frameWeight;
+            private ResizableArray<Vector3> deltaVertices;
+            private ResizableArray<Vector3> deltaNormals;
+            private ResizableArray<Vector3> deltaTangents;
+
+            public BlendShapeFrameContainer(BlendShapeFrame frame)
+            {
+                frameWeight = frame.FrameWeight;
+                deltaVertices = new ResizableArray<Vector3>(frame.DeltaVertices);
+                deltaNormals = new ResizableArray<Vector3>(frame.DeltaNormals);
+                deltaTangents = new ResizableArray<Vector3>(frame.DeltaTangents);
+            }
+
+            public void MoveVertexElement(int dst, int src)
+            {
+                deltaVertices[dst] = deltaVertices[src];
+                deltaNormals[dst] = deltaNormals[src];
+                deltaTangents[dst] = deltaTangents[src];
+            }
+
+            public void MergeVertexAttributes(int dst, int i0, int i1)
+            {
+                deltaVertices[dst] = (deltaVertices[i0] + deltaVertices[i1]) * 0.5f;
+                deltaNormals[dst] = (deltaNormals[i0] + deltaNormals[i1]) * 0.5f;
+                deltaTangents[dst] = (deltaTangents[i0] + deltaTangents[i1]) * 0.5f;
+            }
+
+            public void Resize(int length, bool trimExess = false)
+            {
+                deltaVertices.Resize(length, trimExess);
+                deltaNormals.Resize(length, trimExess);
+                deltaTangents.Resize(length, trimExess);
+            }
+
+            public BlendShapeFrame ToBlendShapeFrame()
+            {
+                var resultVertices = deltaVertices.ToArray();
+                var resultNormals = deltaNormals.ToArray();
+                var resultTangents = deltaTangents.ToArray();
+                return new BlendShapeFrame(frameWeight, resultVertices, resultNormals, resultTangents);
+            }
+        }
+        #endregion
+
         #region Border Vertex
         private struct BorderVertex
         {
@@ -315,6 +412,7 @@ namespace UnityMeshSimplifier
         private UVChannels<Vector4> vertUV4D = null;
         private ResizableArray<Color> vertColors = null;
         private ResizableArray<BoneWeight> vertBoneWeights = null;
+        private ResizableArray<BlendShapeContainer> blendShapes = null;
 
         private Matrix4x4[] bindposes = null;
 
@@ -456,6 +554,14 @@ namespace UnityMeshSimplifier
         public int SubMeshCount
         {
             get { return subMeshCount; }
+        }
+
+        /// <summary>
+        /// Gets the count of blend shapes.
+        /// </summary>
+        public int BlendShapeCount
+        {
+            get { return (blendShapes != null ? blendShapes.Length : 0); }
         }
 
         /// <summary>
@@ -835,6 +941,13 @@ namespace UnityMeshSimplifier
             {
                 vertBoneWeights[dst] = vertBoneWeights[src];
             }
+            if (blendShapes != null)
+            {
+                for (int i = 0; i < blendShapes.Length; i++)
+                {
+                    blendShapes[i].MoveVertexElement(dst, src);
+                }
+            }
         }
 
         private void MergeVertexAttributes(int dst, int i0, int i1)
@@ -883,6 +996,13 @@ namespace UnityMeshSimplifier
             if (vertColors != null)
             {
                 vertColors[dst] = (vertColors[i0] + vertColors[i1]) * 0.5f;
+            }
+            if (blendShapes != null)
+            {
+                for (int i = 0; i < blendShapes.Length; i++)
+                {
+                    blendShapes[i].MergeVertexAttributes(dst, i0, i1);
+                }
             }
 
             // TODO: Do we have to blend bone weights at all or can we just keep them as they are in this scenario?
@@ -1356,6 +1476,7 @@ namespace UnityMeshSimplifier
             var vertUV4D = (this.vertUV4D != null ? this.vertUV4D.Data : null);
             var vertColors = (this.vertColors != null ? this.vertColors.Data : null);
             var vertBoneWeights = (this.vertBoneWeights != null ? this.vertBoneWeights.Data : null);
+            var blendShapes = (this.blendShapes != null ? this.blendShapes.Data : null);
 
             int lastSubMeshIndex = -1;
             subMeshOffsets = new int[subMeshCount];
@@ -1477,6 +1598,14 @@ namespace UnityMeshSimplifier
                         }
                         if (vertColors != null) vertColors[dst] = vertColors[i];
                         if (vertBoneWeights != null) vertBoneWeights[dst] = vertBoneWeights[i];
+
+                        if (blendShapes != null)
+                        {
+                            for (int shapeIndex = 0; shapeIndex < this.blendShapes.Length; shapeIndex++)
+                            {
+                                blendShapes[shapeIndex].MoveVertexElement(dst, i);
+                            }
+                        }
                     }
                     ++dst;
                 }
@@ -1500,6 +1629,14 @@ namespace UnityMeshSimplifier
             if (vertUV4D != null) this.vertUV4D.Resize(vertexCount, true);
             if (vertColors != null) this.vertColors.Resize(vertexCount, true);
             if (vertBoneWeights != null) this.vertBoneWeights.Resize(vertexCount, true);
+
+            if (blendShapes != null)
+            {
+                for (int i = 0; i < this.blendShapes.Length; i++)
+                {
+                    blendShapes[i].Resize(vertexCount, false);
+                }
+            }
         }
         #endregion
 
@@ -2148,6 +2285,94 @@ namespace UnityMeshSimplifier
         #endregion
         #endregion
 
+        #region Blend Shapes
+        /// <summary>
+        /// Returns all blend shapes.
+        /// </summary>
+        /// <returns>An array of all blend shapes.</returns>
+        public BlendShape[] GetAllBlendShapes()
+        {
+            if (blendShapes == null)
+                return null;
+
+            var results = new BlendShape[blendShapes.Length];
+            for (int i = 0; i < results.Length; i++)
+            {
+                results[i] = blendShapes[i].ToBlendShape();
+            }
+            return results;
+        }
+
+        /// <summary>
+        /// Returns a specific blend shape.
+        /// </summary>
+        /// <param name="blendShapeIndex">The blend shape index.</param>
+        /// <returns>The blend shape.</returns>
+        public BlendShape GetBlendShape(int blendShapeIndex)
+        {
+            if (blendShapes == null || blendShapeIndex < 0 || blendShapeIndex >= blendShapes.Length)
+                throw new ArgumentOutOfRangeException(nameof(blendShapeIndex));
+
+            return blendShapes[blendShapeIndex].ToBlendShape();
+        }
+
+        /// <summary>
+        /// Clears all blend shapes.
+        /// </summary>
+        public void ClearBlendShapes()
+        {
+            if (blendShapes != null)
+            {
+                blendShapes.Clear();
+                blendShapes = null;
+            }
+        }
+
+        /// <summary>
+        /// Adds a blend shape.
+        /// </summary>
+        /// <param name="blendShape">The blend shape to add.</param>
+        public void AddBlendShape(BlendShape blendShape)
+        {
+            var frames = blendShape.Frames;
+            if (frames == null || frames.Length == 0)
+                throw new ArgumentException("The frames cannot be null or empty.", nameof(blendShape));
+
+            if (this.blendShapes == null)
+            {
+                this.blendShapes = new ResizableArray<BlendShapeContainer>(4, 0);
+            }
+
+            var container = new BlendShapeContainer(blendShape);
+            this.blendShapes.Add(container);
+        }
+
+        /// <summary>
+        /// Adds several blend shapes.
+        /// </summary>
+        /// <param name="blendShapes">The blend shapes to add.</param>
+        public void AddBlendShapes(BlendShape[] blendShapes)
+        {
+            if (blendShapes == null)
+                throw new ArgumentNullException(nameof(blendShapes));
+
+            if (this.blendShapes == null)
+            {
+                this.blendShapes = new ResizableArray<BlendShapeContainer>(Math.Max(4, blendShapes.Length), 0);
+            }
+
+            for (int i = 0; i < blendShapes.Length; i++)
+            {
+                var frames = blendShapes[i].Frames;
+                if (frames == null || frames.Length == 0)
+                    throw new ArgumentException(string.Format("The frames of blend shape at index {0} cannot be null or empty.", i), nameof(blendShapes));
+
+                var container = new BlendShapeContainer(blendShapes[i]);
+                this.blendShapes.Add(container);
+            }
+        }
+        #endregion
+
         #region Initialize
         /// <summary>
         /// Initializes the algorithm with the original mesh.
@@ -2170,6 +2395,12 @@ namespace UnityMeshSimplifier
             {
                 var uvs = MeshUtils.GetMeshUVs(mesh, channel);
                 SetUVsAuto(channel, uvs);
+            }
+
+            var blendShapes = MeshUtils.GetMeshBlendShapes(mesh);
+            if (blendShapes != null && blendShapes.Length > 0)
+            {
+                AddBlendShapes(blendShapes);
             }
 
             ClearSubMeshes();
@@ -2314,6 +2545,7 @@ namespace UnityMeshSimplifier
             var colors = this.Colors;
             var boneWeights = this.BoneWeights;
             var indices = GetAllSubMeshTriangles();
+            var blendShapes = GetAllBlendShapes();
 
             List<Vector2>[] uvs2D = null;
             List<Vector3>[] uvs3D = null;
@@ -2360,8 +2592,7 @@ namespace UnityMeshSimplifier
                 }
             }
 
-            // TODO: Add support for blend weights
-            return MeshUtils.CreateMesh(vertices, indices, normals, tangents, colors, boneWeights, uvs2D, uvs3D, uvs4D, bindposes, null);
+            return MeshUtils.CreateMesh(vertices, indices, normals, tangents, colors, boneWeights, uvs2D, uvs3D, uvs4D, bindposes, blendShapes);
         }
         #endregion
         #endregion
