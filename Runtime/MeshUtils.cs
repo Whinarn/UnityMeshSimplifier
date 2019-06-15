@@ -216,6 +216,9 @@ namespace UnityMeshSimplifier
 
             int vertexCount = mesh.vertexCount;
             int blendShapeCount = mesh.blendShapeCount;
+            if (blendShapeCount == 0)
+                return null;
+
             var blendShapes = new BlendShape[blendShapeCount];
 
             for (int blendShapeIndex = 0; blendShapeIndex < blendShapeCount; blendShapeIndex++)

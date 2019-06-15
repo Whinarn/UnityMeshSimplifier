@@ -210,7 +210,6 @@ namespace UnityMeshSimplifier
             List<BoneWeight> combinedBoneWeights = null;
             var combinedUVs = new List<Vector4>[MeshUtils.UVChannelCount];
 
-
             List<Matrix4x4> usedBindposes = null;
             List<Transform> usedBones = null;
             var usedMaterials = new List<Material>(totalSubMeshCount);
@@ -233,7 +232,6 @@ namespace UnityMeshSimplifier
                 var meshColors = mesh.colors;
                 var meshBoneWeights = mesh.boneWeights;
                 var meshBindposes = mesh.bindposes;
-                var meshBlendWeights = MeshUtils.GetMeshBlendShapes(mesh);
 
                 // Transform vertices with bones to keep only one bindpose
                 if (meshBones != null && meshBoneWeights != null && meshBoneWeights.Length > 0 && meshBindposes != null && meshBindposes.Length > 0 && meshBones.Length == meshBindposes.Length)
@@ -313,10 +311,10 @@ namespace UnityMeshSimplifier
                         }
                     }
 
-                    int mergeWithMaterialIndex;
-                    if (materialMap.TryGetValue(subMeshMaterial, out mergeWithMaterialIndex))
+                    int existingSubMeshIndex;
+                    if (materialMap.TryGetValue(subMeshMaterial, out existingSubMeshIndex))
                     {
-                        combinedIndices[mergeWithMaterialIndex] = MergeArrays(combinedIndices[mergeWithMaterialIndex], subMeshIndices);
+                        combinedIndices[existingSubMeshIndex] = MergeArrays(combinedIndices[existingSubMeshIndex], subMeshIndices);
                     }
                     else
                     {
@@ -332,12 +330,12 @@ namespace UnityMeshSimplifier
 
             var resultVertices = combinedVertices.ToArray();
             var resultIndices = combinedIndices.ToArray();
-            var resultNormals = combinedNormals.ToArray();
-            var resultTangents = combinedTangents.ToArray();
-            var resultColors = combinedColors.ToArray();
-            var resultBoneWeights = combinedBoneWeights.ToArray();
+            var resultNormals = (combinedNormals != null ? combinedNormals.ToArray() : null);
+            var resultTangents = (combinedTangents != null ? combinedTangents.ToArray() : null);
+            var resultColors = (combinedColors != null ? combinedColors.ToArray() : null);
+            var resultBoneWeights = (combinedBoneWeights != null ? combinedBoneWeights.ToArray() : null);
             var resultUVs = combinedUVs.ToArray();
-            var resultBindposes = usedBindposes.ToArray();
+            var resultBindposes = (usedBindposes != null ? usedBindposes.ToArray() : null);
             resultMaterials = usedMaterials.ToArray();
             resultBones = (usedBones != null ? usedBones.ToArray() : null);
             return MeshUtils.CreateMesh(resultVertices, resultIndices, resultNormals, resultTangents, resultColors, resultBoneWeights, resultUVs, resultBindposes, null);
