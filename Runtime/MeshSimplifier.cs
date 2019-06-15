@@ -340,8 +340,8 @@ namespace UnityMeshSimplifier
             public void InterpolateVertexAttributes(int dst, int i0, int i1, int i2, ref Vector3 barycentricCoord)
             {
                 deltaVertices[dst] = (deltaVertices[i0] * barycentricCoord.x) + (deltaVertices[i1] * barycentricCoord.y) + (deltaVertices[i2] * barycentricCoord.z);
-                deltaNormals[dst] = (deltaNormals[i0] * barycentricCoord.x) + (deltaNormals[i1] * barycentricCoord.y) + (deltaNormals[i2] * barycentricCoord.z);
-                deltaTangents[dst] = (deltaTangents[i0] * barycentricCoord.x) + (deltaTangents[i1] * barycentricCoord.y) + (deltaTangents[i2] * barycentricCoord.z);
+                deltaNormals[dst] = Vector3.Normalize((deltaNormals[i0] * barycentricCoord.x) + (deltaNormals[i1] * barycentricCoord.y) + (deltaNormals[i2] * barycentricCoord.z));
+                deltaTangents[dst] = Vector3.Normalize((deltaTangents[i0] * barycentricCoord.x) + (deltaTangents[i1] * barycentricCoord.y) + (deltaTangents[i2] * barycentricCoord.z));
             }
 
             public void Resize(int length, bool trimExess = false)
@@ -812,6 +812,15 @@ namespace UnityMeshSimplifier
         }
         #endregion
 
+        #region Normalize Tangent
+        private static Vector4 NormalizeTangent(Vector4 tangent)
+        {
+            var tangentVec = new Vector3(tangent.x, tangent.y, tangent.z);
+            tangentVec.Normalize();
+            return new Vector4(tangentVec.x, tangentVec.y, tangentVec.z, tangent.w);
+        }
+        #endregion
+
         #region Flipped
         /// <summary>
         /// Check if a triangle flips when this edge is removed
@@ -905,11 +914,11 @@ namespace UnityMeshSimplifier
         {
             if (vertNormals != null)
             {
-                vertNormals[dst] = (vertNormals[i0] * barycentricCoord.x) + (vertNormals[i1] * barycentricCoord.y) + (vertNormals[i2] * barycentricCoord.z);
+                vertNormals[dst] = Vector3.Normalize((vertNormals[i0] * barycentricCoord.x) + (vertNormals[i1] * barycentricCoord.y) + (vertNormals[i2] * barycentricCoord.z));
             }
             if (vertTangents != null)
             {
-                vertTangents[dst] = (vertTangents[i0] * barycentricCoord.x) + (vertTangents[i1] * barycentricCoord.y) + (vertTangents[i2] * barycentricCoord.z);
+                vertTangents[dst] = NormalizeTangent((vertTangents[i0] * barycentricCoord.x) + (vertTangents[i1] * barycentricCoord.y) + (vertTangents[i2] * barycentricCoord.z));
             }
             if (vertUV2D != null)
             {
