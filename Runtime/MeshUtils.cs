@@ -112,8 +112,6 @@ namespace UnityMeshSimplifier
             var newMesh = new Mesh();
             int subMeshCount = indices.Length;
 
-            //newMesh.AddBlendShapeFrame
-
 #if UNITY_MESH_INDEXFORMAT_SUPPORT
             IndexFormat indexFormat;
             var indexMinMax = MeshUtils.GetSubMeshIndexMinMax(indices, out indexFormat);
@@ -175,6 +173,11 @@ namespace UnityMeshSimplifier
                         newMesh.SetUVs(uvChannel, uvs4D[uvChannel]);
                     }
                 }
+            }
+
+            if (blendShapes != null)
+            {
+                MeshUtils.ApplyMeshBlendShapes(newMesh, blendShapes);
             }
 
             for (int subMeshIndex = 0; subMeshIndex < subMeshCount; subMeshIndex++)
