@@ -2108,6 +2108,51 @@ namespace UnityMeshSimplifier
                 vertUV3D[channel] = null;
             }
         }
+
+        /// <summary>
+        /// Sets the UVs for a specific channel and automatically detects the used components.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <param name="uvs">The UVs.</param>
+        public void SetUVsAuto(int channel, List<Vector4> uvs)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException("channel");
+
+            if (uvs != null && uvs.Count > 0)
+            {
+                int usedComponents = MeshUtils.GetUsedUVComponents(uvs);
+                if (usedComponents <= 2)
+                {
+                    var uv2D = MeshUtils.ConvertUVsTo2D(uvs);
+                    SetUVs(channel, uv2D);
+                }
+                else if (usedComponents == 3)
+                {
+                    var uv3D = MeshUtils.ConvertUVsTo3D(uvs);
+                    SetUVs(channel, uv3D);
+                }
+                else
+                {
+                    SetUVs(channel, uvs);
+                }
+            }
+            else
+            {
+                if (vertUV2D != null)
+                {
+                    vertUV2D[channel] = null;
+                }
+                if (vertUV3D != null)
+                {
+                    vertUV3D[channel] = null;
+                }
+                if (vertUV4D != null)
+                {
+                    vertUV4D[channel] = null;
+                }
+            }
+        }
         #endregion
         #endregion
 
