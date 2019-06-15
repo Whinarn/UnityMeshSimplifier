@@ -296,6 +296,14 @@ namespace UnityMeshSimplifier
                 }
             }
 
+            public void InterpolateVertexAttributes(int dst, int i0, int i1, int i2, ref Vector3 barycentricCoord)
+            {
+                for (int i = 0; i < frames.Length; i++)
+                {
+                    frames[i].InterpolateVertexAttributes(dst, i0, i1, i2, ref barycentricCoord);
+                }
+            }
+
             public void Resize(int length, bool trimExess = false)
             {
                 for (int i = 0; i < frames.Length; i++)
@@ -342,6 +350,13 @@ namespace UnityMeshSimplifier
                 deltaVertices[dst] = (deltaVertices[i0] + deltaVertices[i1]) * 0.5f;
                 deltaNormals[dst] = (deltaNormals[i0] + deltaNormals[i1]) * 0.5f;
                 deltaTangents[dst] = (deltaTangents[i0] + deltaTangents[i1]) * 0.5f;
+            }
+
+            public void InterpolateVertexAttributes(int dst, int i0, int i1, int i2, ref Vector3 barycentricCoord)
+            {
+                deltaVertices[dst] = (deltaVertices[i0] * barycentricCoord.x) + (deltaVertices[i1] * barycentricCoord.y) + (deltaVertices[i2] * barycentricCoord.z);
+                deltaNormals[dst] = (deltaNormals[i0] * barycentricCoord.x) + (deltaNormals[i1] * barycentricCoord.y) + (deltaNormals[i2] * barycentricCoord.z);
+                deltaTangents[dst] = (deltaTangents[i0] * barycentricCoord.x) + (deltaTangents[i1] * barycentricCoord.y) + (deltaTangents[i2] * barycentricCoord.z);
             }
 
             public void Resize(int length, bool trimExess = false)
@@ -1065,6 +1080,13 @@ namespace UnityMeshSimplifier
             if (vertColors != null)
             {
                 vertColors[dst] = (vertColors[i0] * barycentricCoord.x) + (vertColors[i1] * barycentricCoord.y) + (vertColors[i2] * barycentricCoord.z);
+            }
+            if (blendShapes != null)
+            {
+                for (int i = 0; i < blendShapes.Length; i++)
+                {
+                    blendShapes[i].InterpolateVertexAttributes(dst, i0, i1, i2, ref barycentricCoord);
+                }
             }
 
             // TODO: How do we interpolate the bone weights? Do we have to?
