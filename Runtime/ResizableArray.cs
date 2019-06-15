@@ -25,6 +25,7 @@ SOFTWARE.
 #endregion
 
 using System;
+using System.Runtime.CompilerServices;
 
 namespace UnityMeshSimplifier
 {
@@ -47,6 +48,7 @@ namespace UnityMeshSimplifier
         /// </summary>
         public int Length
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get { return length; }
         }
 
@@ -55,6 +57,7 @@ namespace UnityMeshSimplifier
         /// </summary>
         public T[] Data
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get { return items; }
         }
 
@@ -65,7 +68,9 @@ namespace UnityMeshSimplifier
         /// <returns>The element value.</returns>
         public T this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get { return items[index]; }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set { items[index] = value; }
         }
         #endregion

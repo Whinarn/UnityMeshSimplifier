@@ -47,6 +47,7 @@ SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace UnityMeshSimplifier
@@ -89,10 +90,12 @@ namespace UnityMeshSimplifier
             #region Properties
             public int this[int index]
             {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get
                 {
                     return (index == 0 ? v0 : (index == 1 ? v1 : v2));
                 }
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 set
                 {
                     switch (index)
@@ -114,6 +117,7 @@ namespace UnityMeshSimplifier
             #endregion
 
             #region Constructor
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Triangle(int v0, int v1, int v2, int subMeshIndex)
             {
                 this.v0 = v0;
@@ -132,6 +136,7 @@ namespace UnityMeshSimplifier
             #endregion
 
             #region Public Methods
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void GetAttributeIndices(int[] attributeIndices)
             {
                 attributeIndices[0] = va0;
@@ -139,6 +144,7 @@ namespace UnityMeshSimplifier
                 attributeIndices[2] = va2;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void SetAttributeIndex(int index, int value)
             {
                 switch (index)
@@ -157,6 +163,7 @@ namespace UnityMeshSimplifier
                 }
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void GetErrors(double[] err)
             {
                 err[0] = err0;
@@ -178,6 +185,7 @@ namespace UnityMeshSimplifier
             public bool seam;
             public bool foldover;
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Vertex(Vector3d p)
             {
                 this.p = p;
@@ -197,6 +205,7 @@ namespace UnityMeshSimplifier
             public int tid;
             public int tvertex;
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Set(int tid, int tvertex)
             {
                 this.tid = tid;
@@ -213,6 +222,7 @@ namespace UnityMeshSimplifier
 
             public TVec[][] Data
             {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get
                 {
                     for (int i = 0; i < UVChannelCount; i++)
@@ -236,7 +246,9 @@ namespace UnityMeshSimplifier
             /// <param name="index">The channel index.</param>
             public ResizableArray<TVec> this[int index]
             {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get { return channels[index]; }
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 set { channels[index] = value; }
             }
 
@@ -280,6 +292,7 @@ namespace UnityMeshSimplifier
                 }
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void MoveVertexElement(int dst, int src)
             {
                 for (int i = 0; i < frames.Length; i++)
@@ -288,6 +301,7 @@ namespace UnityMeshSimplifier
                 }
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void InterpolateVertexAttributes(int dst, int i0, int i1, int i2, ref Vector3 barycentricCoord)
             {
                 for (int i = 0; i < frames.Length; i++)
@@ -330,6 +344,7 @@ namespace UnityMeshSimplifier
                 deltaTangents = new ResizableArray<Vector3>(frame.DeltaTangents);
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void MoveVertexElement(int dst, int src)
             {
                 deltaVertices[dst] = deltaVertices[src];
@@ -337,6 +352,7 @@ namespace UnityMeshSimplifier
                 deltaTangents[dst] = deltaTangents[src];
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void InterpolateVertexAttributes(int dst, int i0, int i1, int i2, ref Vector3 barycentricCoord)
             {
                 deltaVertices[dst] = (deltaVertices[i0] * barycentricCoord.x) + (deltaVertices[i1] * barycentricCoord.y) + (deltaVertices[i2] * barycentricCoord.z);
@@ -367,6 +383,7 @@ namespace UnityMeshSimplifier
             public int index;
             public int hash;
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public BorderVertex(int index, int hash)
             {
                 this.index = index;
@@ -380,6 +397,7 @@ namespace UnityMeshSimplifier
         {
             public static readonly BorderVertexComparer instance = new BorderVertexComparer();
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public int Compare(BorderVertex x, BorderVertex y)
             {
                 return x.hash.CompareTo(y.hash);
@@ -742,6 +760,7 @@ namespace UnityMeshSimplifier
         #endregion
 
         #region Calculate Error
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private double VertexError(ref SymmetricMatrix q, double x, double y, double z)
         {
             return q.m0 * x * x + 2 * q.m1 * x * y + 2 * q.m2 * x * z + 2 * q.m3 * x + q.m4 * y * y
@@ -813,6 +832,7 @@ namespace UnityMeshSimplifier
         #endregion
 
         #region Normalize Tangent
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Vector4 NormalizeTangent(Vector4 tangent)
         {
             var tangentVec = new Vector3(tangent.x, tangent.y, tangent.z);

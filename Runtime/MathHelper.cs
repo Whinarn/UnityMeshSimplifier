@@ -25,6 +25,7 @@ SOFTWARE.
 #endregion
 
 using System;
+using System.Runtime.CompilerServices;
 
 namespace UnityMeshSimplifier
 {
@@ -73,6 +74,7 @@ namespace UnityMeshSimplifier
         /// <param name="val2">The second value.</param>
         /// <param name="val3">The third value.</param>
         /// <returns>The minimum value.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Min(double val1, double val2, double val3)
         {
             return (val1 < val2 ? (val1 < val3 ? val1 : val3) : (val2 < val3 ? val2 : val3));
@@ -87,6 +89,7 @@ namespace UnityMeshSimplifier
         /// <param name="min">The minimum value.</param>
         /// <param name="max">The maximum value.</param>
         /// <returns>The clamped value.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Clamp(double value, double min, double max)
         {
             return (value >= min ? (value <= max ? value : max) : min);
@@ -101,6 +104,7 @@ namespace UnityMeshSimplifier
         /// <param name="p1">The second point.</param>
         /// <param name="p2">The third point.</param>
         /// <returns>The triangle area.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double TriangleArea(ref Vector3d p0, ref Vector3d p1, ref Vector3d p2)
         {
             var dx = p1 - p0;
