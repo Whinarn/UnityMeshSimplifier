@@ -7,8 +7,25 @@ Because of the fact that this project is entirely in C# it *should* work on all 
 These scripts have been tested and confirmed working with Unity 5.6.0f3, Unity 2017.1.0f3, Unity 2017.2.1f1, Unity 2017.3.0f3, Unity 2017.4.0f1, Unity 2018.1.2f1 and Unity 2019.1.4f1.
 
 ## Installation into Unity project
-1. Copy the contents of this repository into a folder named *UnityMeshSimplifier* in your Assets directory within your Unity project.
-2. Done!
+1. Read the instructions from the official Unity documentation: https://docs.unity3d.com/Manual/upm-dependencies.html#Git
+2. Open up *manifest.json* inside the *Packages* directory in your Unity project using a text editor.
+3. Under the dependencies section of this file, you should add the following line at the top:
+```"com.whinarn.unitymeshsimplifier": "https://github.com/Whinarn/UnityMeshSimplifier.git",```
+4. You should now see something like this:
+```
+{
+  "dependencies": {
+    "com.whinarn.unitymeshsimplifier": "https://github.com/Whinarn/UnityMeshSimplifier.git",
+    "com.unity.burst": "1.0.4",
+    "com.unity.mathematics": "1.0.1",
+    "com.unity.package-manager-ui": "2.1.2",
+    ...
+  }
+}
+```
+5. You can also specify to use a specific version of UnityMeshSimplifier if you wish by appending # to the Git URL followed by the package version. For example:
+```"com.whinarn.unitymeshsimplifier": "https://github.com/Whinarn/UnityMeshSimplifier.git#v1.1.0",```
+6. Success! Start up Unity with your Unity project and you should see UnityMeshSimplifier appear in the Unity Package Manager.
 
 ## How do I use this?
 ```c#
@@ -30,6 +47,16 @@ meshSimplifier.SimplifyMesh(quality);
 var newVertices = meshSimplifier.Vertices;
 var newIndices = meshSimplifier.GetSubMeshTriangles(0);
 ```
+
+## How do I contribute?
+1. Create a new empty Unity project, or use an existing one if you wish.
+2. Fork your own copy of this repository.
+2. Clone your UnityMeshSimplifier fork into the *Packages* directory of your Unity project.
+3. Start up your Unity project and you should see UnityMeshSimplifier appear in the Unity Package Manager.
+4. Open the scripts inside of the Unity package as you would normally do with scripts in your *Assets* directory.
+5. Make your changes inside a branch based on *master*.
+6. Create a pull request to the official repository.
+7. Success!
 
 ## The Smart Linking feature
 In order to solve artifacts in the mesh simplification process where holes or other serious issues could arise, a new feature called smart linking has been introduced. This feature is enabled by default but can be disabled through the *EnableSmartLink* property on the *MeshSimplifier* class. Disabling this could give you a minor performance gain in cases where you do not need this.
