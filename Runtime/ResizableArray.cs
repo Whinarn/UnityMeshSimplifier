@@ -196,6 +196,17 @@ namespace UnityMeshSimplifier
 
             items[length++] = item;
         }
+
+        /// <summary>
+        /// Returns a copy of the resizable array as an actually array.
+        /// </summary>
+        /// <returns>The array.</returns>
+        public T[] ToArray()
+        {
+            var newItems = new T[length];
+            Array.Copy(items, 0, newItems, 0, length);
+            return newItems;
+        }
         #endregion
     }
 }
