@@ -288,14 +288,6 @@ namespace UnityMeshSimplifier
                 }
             }
 
-            public void MergeVertexAttributes(int dst, int i0, int i1)
-            {
-                for (int i = 0; i < frames.Length; i++)
-                {
-                    frames[i].MergeVertexAttributes(dst, i0, i1);
-                }
-            }
-
             public void InterpolateVertexAttributes(int dst, int i0, int i1, int i2, ref Vector3 barycentricCoord)
             {
                 for (int i = 0; i < frames.Length; i++)
@@ -343,13 +335,6 @@ namespace UnityMeshSimplifier
                 deltaVertices[dst] = deltaVertices[src];
                 deltaNormals[dst] = deltaNormals[src];
                 deltaTangents[dst] = deltaTangents[src];
-            }
-
-            public void MergeVertexAttributes(int dst, int i0, int i1)
-            {
-                deltaVertices[dst] = (deltaVertices[i0] + deltaVertices[i1]) * 0.5f;
-                deltaNormals[dst] = (deltaNormals[i0] + deltaNormals[i1]) * 0.5f;
-                deltaTangents[dst] = (deltaTangents[i0] + deltaTangents[i1]) * 0.5f;
             }
 
             public void InterpolateVertexAttributes(int dst, int i0, int i1, int i2, ref Vector3 barycentricCoord)
@@ -915,125 +900,7 @@ namespace UnityMeshSimplifier
         }
         #endregion
 
-        #region Move/Merge/Interpolate Vertex Attributes
-        private void MoveVertexAttributes(int dst, int src)
-        {
-            if (vertNormals != null)
-            {
-                vertNormals[dst] = vertNormals[src];
-            }
-            if (vertTangents != null)
-            {
-                vertTangents[dst] = vertTangents[src];
-            }
-            if (vertUV2D != null)
-            {
-                for (int i = 0; i < UVChannelCount; i++)
-                {
-                    var vertUV = vertUV2D[i];
-                    if (vertUV != null)
-                    {
-                        vertUV[dst] = vertUV[src];
-                    }
-                }
-            }
-            if (vertUV3D != null)
-            {
-                for (int i = 0; i < UVChannelCount; i++)
-                {
-                    var vertUV = vertUV3D[i];
-                    if (vertUV != null)
-                    {
-                        vertUV[dst] = vertUV[src];
-                    }
-                }
-            }
-            if (vertUV4D != null)
-            {
-                for (int i = 0; i < UVChannelCount; i++)
-                {
-                    var vertUV = vertUV4D[i];
-                    if (vertUV != null)
-                    {
-                        vertUV[dst] = vertUV[src];
-                    }
-                }
-            }
-            if (vertColors != null)
-            {
-                vertColors[dst] = vertColors[src];
-            }
-            if (vertBoneWeights != null)
-            {
-                vertBoneWeights[dst] = vertBoneWeights[src];
-            }
-            if (blendShapes != null)
-            {
-                for (int i = 0; i < blendShapes.Length; i++)
-                {
-                    blendShapes[i].MoveVertexElement(dst, src);
-                }
-            }
-        }
-
-        private void MergeVertexAttributes(int dst, int i0, int i1)
-        {
-            if (vertNormals != null)
-            {
-                vertNormals[dst] = (vertNormals[i0] + vertNormals[i1]) * 0.5f;
-            }
-            if (vertTangents != null)
-            {
-                vertTangents[dst] = (vertTangents[i0] + vertTangents[i1]) * 0.5f;
-            }
-            if (vertUV2D != null)
-            {
-                for (int i = 0; i < UVChannelCount; i++)
-                {
-                    var vertUV = vertUV2D[i];
-                    if (vertUV != null)
-                    {
-                        vertUV[dst] = (vertUV[i0] + vertUV[i1]) * 0.5f;
-                    }
-                }
-            }
-            if (vertUV3D != null)
-            {
-                for (int i = 0; i < UVChannelCount; i++)
-                {
-                    var vertUV = vertUV3D[i];
-                    if (vertUV != null)
-                    {
-                        vertUV[dst] = (vertUV[i0] + vertUV[i1]) * 0.5f;
-                    }
-                }
-            }
-            if (vertUV4D != null)
-            {
-                for (int i = 0; i < UVChannelCount; i++)
-                {
-                    var vertUV = vertUV4D[i];
-                    if (vertUV != null)
-                    {
-                        vertUV[dst] = (vertUV[i0] + vertUV[i1]) * 0.5f;
-                    }
-                }
-            }
-            if (vertColors != null)
-            {
-                vertColors[dst] = (vertColors[i0] + vertColors[i1]) * 0.5f;
-            }
-            if (blendShapes != null)
-            {
-                for (int i = 0; i < blendShapes.Length; i++)
-                {
-                    blendShapes[i].MergeVertexAttributes(dst, i0, i1);
-                }
-            }
-
-            // TODO: Do we have to blend bone weights at all or can we just keep them as they are in this scenario?
-        }
-
+        #region Interpolate Vertex Attributes
         private void InterpolateVertexAttributes(int dst, int i0, int i1, int i2, ref Vector3 barycentricCoord)
         {
             if (vertNormals != null)
