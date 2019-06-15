@@ -1544,6 +1544,20 @@ namespace UnityMeshSimplifier
         #region Public Methods
         #region Sub-Meshes
         /// <summary>
+        /// Returns the triangle indices for all sub-meshes.
+        /// </summary>
+        /// <returns>The triangle indices for all sub-meshes.</returns>
+        public int[][] GetAllSubMeshTriangles()
+        {
+            var indices = new int[subMeshCount][];
+            for (int subMeshIndex = 0; subMeshIndex < subMeshCount; subMeshIndex++)
+            {
+                indices[subMeshIndex] = GetSubMeshTriangles(subMeshIndex);
+            }
+            return indices;
+        }
+
+        /// <summary>
         /// Returns the triangle indices for a specific sub-mesh.
         /// </summary>
         /// <param name="subMeshIndex">The sub-mesh index.</param>
