@@ -438,7 +438,7 @@ namespace UnityMeshSimplifier
             set
             {
                 if (value == null)
-                    throw new ArgumentNullException("value");
+                    throw new ArgumentNullException(nameof(value));
 
                 bindposes = null;
                 vertices.Resize(value.Length);
@@ -597,15 +597,12 @@ namespace UnityMeshSimplifier
         /// </summary>
         /// <param name="mesh">The original mesh to simplify.</param>
         public MeshSimplifier(Mesh mesh)
+            : this()
         {
-            if (mesh == null)
-                throw new ArgumentNullException("mesh");
-
-            triangles = new ResizableArray<Triangle>(0);
-            vertices = new ResizableArray<Vertex>(0);
-            refs = new ResizableArray<Ref>(0);
-
-            Initialize(mesh);
+            if (mesh != null)
+            {
+                Initialize(mesh);
+            }
         }
         #endregion
 
@@ -787,15 +784,15 @@ namespace UnityMeshSimplifier
         #endregion
 
         #region Move/Merge Vertex Attributes
-        private void MoveVertexAttributes(int i0, int i1)
+        private void MoveVertexAttributes(int dst, int src)
         {
             if (vertNormals != null)
             {
-                vertNormals[i0] = vertNormals[i1];
+                vertNormals[dst] = vertNormals[src];
             }
             if (vertTangents != null)
             {
-                vertTangents[i0] = vertTangents[i1];
+                vertTangents[dst] = vertTangents[src];
             }
             if (vertUV2D != null)
             {
@@ -804,7 +801,7 @@ namespace UnityMeshSimplifier
                     var vertUV = vertUV2D[i];
                     if (vertUV != null)
                     {
-                        vertUV[i0] = vertUV[i1];
+                        vertUV[dst] = vertUV[src];
                     }
                 }
             }
@@ -815,7 +812,7 @@ namespace UnityMeshSimplifier
                     var vertUV = vertUV3D[i];
                     if (vertUV != null)
                     {
-                        vertUV[i0] = vertUV[i1];
+                        vertUV[dst] = vertUV[src];
                     }
                 }
             }
@@ -826,29 +823,29 @@ namespace UnityMeshSimplifier
                     var vertUV = vertUV4D[i];
                     if (vertUV != null)
                     {
-                        vertUV[i0] = vertUV[i1];
+                        vertUV[dst] = vertUV[src];
                     }
                 }
             }
             if (vertColors != null)
             {
-                vertColors[i0] = vertColors[i1];
+                vertColors[dst] = vertColors[src];
             }
             if (vertBoneWeights != null)
             {
-                vertBoneWeights[i0] = vertBoneWeights[i1];
+                vertBoneWeights[dst] = vertBoneWeights[src];
             }
         }
 
-        private void MergeVertexAttributes(int i0, int i1)
+        private void MergeVertexAttributes(int dst, int i0, int i1)
         {
             if (vertNormals != null)
             {
-                vertNormals[i0] = (vertNormals[i0] + vertNormals[i1]) * 0.5f;
+                vertNormals[dst] = (vertNormals[i0] + vertNormals[i1]) * 0.5f;
             }
             if (vertTangents != null)
             {
-                vertTangents[i0] = (vertTangents[i0] + vertTangents[i1]) * 0.5f;
+                vertTangents[dst] = (vertTangents[i0] + vertTangents[i1]) * 0.5f;
             }
             if (vertUV2D != null)
             {
@@ -857,7 +854,7 @@ namespace UnityMeshSimplifier
                     var vertUV = vertUV2D[i];
                     if (vertUV != null)
                     {
-                        vertUV[i0] = (vertUV[i0] + vertUV[i1]) * 0.5f;
+                        vertUV[dst] = (vertUV[i0] + vertUV[i1]) * 0.5f;
                     }
                 }
             }
@@ -868,7 +865,7 @@ namespace UnityMeshSimplifier
                     var vertUV = vertUV3D[i];
                     if (vertUV != null)
                     {
-                        vertUV[i0] = (vertUV[i0] + vertUV[i1]) * 0.5f;
+                        vertUV[dst] = (vertUV[i0] + vertUV[i1]) * 0.5f;
                     }
                 }
             }
@@ -879,16 +876,16 @@ namespace UnityMeshSimplifier
                     var vertUV = vertUV4D[i];
                     if (vertUV != null)
                     {
-                        vertUV[i0] = (vertUV[i0] + vertUV[i1]) * 0.5f;
+                        vertUV[dst] = (vertUV[i0] + vertUV[i1]) * 0.5f;
                     }
                 }
             }
             if (vertColors != null)
             {
-                vertColors[i0] = (vertColors[i0] + vertColors[i1]) * 0.5f;
+                vertColors[dst] = (vertColors[i0] + vertColors[i1]) * 0.5f;
             }
 
-            // TODO: Do we have to blend bone weights at all or can we just keep them as it is in this scenario?
+            // TODO: Do we have to blend bone weights at all or can we just keep them as they are in this scenario?
         }
         #endregion
 
@@ -1006,7 +1003,7 @@ namespace UnityMeshSimplifier
                     {
                         // Merge vertex attributes ia0 and ia1 into ia0
                         int ia1 = attributeIndexArr[nextEdgeIndex];
-                        MergeVertexAttributes(ia0, ia1);
+                        MergeVertexAttributes(ia0, ia0, ia1);
                     }
 
                     if (vertices[i0].seam)
@@ -1560,7 +1557,7 @@ namespace UnityMeshSimplifier
         public int[] GetSubMeshTriangles(int subMeshIndex)
         {
             if (subMeshIndex < 0)
-                throw new ArgumentOutOfRangeException("subMeshIndex", "The sub-mesh index is negative.");
+                throw new ArgumentOutOfRangeException(nameof(subMeshIndex), "The sub-mesh index is negative.");
 
             // First get the sub-mesh offsets
             if (subMeshOffsets == null)
@@ -1569,7 +1566,7 @@ namespace UnityMeshSimplifier
             }
 
             if (subMeshIndex >= subMeshOffsets.Length)
-                throw new ArgumentOutOfRangeException("subMeshIndex", "The sub-mesh index is greater than or equals to the sub mesh count.");
+                throw new ArgumentOutOfRangeException(nameof(subMeshIndex), "The sub-mesh index is greater than or equals to the sub mesh count.");
             else if (subMeshOffsets.Length != subMeshCount)
                 throw new InvalidOperationException("The sub-mesh triangle offsets array is not the same size as the count of sub-meshes. This should not be possible to happen.");
 
@@ -1619,9 +1616,9 @@ namespace UnityMeshSimplifier
         public void AddSubMeshTriangles(int[] triangles)
         {
             if (triangles == null)
-                throw new ArgumentNullException("triangles");
+                throw new ArgumentNullException(nameof(triangles));
             else if ((triangles.Length % 3) != 0)
-                throw new ArgumentException("The index array length must be a multiple of 3 in order to represent triangles.", "triangles");
+                throw new ArgumentException("The index array length must be a multiple of 3 in order to represent triangles.", nameof(triangles));
 
             int subMeshIndex = subMeshCount++;
             int triangleIndex = this.triangles.Length;
@@ -1647,7 +1644,7 @@ namespace UnityMeshSimplifier
         public void AddSubMeshTriangles(int[][] triangles)
         {
             if (triangles == null)
-                throw new ArgumentNullException("triangles");
+                throw new ArgumentNullException(nameof(triangles));
 
             int totalTriangleCount = 0;
             for (int i = 0; i < triangles.Length; i++)
@@ -1655,7 +1652,7 @@ namespace UnityMeshSimplifier
                 if (triangles[i] == null)
                     throw new ArgumentException(string.Format("The index array at index {0} is null.", i));
                 else if ((triangles[i].Length % 3) != 0)
-                    throw new ArgumentException(string.Format("The index array length at index {0} must be a multiple of 3 in order to represent triangles.", i), "triangles");
+                    throw new ArgumentException(string.Format("The index array length at index {0} must be a multiple of 3 in order to represent triangles.", i), nameof(triangles));
 
                 totalTriangleCount += triangles[i].Length / 3;
             }
@@ -1693,7 +1690,7 @@ namespace UnityMeshSimplifier
         public Vector2[] GetUVs2D(int channel)
         {
             if (channel < 0 || channel >= UVChannelCount)
-                throw new ArgumentOutOfRangeException("channel");
+                throw new ArgumentOutOfRangeException(nameof(channel));
 
             if (vertUV2D != null && vertUV2D[channel] != null)
             {
@@ -1713,7 +1710,7 @@ namespace UnityMeshSimplifier
         public Vector3[] GetUVs3D(int channel)
         {
             if (channel < 0 || channel >= UVChannelCount)
-                throw new ArgumentOutOfRangeException("channel");
+                throw new ArgumentOutOfRangeException(nameof(channel));
 
             if (vertUV3D != null && vertUV3D[channel] != null)
             {
@@ -1733,7 +1730,7 @@ namespace UnityMeshSimplifier
         public Vector4[] GetUVs4D(int channel)
         {
             if (channel < 0 || channel >= UVChannelCount)
-                throw new ArgumentOutOfRangeException("channel");
+                throw new ArgumentOutOfRangeException(nameof(channel));
 
             if (vertUV4D != null && vertUV4D[channel] != null)
             {
@@ -1753,9 +1750,9 @@ namespace UnityMeshSimplifier
         public void GetUVs(int channel, List<Vector2> uvs)
         {
             if (channel < 0 || channel >= UVChannelCount)
-                throw new ArgumentOutOfRangeException("channel");
+                throw new ArgumentOutOfRangeException(nameof(channel));
             else if (uvs == null)
-                throw new ArgumentNullException("uvs");
+                throw new ArgumentNullException(nameof(uvs));
 
             uvs.Clear();
             if (vertUV2D != null && vertUV2D[channel] != null)
@@ -1776,9 +1773,9 @@ namespace UnityMeshSimplifier
         public void GetUVs(int channel, List<Vector3> uvs)
         {
             if (channel < 0 || channel >= UVChannelCount)
-                throw new ArgumentOutOfRangeException("channel");
+                throw new ArgumentOutOfRangeException(nameof(channel));
             else if (uvs == null)
-                throw new ArgumentNullException("uvs");
+                throw new ArgumentNullException(nameof(uvs));
 
             uvs.Clear();
             if (vertUV3D != null && vertUV3D[channel] != null)
@@ -1799,9 +1796,9 @@ namespace UnityMeshSimplifier
         public void GetUVs(int channel, List<Vector4> uvs)
         {
             if (channel < 0 || channel >= UVChannelCount)
-                throw new ArgumentOutOfRangeException("channel");
+                throw new ArgumentOutOfRangeException(nameof(channel));
             else if (uvs == null)
-                throw new ArgumentNullException("uvs");
+                throw new ArgumentNullException(nameof(uvs));
 
             uvs.Clear();
             if (vertUV4D != null && vertUV4D[channel] != null)
@@ -1824,7 +1821,7 @@ namespace UnityMeshSimplifier
         public void SetUVs(int channel, Vector2[] uvs)
         {
             if (channel < 0 || channel >= UVChannelCount)
-                throw new ArgumentOutOfRangeException("channel");
+                throw new ArgumentOutOfRangeException(nameof(channel));
 
             if (uvs != null && uvs.Length > 0)
             {
@@ -1872,7 +1869,7 @@ namespace UnityMeshSimplifier
         public void SetUVs(int channel, Vector3[] uvs)
         {
             if (channel < 0 || channel >= UVChannelCount)
-                throw new ArgumentOutOfRangeException("channel");
+                throw new ArgumentOutOfRangeException(nameof(channel));
 
             if (uvs != null && uvs.Length > 0)
             {
@@ -1920,7 +1917,7 @@ namespace UnityMeshSimplifier
         public void SetUVs(int channel, Vector4[] uvs)
         {
             if (channel < 0 || channel >= UVChannelCount)
-                throw new ArgumentOutOfRangeException("channel");
+                throw new ArgumentOutOfRangeException(nameof(channel));
 
             if (uvs != null && uvs.Length > 0)
             {
@@ -1968,7 +1965,7 @@ namespace UnityMeshSimplifier
         public void SetUVs(int channel, List<Vector2> uvs)
         {
             if (channel < 0 || channel >= UVChannelCount)
-                throw new ArgumentOutOfRangeException("channel");
+                throw new ArgumentOutOfRangeException(nameof(channel));
 
             if (uvs != null && uvs.Count > 0)
             {
@@ -2016,7 +2013,7 @@ namespace UnityMeshSimplifier
         public void SetUVs(int channel, List<Vector3> uvs)
         {
             if (channel < 0 || channel >= UVChannelCount)
-                throw new ArgumentOutOfRangeException("channel");
+                throw new ArgumentOutOfRangeException(nameof(channel));
 
             if (uvs != null && uvs.Count > 0)
             {
@@ -2064,7 +2061,7 @@ namespace UnityMeshSimplifier
         public void SetUVs(int channel, List<Vector4> uvs)
         {
             if (channel < 0 || channel >= UVChannelCount)
-                throw new ArgumentOutOfRangeException("channel");
+                throw new ArgumentOutOfRangeException(nameof(channel));
 
             if (uvs != null && uvs.Count > 0)
             {
@@ -2112,7 +2109,7 @@ namespace UnityMeshSimplifier
         public void SetUVsAuto(int channel, List<Vector4> uvs)
         {
             if (channel < 0 || channel >= UVChannelCount)
-                throw new ArgumentOutOfRangeException("channel");
+                throw new ArgumentOutOfRangeException(nameof(channel));
 
             if (uvs != null && uvs.Count > 0)
             {
@@ -2159,7 +2156,7 @@ namespace UnityMeshSimplifier
         public void Initialize(Mesh mesh)
         {
             if (mesh == null)
-                throw new ArgumentNullException("mesh");
+                throw new ArgumentNullException(nameof(mesh));
 
             this.Vertices = mesh.vertices;
             this.Normals = mesh.normals;

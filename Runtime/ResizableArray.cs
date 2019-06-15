@@ -89,9 +89,9 @@ namespace UnityMeshSimplifier
         public ResizableArray(int capacity, int length)
         {
             if (capacity < 0)
-                throw new ArgumentOutOfRangeException("capacity");
+                throw new ArgumentOutOfRangeException(nameof(capacity));
             else if (length < 0 || length > capacity)
-                throw new ArgumentOutOfRangeException("length");
+                throw new ArgumentOutOfRangeException(nameof(length));
 
             if (capacity > 0)
                 items = new T[capacity];
@@ -151,7 +151,7 @@ namespace UnityMeshSimplifier
         public void Resize(int length, bool trimExess = false)
         {
             if (length < 0)
-                throw new ArgumentOutOfRangeException("capacity");
+                throw new ArgumentOutOfRangeException(nameof(length));
 
             if (length > items.Length)
             {
@@ -178,7 +178,7 @@ namespace UnityMeshSimplifier
             if (items.Length == length) // Nothing to do
                 return;
 
-            T[] newItems = new T[length];
+            var newItems = new T[length];
             Array.Copy(items, 0, newItems, 0, length);
             items = newItems;
         }
