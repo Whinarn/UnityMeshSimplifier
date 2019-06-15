@@ -59,12 +59,7 @@ namespace UnityMeshSimplifier
     {
         #region Consts
         private const double DoubleEpsilon = 1.0E-3;
-
-#if UNITY_8UV_SUPPORT
-        private const int UVChannelCount = 8;
-#else
-        private const int UVChannelCount = 4;
-#endif
+        private const int UVChannelCount = MeshUtils.UVChannelCount;
         #endregion
 
         #region Classes
@@ -2169,26 +2164,21 @@ namespace UnityMeshSimplifier
             this.Vertices = mesh.vertices;
             this.Normals = mesh.normals;
             this.Tangents = mesh.tangents;
-            this.UV1 = mesh.uv;
-            this.UV2 = mesh.uv2;
-            this.UV3 = mesh.uv3;
-            this.UV4 = mesh.uv4;
-
-#if UNITY_8UV_SUPPORT
-            this.UV5 = mesh.uv5;
-            this.UV6 = mesh.uv6;
-            this.UV7 = mesh.uv7;
-            this.UV8 = mesh.uv8;
-#endif
 
             this.Colors = mesh.colors;
             this.BoneWeights = mesh.boneWeights;
             this.bindposes = mesh.bindposes;
 
+            for (int channel = 0; channel < UVChannelCount; channel++)
+            {
+                var uvs = MeshUtils.GetMeshUVs(mesh, channel);
+                SetUVsAuto(channel, uvs);
+            }
+
             ClearSubMeshes();
 
             int subMeshCount = mesh.subMeshCount;
-            int[][] subMeshTriangles = new int[subMeshCount][];
+            var subMeshTriangles = new int[subMeshCount][];
             for (int i = 0; i < subMeshCount; i++)
             {
                 subMeshTriangles[i] = mesh.GetTriangles(i);
@@ -2326,84 +2316,55 @@ namespace UnityMeshSimplifier
             var tangents = this.Tangents;
             var colors = this.Colors;
             var boneWeights = this.BoneWeights;
+            var indices = GetAllSubMeshTriangles();
 
-            var newMesh = new Mesh();
-
-#if UNITY_MESH_INDEXFORMAT_SUPPORT
-            // TODO: Use baseVertex if all submeshes are within the ushort.MaxValue range even though the total vertex count is above
-            bool use32BitIndex = (vertices.Length > ushort.MaxValue);
-            newMesh.indexFormat = (use32BitIndex ? UnityEngine.Rendering.IndexFormat.UInt32 : UnityEngine.Rendering.IndexFormat.UInt16);
-#endif
-
-            if (bindposes != null && bindposes.Length > 0)
-            {
-                newMesh.bindposes = bindposes;
-            }
-
-            newMesh.subMeshCount = subMeshCount;
-            newMesh.vertices = this.Vertices;
-            if (normals != null) newMesh.normals = normals;
-            if (tangents != null) newMesh.tangents = tangents;
-
+            List<Vector2>[] uvs2D = null;
+            List<Vector3>[] uvs3D = null;
+            List<Vector4>[] uvs4D = null;
             if (vertUV2D != null)
             {
-                List<Vector2> uvSet = null;
-                for (int i = 0; i < UVChannelCount; i++)
+                uvs2D = new List<Vector2>[UVChannelCount];
+                for (int channel = 0; channel < UVChannelCount; channel++)
                 {
-                    if (vertUV2D[i] != null)
+                    if (vertUV2D[channel] != null)
                     {
-                        if (uvSet == null)
-                            uvSet = new List<Vector2>(vertUV2D[i].Length);
-
-                        GetUVs(i, uvSet);
-                        newMesh.SetUVs(i, uvSet);
+                        var uvs = new List<Vector2>(vertices.Length);
+                        GetUVs(channel, uvs);
+                        uvs2D[channel] = uvs;
                     }
                 }
             }
 
             if (vertUV3D != null)
             {
-                List<Vector3> uvSet = null;
-                for (int i = 0; i < UVChannelCount; i++)
+                uvs3D = new List<Vector3>[UVChannelCount];
+                for (int channel = 0; channel < UVChannelCount; channel++)
                 {
-                    if (vertUV3D[i] != null)
+                    if (vertUV3D[channel] != null)
                     {
-                        if (uvSet == null)
-                            uvSet = new List<Vector3>(vertUV3D[i].Length);
-
-                        GetUVs(i, uvSet);
-                        newMesh.SetUVs(i, uvSet);
+                        var uvs = new List<Vector3>(vertices.Length);
+                        GetUVs(channel, uvs);
+                        uvs3D[channel] = uvs;
                     }
                 }
             }
 
             if (vertUV4D != null)
             {
-                List<Vector4> uvSet = null;
-                for (int i = 0; i < UVChannelCount; i++)
+                uvs4D = new List<Vector4>[UVChannelCount];
+                for (int channel = 0; channel < UVChannelCount; channel++)
                 {
-                    if (vertUV4D[i] != null)
+                    if (vertUV4D[channel] != null)
                     {
-                        if (uvSet == null)
-                            uvSet = new List<Vector4>(vertUV4D[i].Length);
-
-                        GetUVs(i, uvSet);
-                        newMesh.SetUVs(i, uvSet);
+                        var uvs = new List<Vector4>(vertices.Length);
+                        GetUVs(channel, uvs);
+                        uvs4D[channel] = uvs;
                     }
                 }
             }
 
-            if (colors != null) newMesh.colors = colors;
-            if (boneWeights != null) newMesh.boneWeights = boneWeights;
-
-            for (int i = 0; i < subMeshCount; i++)
-            {
-                var subMeshTriangles = GetSubMeshTriangles(i);
-                newMesh.SetTriangles(subMeshTriangles, i, false);
-            }
-
-            newMesh.RecalculateBounds();
-            return newMesh;
+            // TODO: Add support for blend weights
+            return MeshUtils.CreateMesh(vertices, indices, normals, tangents, colors, boneWeights, uvs2D, uvs3D, uvs4D, bindposes, null);
         }
         #endregion
         #endregion
