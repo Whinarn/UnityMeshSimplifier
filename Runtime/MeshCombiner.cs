@@ -24,6 +24,12 @@ SOFTWARE.
 */
 #endregion
 
+#if UNITY_2017_3 || UNITY_2017_4 || UNITY_2018 || UNITY_2019
+#define UNITY_MESH_INDEXFORMAT_SUPPORT
+#endif
+
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace UnityMeshSimplifier
@@ -166,7 +172,7 @@ namespace UnityMeshSimplifier
                     throw new System.ArgumentException(string.Format("The mesh at index {0} is null.", meshIndex), nameof(meshes));
 
                 totalVertexCount += mesh.vertexCount;
-                totalSubMeshCount = mesh.subMeshCount;
+                totalSubMeshCount += mesh.subMeshCount;
 
                 // Validate the mesh materials
                 var meshMaterials = materials[meshIndex];
@@ -196,14 +202,289 @@ namespace UnityMeshSimplifier
                 }
             }
 
-            var vertices = new Vector3[totalVertexCount];
-            var indices = new int[totalSubMeshCount][];
+            var combinedVertices = new List<Vector3>(totalVertexCount);
+            var combinedIndices = new List<int[]>(totalSubMeshCount);
+            List<Vector3> combinedNormals = null;
+            List<Vector4> combinedTangents = null;
+            List<Color> combinedColors = null;
+            List<BoneWeight> combinedBoneWeights = null;
+            var combinedUVs = new List<Vector4>[MeshUtils.UVChannelCount];
 
-            // TODO: Implement the actual mesh combining here!
 
-            resultMaterials = null;
-            resultBones = null;
-            return null;
+            List<Matrix4x4> usedBindposes = null;
+            List<Transform> usedBones = null;
+            var usedMaterials = new List<Material>(totalSubMeshCount);
+            var materialMap = new Dictionary<Material, int>(totalSubMeshCount);
+
+            int currentVertexCount = 0;
+            for (int meshIndex = 0; meshIndex < meshes.Length; meshIndex++)
+            {
+                var mesh = meshes[meshIndex];
+                var meshTransform = transforms[meshIndex];
+                var meshMaterials = materials[meshIndex];
+                var meshBones = (bones != null ? bones[meshIndex] : null);
+
+                int subMeshCount = mesh.subMeshCount;
+                int meshVertexCount = mesh.vertexCount;
+                var meshVertices = mesh.vertices;
+                var meshNormals = mesh.normals;
+                var meshTangents = mesh.tangents;
+                var meshUVs = MeshUtils.GetMeshUVs(mesh);
+                var meshColors = mesh.colors;
+                var meshBoneWeights = mesh.boneWeights;
+                var meshBindposes = mesh.bindposes;
+                var meshBlendWeights = MeshUtils.GetMeshBlendShapes(mesh);
+
+                // Transform vertices with bones to keep only one bindpose
+                if (meshBones != null && meshBoneWeights != null && meshBoneWeights.Length > 0 && meshBindposes != null && meshBindposes.Length > 0 && meshBones.Length == meshBindposes.Length)
+                {
+                    if (usedBindposes == null)
+                    {
+                        usedBindposes = new List<Matrix4x4>(meshBindposes);
+                        usedBones = new List<Transform>(meshBones);
+                    }
+
+                    bool bindPoseMismatch = false;
+                    int[] boneIndices = new int[meshBones.Length];
+                    for (int i = 0; i < meshBones.Length; i++)
+                    {
+                        int usedBoneIndex = usedBones.IndexOf(meshBones[i]);
+                        if (usedBoneIndex == -1)
+                        {
+                            usedBoneIndex = usedBones.Count;
+                            usedBones.Add(meshBones[i]);
+                            usedBindposes.Add(meshBindposes[i]);
+                        }
+                        else
+                        {
+                            if (meshBindposes[i] != usedBindposes[usedBoneIndex])
+                            {
+                                bindPoseMismatch = true;
+                            }
+                        }
+                        boneIndices[i] = usedBoneIndex;
+                    }
+
+                    // If any bindpose is mismatching, we correct it first
+                    if (bindPoseMismatch)
+                    {
+                        var correctedBindposes = new Matrix4x4[meshBindposes.Length];
+                        for (int i = 0; i < meshBindposes.Length; i++)
+                        {
+                            int usedBoneIndex = boneIndices[i];
+                            correctedBindposes[i] = usedBindposes[usedBoneIndex];
+                        }
+                        TransformVertices(meshVertices, meshBoneWeights, meshBindposes, correctedBindposes);
+                    }
+
+                    // Then we remap the bones
+                    RemapBones(meshBoneWeights, boneIndices);
+                }
+
+                // Transforms the vertices
+                TransformVertices(meshVertices, ref meshTransform);
+
+                // Copy vertex positions & attributes
+                CopyVertexPositions(combinedVertices, meshVertices);
+                CopyVertexAttributes(ref combinedNormals, meshNormals, currentVertexCount, meshVertexCount, totalVertexCount, new Vector3(1f, 0f, 0f));
+                CopyVertexAttributes(ref combinedTangents, meshTangents, currentVertexCount, meshVertexCount, totalVertexCount, new Vector4(0f, 0f, 1f, 1f));
+                CopyVertexAttributes(ref combinedColors, meshColors, currentVertexCount, meshVertexCount, totalVertexCount, new Color(1f, 1f, 1f, 1f));
+                CopyVertexAttributes(ref combinedBoneWeights, meshBoneWeights, currentVertexCount, meshVertexCount, totalVertexCount, new BoneWeight());
+
+                for (int channel = 0; channel < meshUVs.Length; channel++)
+                {
+                    CopyVertexAttributes(ref combinedUVs[channel], meshUVs[channel], currentVertexCount, meshVertexCount, totalVertexCount, new Vector4(0f, 0f, 0f, 0f));
+                }
+
+                for (int subMeshIndex = 0; subMeshIndex < subMeshCount; subMeshIndex++)
+                {
+                    var subMeshMaterial = meshMaterials[subMeshIndex];
+#if UNITY_MESH_INDEXFORMAT_SUPPORT
+                    var subMeshIndices = mesh.GetTriangles(subMeshIndex, true);
+#else
+                    var subMeshIndices = mesh.GetTriangles(subMeshIndex);
+#endif
+
+                    if (currentVertexCount > 0)
+                    {
+                        for (int index = 0; index < subMeshIndices.Length; index++)
+                        {
+                            subMeshIndices[index] += currentVertexCount;
+                        }
+                    }
+
+                    int mergeWithMaterialIndex;
+                    if (materialMap.TryGetValue(subMeshMaterial, out mergeWithMaterialIndex))
+                    {
+                        combinedIndices[mergeWithMaterialIndex] = MergeArrays(combinedIndices[mergeWithMaterialIndex], subMeshIndices);
+                    }
+                    else
+                    {
+                        int materialIndex = combinedIndices.Count;
+                        materialMap.Add(subMeshMaterial, materialIndex);
+                        usedMaterials.Add(subMeshMaterial);
+                        combinedIndices.Add(subMeshIndices);
+                    }
+                }
+
+                currentVertexCount += meshVertexCount;
+            }
+
+            var resultVertices = combinedVertices.ToArray();
+            var resultIndices = combinedIndices.ToArray();
+            var resultNormals = combinedNormals.ToArray();
+            var resultTangents = combinedTangents.ToArray();
+            var resultColors = combinedColors.ToArray();
+            var resultBoneWeights = combinedBoneWeights.ToArray();
+            var resultUVs = combinedUVs.ToArray();
+            var resultBindposes = usedBindposes.ToArray();
+            resultMaterials = usedMaterials.ToArray();
+            resultBones = (usedBones != null ? usedBones.ToArray() : null);
+            return MeshUtils.CreateMesh(resultVertices, resultIndices, resultNormals, resultTangents, resultColors, resultBoneWeights, resultUVs, resultBindposes, null);
+        }
+        #endregion
+
+        #region Private Methods
+        private static void CopyVertexPositions(List<Vector3> list, Vector3[] arr)
+        {
+            if (arr == null || arr.Length == 0)
+                return;
+
+            for (int i = 0; i < arr.Length; i++)
+            {
+                list.Add(arr[i]);
+            }
+        }
+
+        private static void CopyVertexAttributes<T>(ref List<T> dest, IEnumerable<T> src, int previousVertexCount, int meshVertexCount, int totalVertexCount, T defaultValue)
+        {
+            if (src == null || src.Count() == 0)
+            {
+                if (dest != null)
+                {
+                    for (int i = 0; i < meshVertexCount; i++)
+                    {
+                        dest.Add(defaultValue);
+                    }
+                }
+                return;
+            }
+
+            if (dest == null)
+            {
+                dest = new List<T>(totalVertexCount);
+                for (int i = 0; i < previousVertexCount; i++)
+                {
+                    dest.Add(defaultValue);
+                }
+            }
+
+            dest.AddRange(src);
+        }
+
+        private static T[] MergeArrays<T>(T[] arr1, T[] arr2)
+        {
+            var newArr = new T[arr1.Length + arr2.Length];
+            System.Array.Copy(arr1, 0, newArr, 0, arr1.Length);
+            System.Array.Copy(arr2, 0, newArr, arr1.Length, arr2.Length);
+            return newArr;
+        }
+
+        private static void TransformVertices(Vector3[] vertices, ref Matrix4x4 transform)
+        {
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                vertices[i] = transform.MultiplyPoint3x4(vertices[i]);
+            }
+        }
+
+        private static void TransformVertices(Vector3[] vertices, BoneWeight[] boneWeights, Matrix4x4[] oldBindposes, Matrix4x4[] newBindposes)
+        {
+            // TODO: Is this method doing what it is supposed to?? It has not been properly tested
+
+            // First invert the old bindposes
+            for (int i = 0; i < oldBindposes.Length; i++)
+            {
+                oldBindposes[i] = oldBindposes[i].inverse;
+            }
+
+            // The transform the vertices
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                if (boneWeights[i].weight0 > 0f)
+                {
+                    int boneIndex = boneWeights[i].boneIndex0;
+                    float weight = boneWeights[i].weight0;
+                    vertices[i] = ScaleMatrix(ref newBindposes[boneIndex], weight) * (ScaleMatrix(ref oldBindposes[boneIndex], weight) * vertices[i]);
+                }
+                if (boneWeights[i].weight1 > 0f)
+                {
+                    int boneIndex = boneWeights[i].boneIndex1;
+                    float weight = boneWeights[i].weight1;
+                    vertices[i] = ScaleMatrix(ref newBindposes[boneIndex], weight) * (ScaleMatrix(ref oldBindposes[boneIndex], weight) * vertices[i]);
+                }
+                if (boneWeights[i].weight2 > 0f)
+                {
+                    int boneIndex = boneWeights[i].boneIndex2;
+                    float weight = boneWeights[i].weight2;
+                    vertices[i] = ScaleMatrix(ref newBindposes[boneIndex], weight) * (ScaleMatrix(ref oldBindposes[boneIndex], weight) * vertices[i]);
+                }
+                if (boneWeights[i].weight3 > 0f)
+                {
+                    int boneIndex = boneWeights[i].boneIndex3;
+                    float weight = boneWeights[i].weight3;
+                    vertices[i] = ScaleMatrix(ref newBindposes[boneIndex], weight) * (ScaleMatrix(ref oldBindposes[boneIndex], weight) * vertices[i]);
+                }
+            }
+        }
+
+        private static void RemapBones(BoneWeight[] boneWeights, int[] boneIndices)
+        {
+            for (int i = 0; i < boneWeights.Length; i++)
+            {
+                if (boneWeights[i].weight0 > 0)
+                {
+                    boneWeights[i].boneIndex0 = boneIndices[boneWeights[i].boneIndex0];
+                }
+                if (boneWeights[i].weight1 > 0)
+                {
+                    boneWeights[i].boneIndex1 = boneIndices[boneWeights[i].boneIndex1];
+                }
+                if (boneWeights[i].weight2 > 0)
+                {
+                    boneWeights[i].boneIndex2 = boneIndices[boneWeights[i].boneIndex2];
+                }
+                if (boneWeights[i].weight3 > 0)
+                {
+                    boneWeights[i].boneIndex3 = boneIndices[boneWeights[i].boneIndex3];
+                }
+            }
+        }
+
+        private static Matrix4x4 ScaleMatrix(ref Matrix4x4 matrix, float scale)
+        {
+            return new Matrix4x4()
+            {
+                m00 = matrix.m00 * scale,
+                m01 = matrix.m01 * scale,
+                m02 = matrix.m02 * scale,
+                m03 = matrix.m03 * scale,
+
+                m10 = matrix.m10 * scale,
+                m11 = matrix.m11 * scale,
+                m12 = matrix.m12 * scale,
+                m13 = matrix.m13 * scale,
+
+                m20 = matrix.m20 * scale,
+                m21 = matrix.m21 * scale,
+                m22 = matrix.m22 * scale,
+                m23 = matrix.m23 * scale,
+
+                m30 = matrix.m30 * scale,
+                m31 = matrix.m31 * scale,
+                m32 = matrix.m32 * scale,
+                m33 = matrix.m33 * scale
+            };
         }
         #endregion
     }
