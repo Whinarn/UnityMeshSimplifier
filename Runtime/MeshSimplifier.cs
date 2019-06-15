@@ -37,6 +37,14 @@ SOFTWARE.
 //https://github.com/sp4cerat/Fast-Quadric-Mesh-Simplification
 #endregion
 
+#if UNITY_2018_2 || UNITY_2018_3 || UNITY_2018_4 || UNITY_2019
+#define UNITY_8UV_SUPPORT
+#endif
+
+#if UNITY_2017_3 || UNITY_2017_4 || UNITY_2018 || UNITY_2019
+#define UNITY_MESH_INDEXFORMAT_SUPPORT
+#endif
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -51,7 +59,12 @@ namespace UnityMeshSimplifier
     {
         #region Consts
         private const double DoubleEpsilon = 1.0E-3;
+
+#if UNITY_8UV_SUPPORT
+        private const int UVChannelCount = 8;
+#else
         private const int UVChannelCount = 4;
+#endif
         #endregion
 
         #region Classes
@@ -475,7 +488,7 @@ namespace UnityMeshSimplifier
         }
 
         /// <summary>
-        /// Gets or sets the vertex UV set 1.
+        /// Gets or sets the vertex 2D UV set 1.
         /// </summary>
         public Vector2[] UV1
         {
@@ -484,7 +497,7 @@ namespace UnityMeshSimplifier
         }
 
         /// <summary>
-        /// Gets or sets the vertex UV set 2.
+        /// Gets or sets the vertex 2D UV set 2.
         /// </summary>
         public Vector2[] UV2
         {
@@ -493,7 +506,7 @@ namespace UnityMeshSimplifier
         }
 
         /// <summary>
-        /// Gets or sets the vertex UV set 3.
+        /// Gets or sets the vertex 2D UV set 3.
         /// </summary>
         public Vector2[] UV3
         {
@@ -502,13 +515,51 @@ namespace UnityMeshSimplifier
         }
 
         /// <summary>
-        /// Gets or sets the vertex UV set 4.
+        /// Gets or sets the vertex 2D UV set 4.
         /// </summary>
         public Vector2[] UV4
         {
             get { return GetUVs2D(3); }
             set { SetUVs(3, value); }
         }
+
+#if UNITY_8UV_SUPPORT
+        /// <summary>
+        /// Gets or sets the vertex 2D UV set 5.
+        /// </summary>
+        public Vector2[] UV5
+        {
+            get { return GetUVs2D(4); }
+            set { SetUVs(4, value); }
+        }
+
+        /// <summary>
+        /// Gets or sets the vertex 2D UV set 6.
+        /// </summary>
+        public Vector2[] UV6
+        {
+            get { return GetUVs2D(5); }
+            set { SetUVs(5, value); }
+        }
+
+        /// <summary>
+        /// Gets or sets the vertex 2D UV set 7.
+        /// </summary>
+        public Vector2[] UV7
+        {
+            get { return GetUVs2D(6); }
+            set { SetUVs(6, value); }
+        }
+
+        /// <summary>
+        /// Gets or sets the vertex 2D UV set 8.
+        /// </summary>
+        public Vector2[] UV8
+        {
+            get { return GetUVs2D(7); }
+            set { SetUVs(7, value); }
+        }
+#endif
 
         /// <summary>
         /// Gets or sets the vertex colors.
@@ -2063,6 +2114,14 @@ namespace UnityMeshSimplifier
             this.UV2 = mesh.uv2;
             this.UV3 = mesh.uv3;
             this.UV4 = mesh.uv4;
+
+#if UNITY_8UV_SUPPORT
+            this.UV5 = mesh.uv5;
+            this.UV6 = mesh.uv6;
+            this.UV7 = mesh.uv7;
+            this.UV8 = mesh.uv8;
+#endif
+
             this.Colors = mesh.colors;
             this.BoneWeights = mesh.boneWeights;
             this.bindposes = mesh.bindposes;
@@ -2211,7 +2270,7 @@ namespace UnityMeshSimplifier
 
             var newMesh = new Mesh();
 
-#if UNITY_2017_3 || UNITY_2017_4 || UNITY_2018 
+#if UNITY_MESH_INDEXFORMAT_SUPPORT
             // TODO: Use baseVertex if all submeshes are within the ushort.MaxValue range even though the total vertex count is above
             bool use32BitIndex = (vertices.Length > ushort.MaxValue);
             newMesh.indexFormat = (use32BitIndex ? UnityEngine.Rendering.IndexFormat.UInt32 : UnityEngine.Rendering.IndexFormat.UInt16);
