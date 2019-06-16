@@ -123,6 +123,7 @@ namespace UnityMeshSimplifier
             var lodGroup = gameObject.AddComponent<LODGroup>();
 
             Renderer[] allRenderers = (autoCollectRenderers ? gameObject.GetComponentsInChildren<Renderer>() : null);
+            var renderersToDisable = new List<Renderer>((allRenderers != null ? allRenderers.Length : 10));
             var lods = new LOD[levels.Length];
             for (int levelIndex = 0; levelIndex < levels.Length; levelIndex++)
             {
@@ -209,7 +210,21 @@ namespace UnityMeshSimplifier
                     }
                 }
 
+                foreach (var renderer in originalLevelRenderers)
+                {
+                    if (!renderersToDisable.Contains(renderer))
+                    {
+                        renderersToDisable.Add(renderer);
+                    }
+                }
+
                 lods[levelIndex] = new LOD(level.ScreenRelativeTransitionHeight, levelRenderers.ToArray());
+            }
+
+            CreateBackup(gameObject, renderersToDisable.ToArray());
+            foreach (var renderer in renderersToDisable)
+            {
+                renderer.enabled = false;
             }
 
             lodGroup.animateCrossFading = false;
@@ -239,6 +254,8 @@ namespace UnityMeshSimplifier
         {
             if (gameObject == null)
                 throw new System.ArgumentNullException(nameof(gameObject));
+
+            RestoreBackup(gameObject);
 
             var transform = gameObject.transform;
             var lodParent = transform.Find(LODParentGameObjectName);
@@ -512,6 +529,30 @@ namespace UnityMeshSimplifier
             else
             {
                 Object.DestroyImmediate(obj);
+            }
+        }
+
+        private static void CreateBackup(GameObject gameObject, Renderer[] originalRenderers)
+        {
+            var backupComponent = gameObject.AddComponent<LODBackupComponent>();
+            backupComponent.hideFlags = HideFlags.HideInInspector;
+            backupComponent.OriginalRenderers = originalRenderers;
+        }
+
+        private static void RestoreBackup(GameObject gameObject)
+        {
+            var backupComponents = gameObject.GetComponents<LODBackupComponent>();
+            foreach (var backupComponent in backupComponents)
+            {
+                var originalRenderers = backupComponent.OriginalRenderers;
+                if (originalRenderers != null)
+                {
+                    foreach (var renderer in originalRenderers)
+                    {
+                        renderer.enabled = true;
+                    }
+                }
+                DestroyObject(backupComponent);
             }
         }
 
