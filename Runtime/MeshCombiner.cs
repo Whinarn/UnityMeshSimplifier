@@ -70,6 +70,8 @@ namespace UnityMeshSimplifier
                     throw new System.ArgumentException(string.Format("The renderer at index {0} has no mesh filter.", i), nameof(renderers));
                 else if (meshFilter.sharedMesh == null)
                     throw new System.ArgumentException(string.Format("The mesh filter for renderer at index {0} has no mesh.", i), nameof(renderers));
+                else if (!meshFilter.sharedMesh.isReadable)
+                    throw new System.ArgumentException(string.Format("The mesh in the mesh filter for renderer at index {0} is not readable.", i), nameof(renderers));
 
                 meshes[i] = meshFilter.sharedMesh;
                 transforms[i] = rootTransform.worldToLocalMatrix * rendererTransform.localToWorldMatrix;
@@ -106,6 +108,8 @@ namespace UnityMeshSimplifier
                     throw new System.ArgumentException(string.Format("The renderer at index {0} is null.", i), nameof(renderers));
                 else if (renderer.sharedMesh == null)
                     throw new System.ArgumentException(string.Format("The renderer at index {0} has no mesh.", i), nameof(renderers));
+                else if (!renderer.sharedMesh.isReadable)
+                    throw new System.ArgumentException(string.Format("The mesh in the renderer at index {0} is not readable.", i), nameof(renderers));
 
                 var rendererTransform = renderer.transform;
                 meshes[i] = renderer.sharedMesh;
@@ -170,6 +174,8 @@ namespace UnityMeshSimplifier
                 var mesh = meshes[meshIndex];
                 if (mesh == null)
                     throw new System.ArgumentException(string.Format("The mesh at index {0} is null.", meshIndex), nameof(meshes));
+                else if (!mesh.isReadable)
+                    throw new System.ArgumentException(string.Format("The mesh at index {0} is not readable.", meshIndex), nameof(meshes));
 
                 totalVertexCount += mesh.vertexCount;
                 totalSubMeshCount += mesh.subMeshCount;
