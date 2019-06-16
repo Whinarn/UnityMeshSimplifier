@@ -37,6 +37,8 @@ namespace UnityMeshSimplifier
     {
         #region Consts
         private const string LODParentGameObjectName = "_UMS_LODs_";
+        private const string LODAssetParentPath = "Assets/UMS_LODs";
+        private const string LODAssetParentPathWithSlash = LODAssetParentPath + "/";
         #endregion
 
         #region Structs
@@ -168,7 +170,7 @@ namespace UnityMeshSimplifier
                             if (level.Quality < 1f)
                             {
                                 mesh = SimplifyMesh(mesh, level.Quality, simplificationOptions);
-                                SaveAsset(mesh);
+                                SaveLODMeshAsset(mesh, gameObject.name, renderer.name, levelIndex, renderer.mesh.name);
 
                                 if (renderer.isNewMesh)
                                 {
@@ -194,7 +196,7 @@ namespace UnityMeshSimplifier
                             if (level.Quality < 1f)
                             {
                                 mesh = SimplifyMesh(mesh, level.Quality, simplificationOptions);
-                                SaveAsset(mesh);
+                                SaveLODMeshAsset(mesh, gameObject.name, renderer.name, levelIndex, renderer.mesh.name);
 
                                 if (renderer.isNewMesh)
                                 {
@@ -262,6 +264,9 @@ namespace UnityMeshSimplifier
             if (lodParent == null)
                 return false;
 
+            // Destroy LOD assets
+            DestroyLODAssets(lodParent);
+
             // Destroy the LOD parent
             DestroyObject(lodParent.gameObject);
 
@@ -271,8 +276,6 @@ namespace UnityMeshSimplifier
             {
                 DestroyObject(lodGroup);
             }
-
-            // TODO: Clean up asset files?
 
             return true;
         }
@@ -522,14 +525,18 @@ namespace UnityMeshSimplifier
             if (obj == null)
                 throw new System.ArgumentNullException(nameof(obj));
 
+#if UNITY_EDITOR
             if (Application.isPlaying)
             {
                 Object.Destroy(obj);
             }
             else
             {
-                Object.DestroyImmediate(obj);
+                Object.DestroyImmediate(obj, false);
             }
+#else
+            Object.Destroy(obj);
+#endif
         }
 
         private static void CreateBackup(GameObject gameObject, Renderer[] originalRenderers)
@@ -556,9 +563,185 @@ namespace UnityMeshSimplifier
             }
         }
 
-        private static void SaveAsset(Object asset)
+        private static void DestroyLODAssets(Transform transform)
         {
-            // TODO: Save asset!
+#if UNITY_EDITOR
+            var renderers = transform.GetComponentsInChildren<Renderer>(true);
+            foreach (var renderer in renderers)
+            {
+                var meshRenderer = renderer as MeshRenderer;
+                var skinnedMeshRenderer = renderer as SkinnedMeshRenderer;
+
+                if (meshRenderer != null)
+                {
+                    var meshFilter = meshRenderer.GetComponent<MeshFilter>();
+                    if (meshFilter != null)
+                    {
+                        DestroyLODAsset(meshFilter.sharedMesh);
+                    }
+                }
+                else if (skinnedMeshRenderer != null)
+                {
+                    DestroyLODAsset(skinnedMeshRenderer.sharedMesh);
+                }
+
+                foreach (var material in renderer.sharedMaterials)
+                {
+                    DestroyLODMaterialAsset(material);
+                }
+            }
+
+            // Delete any empty LOD asset directories
+            DeleteEmptyDirectory(LODAssetParentPath);
+#endif
+        }
+
+        private static void DestroyLODMaterialAsset(Material material)
+        {
+            if (material == null)
+                return;
+
+#if UNITY_EDITOR
+            var shader = material.shader;
+            if (shader == null)
+                return;
+
+            // We find all texture properties of materials and delete those assets also
+            int propertyCount = UnityEditor.ShaderUtil.GetPropertyCount(shader);
+            for (int propertyIndex = 0; propertyIndex < propertyCount; propertyIndex++)
+            {
+                var propertyType = UnityEditor.ShaderUtil.GetPropertyType(shader, propertyIndex);
+                if (propertyType == UnityEditor.ShaderUtil.ShaderPropertyType.TexEnv)
+                {
+                    string propertyName = UnityEditor.ShaderUtil.GetPropertyName(shader, propertyIndex);
+                    var texture = material.GetTexture(propertyName);
+                    DestroyLODAsset(texture);
+                }
+            }
+
+            DestroyLODAsset(material);
+#endif
+        }
+
+        private static void DestroyLODAsset(Object asset)
+        {
+            if (asset == null)
+                return;
+
+#if UNITY_EDITOR
+            // We only delete assets that we have automatically generated
+            string assetPath = UnityEditor.AssetDatabase.GetAssetPath(asset);
+            if (assetPath.StartsWith(LODAssetParentPathWithSlash))
+            {
+                UnityEditor.AssetDatabase.DeleteAsset(assetPath);
+            }
+#endif
+        }
+
+        private static void SaveLODMeshAsset(Object asset, string gameObjectName, string rendererName, int levelIndex, string meshName)
+        {
+            gameObjectName = MakePathSafe(gameObjectName);
+            rendererName = MakePathSafe(rendererName);
+            meshName = MakePathSafe(meshName);
+            meshName = string.Format("{0:00}_{1}", levelIndex, meshName);
+            string path = string.Format("{0}{1}/{2}/{3}.mesh", LODAssetParentPathWithSlash, gameObjectName, rendererName, meshName);
+            SaveAsset(asset, path);
+        }
+
+        private static void SaveAsset(Object asset, string path)
+        {
+#if UNITY_EDITOR
+            CreateParentDirectory(path);
+
+            // Make sure that there is no asset with the same path already
+            path = UnityEditor.AssetDatabase.GenerateUniqueAssetPath(path);
+
+            UnityEditor.AssetDatabase.CreateAsset(asset, path);
+#endif
+        }
+
+        private static void CreateParentDirectory(string path)
+        {
+#if UNITY_EDITOR
+            int lastSlashIndex = path.LastIndexOf('/');
+            if (lastSlashIndex != -1)
+            {
+                string parentPath = path.Substring(0, lastSlashIndex);
+                if (!UnityEditor.AssetDatabase.IsValidFolder(parentPath))
+                {
+                    lastSlashIndex = parentPath.LastIndexOf('/');
+                    if (lastSlashIndex != -1)
+                    {
+                        string folderName = parentPath.Substring(lastSlashIndex + 1);
+                        string folderParentPath = parentPath.Substring(0, lastSlashIndex);
+                        CreateParentDirectory(parentPath);
+                        UnityEditor.AssetDatabase.CreateFolder(folderParentPath, folderName);
+                    }
+                    else
+                    {
+                        UnityEditor.AssetDatabase.CreateFolder(string.Empty, parentPath);
+                    }
+                }
+            }
+#endif
+        }
+
+        private static string MakePathSafe(string name)
+        {
+            var sb = new System.Text.StringBuilder(name.Length);
+            bool lastWasSeparator = false;
+            for (int i = 0; i < name.Length; i++)
+            {
+                char c = name[i];
+                if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'))
+                {
+                    lastWasSeparator = false;
+                    sb.Append(c);
+                }
+                else if (c == '_' || c == '-')
+                {
+                    if (!lastWasSeparator)
+                    {
+                        lastWasSeparator = true;
+                        sb.Append(c);
+                    }
+                }
+                else
+                {
+                    if (!lastWasSeparator)
+                    {
+                        lastWasSeparator = true;
+                        sb.Append('_');
+                    }
+                }
+            }
+            return sb.ToString();
+        }
+
+        private static bool DeleteEmptyDirectory(string path)
+        {
+#if UNITY_EDITOR
+            bool deletedAllSubFolders = true;
+            var subFolders = UnityEditor.AssetDatabase.GetSubFolders(path);
+            for (int i = 0; i < subFolders.Length; i++)
+            {
+                if (!DeleteEmptyDirectory(subFolders[i]))
+                {
+                    deletedAllSubFolders = false;
+                }
+            }
+
+            if (!deletedAllSubFolders)
+                return false;
+
+            string[] assetGuids = UnityEditor.AssetDatabase.FindAssets(string.Empty, new string[] { path });
+            if (assetGuids.Length > 0)
+                return false;
+
+            return UnityEditor.AssetDatabase.DeleteAsset(path);
+#else
+            return false;
+#endif
         }
 
         private static void DisplayError(string title, string message, string ok, Object context)
