@@ -472,14 +472,17 @@ namespace UnityMeshSimplifier.Editor
 
         private void GenerateLODs()
         {
-            isGeneratedProperty.boolValue = true;
-            LODGenerator.GenerateLODs(lodGeneratorHelper);
+            var lodGroup = LODGenerator.GenerateLODs(lodGeneratorHelper);
+            if (lodGroup != null)
+            {
+                isGeneratedProperty.boolValue = true;
+            }
         }
 
         private void DestroyLODs()
         {
-            isGeneratedProperty.boolValue = false;
             LODGenerator.DestroyLODs(lodGeneratorHelper);
+            isGeneratedProperty.boolValue = false;
         }
 
         private Renderer[] GetRenderers(IEnumerable<GameObject> gameObjects, bool searchChildren)

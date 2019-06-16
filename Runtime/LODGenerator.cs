@@ -76,6 +76,9 @@ namespace UnityMeshSimplifier
             var simplificationOptions = generatorHelper.SimplificationOptions;
 
             var lodGroup = GenerateLODs(gameObject, levels, autoCollectRenderers, simplificationOptions);
+            if (lodGroup == null)
+                return null;
+
             lodGroup.animateCrossFading = generatorHelper.AnimateCrossFading;
             lodGroup.fadeMode = generatorHelper.FadeMode;
             return lodGroup;
@@ -97,18 +100,27 @@ namespace UnityMeshSimplifier
             else if (levels == null)
                 throw new System.ArgumentNullException(nameof(levels));
 
-            DestroyLODs(gameObject);
 
             var transform = gameObject.transform;
+            var existingLodParent = transform.Find(LODParentGameObjectName);
+            if (existingLodParent != null)
+            {
+                DisplayError("The game object already has LODs!", "The game object already appears to have LODs. Please remove them first.", "OK", existingLodParent);
+                return null;
+            }
+
+            var existingLodGroup = gameObject.GetComponent<LODGroup>();
+            if (existingLodGroup != null)
+            {
+                DisplayError("The game object already has LODs!", "The game object already appears to have a LOD Group. Please remove it first.", "OK", existingLodGroup);
+                return null;
+            }
+
             var lodParentGameObject = new GameObject(LODParentGameObjectName);
             var lodParent = lodParentGameObject.transform;
             ParentAndResetTransform(lodParent, transform);
 
-            var lodGroup = gameObject.GetComponent<LODGroup>();
-            if (lodGroup == null)
-            {
-                lodGroup = gameObject.AddComponent<LODGroup>();
-            }
+            var lodGroup = gameObject.AddComponent<LODGroup>();
 
             Renderer[] allRenderers = (autoCollectRenderers ? gameObject.GetComponentsInChildren<Renderer>() : null);
             var lods = new LOD[levels.Length];
@@ -506,6 +518,15 @@ namespace UnityMeshSimplifier
         private static void SaveAsset(Object asset)
         {
             // TODO: Save asset!
+        }
+
+        private static void DisplayError(string title, string message, string ok, Object context)
+        {
+            Debug.LogErrorFormat(context, "{0}\n{1}", title, message);
+
+#if UNITY_EDITOR
+            UnityEditor.EditorUtility.DisplayDialog(title, message, ok);
+#endif
         }
         #endregion
     }
