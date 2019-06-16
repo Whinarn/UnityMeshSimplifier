@@ -181,9 +181,9 @@ namespace UnityMeshSimplifier
             public int tstart;
             public int tcount;
             public SymmetricMatrix q;
-            public bool border;
-            public bool seam;
-            public bool foldover;
+            public bool borderEdge;
+            public bool uvSeamEdge;
+            public bool uvFoldoverEdge;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Vertex(Vector3d p)
@@ -192,9 +192,9 @@ namespace UnityMeshSimplifier
                 this.tstart = 0;
                 this.tcount = 0;
                 this.q = new SymmetricMatrix();
-                this.border = true;
-                this.seam = false;
-                this.foldover = false;
+                this.borderEdge = true;
+                this.uvSeamEdge = false;
+                this.uvFoldoverEdge = false;
             }
         }
         #endregion
@@ -771,10 +771,10 @@ namespace UnityMeshSimplifier
         {
             // compute interpolated vertex
             SymmetricMatrix q = (vert0.q + vert1.q);
-            bool border = (vert0.border & vert1.border);
+            bool borderEdge = (vert0.borderEdge & vert1.borderEdge);
             double error = 0.0;
             double det = q.Determinant1();
-            if (det != 0.0 && !border)
+            if (det != 0.0 && !borderEdge)
             {
                 // q_delta is invertible
                 result = new Vector3d(
@@ -1058,22 +1058,22 @@ namespace UnityMeshSimplifier
                     int i1 = triangles[tid][nextEdgeIndex];
 
                     // Border check
-                    if (vertices[i0].border != vertices[i1].border)
+                    if (vertices[i0].borderEdge != vertices[i1].borderEdge)
                         continue;
                     // Seam check
-                    else if (vertices[i0].seam != vertices[i1].seam)
+                    else if (vertices[i0].uvSeamEdge != vertices[i1].uvSeamEdge)
                         continue;
                     // Foldover check
-                    else if (vertices[i0].foldover != vertices[i1].foldover)
+                    else if (vertices[i0].uvFoldoverEdge != vertices[i1].uvFoldoverEdge)
                         continue;
                     // If borders should be preserved
-                    else if (preserveBorders && vertices[i0].border)
+                    else if (preserveBorderEdges && vertices[i0].borderEdge)
                         continue;
                     // If seams should be preserved
-                    else if (preserveSeams && vertices[i0].seam)
+                    else if (preserveUVSeamEdges && vertices[i0].uvSeamEdge)
                         continue;
                     // If foldovers should be preserved
-                    else if (preserveFoldovers && vertices[i0].foldover)
+                    else if (preserveUVFoldoverEdges && vertices[i0].uvFoldoverEdge)
                         continue;
 
                     // Compute vertex to collapse to
@@ -1102,7 +1102,7 @@ namespace UnityMeshSimplifier
                     int ia2 = attributeIndexArr[nextNextEdgeIndex];
                     InterpolateVertexAttributes(ia0, ia0, ia1, ia2, ref barycentricCoord);
 
-                    if (vertices[i0].seam)
+                    if (vertices[i0].uvSeamEdge)
                     {
                         ia0 = -1;
                     }
@@ -1181,9 +1181,9 @@ namespace UnityMeshSimplifier
                 int vsize = 0;
                 for (int i = 0; i < vertexCount; i++)
                 {
-                    vertices[i].border = false;
-                    vertices[i].seam = false;
-                    vertices[i].foldover = false;
+                    vertices[i].borderEdge = false;
+                    vertices[i].uvSeamEdge = false;
+                    vertices[i].uvFoldoverEdge = false;
                 }
 
                 int ofs;
@@ -1232,7 +1232,7 @@ namespace UnityMeshSimplifier
                         if (vcount[j] == 1)
                         {
                             id = vids[j];
-                            vertices[id].border = true;
+                            vertices[id].borderEdge = true;
                             ++borderVertexCount;
 
                             if (enableSmartLink)
@@ -1258,7 +1258,7 @@ namespace UnityMeshSimplifier
                     double borderAreaWidth = borderMaxX - borderMinX;
                     for (int i = 0; i < vertexCount; i++)
                     {
-                        if (vertices[i].border)
+                        if (vertices[i].borderEdge)
                         {
                             int vertexHash = (int)(((((vertices[i].p.x - borderMinX) / borderAreaWidth) * 2.0) - 1.0) * int.MaxValue);
                             borderVertices[borderIndexCount] = new BorderVertex(i, vertexHash);
@@ -1298,18 +1298,18 @@ namespace UnityMeshSimplifier
                             if (sqrMagnitude <= vertexLinkDistanceSqr)
                             {
                                 borderVertices[j].index = -1; // NOTE: This makes sure that the "other" vertex is not processed again
-                                vertices[myIndex].border = false;
-                                vertices[otherIndex].border = false;
+                                vertices[myIndex].borderEdge = false;
+                                vertices[otherIndex].borderEdge = false;
 
                                 if (AreUVsTheSame(0, myIndex, otherIndex))
                                 {
-                                    vertices[myIndex].foldover = true;
-                                    vertices[otherIndex].foldover = true;
+                                    vertices[myIndex].uvFoldoverEdge = true;
+                                    vertices[otherIndex].uvFoldoverEdge = true;
                                 }
                                 else
                                 {
-                                    vertices[myIndex].seam = true;
-                                    vertices[otherIndex].seam = true;
+                                    vertices[myIndex].uvSeamEdge = true;
+                                    vertices[otherIndex].uvSeamEdge = true;
                                 }
 
                                 int otherTriangleCount = vertices[otherIndex].tcount;
