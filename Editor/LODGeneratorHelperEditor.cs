@@ -475,14 +475,27 @@ namespace UnityMeshSimplifier.Editor
             var lodGroup = LODGenerator.GenerateLODs(lodGeneratorHelper);
             if (lodGroup != null)
             {
-                isGeneratedProperty.boolValue = true;
+                using (var serializedObject = new SerializedObject(lodGeneratorHelper))
+                {
+                    var isGeneratedProperty = serializedObject.FindProperty(IsGeneratedFieldName);
+                    serializedObject.UpdateIfRequiredOrScript();
+                    isGeneratedProperty.boolValue = true;
+                    serializedObject.ApplyModifiedPropertiesWithoutUndo();
+                }
             }
         }
 
         private void DestroyLODs()
         {
             LODGenerator.DestroyLODs(lodGeneratorHelper);
-            isGeneratedProperty.boolValue = false;
+
+            using (var serializedObject = new SerializedObject(lodGeneratorHelper))
+            {
+                var isGeneratedProperty = serializedObject.FindProperty(IsGeneratedFieldName);
+                serializedObject.UpdateIfRequiredOrScript();
+                isGeneratedProperty.boolValue = false;
+                serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            }
         }
 
         private Renderer[] GetRenderers(IEnumerable<GameObject> gameObjects, bool searchChildren)
