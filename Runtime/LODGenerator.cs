@@ -53,8 +53,9 @@ namespace UnityMeshSimplifier
             var gameObject = generatorHelper.gameObject;
             var levels = generatorHelper.Levels;
             bool autoCollectRenderers = generatorHelper.AutoCollectRenderers;
+            var simplificationOptions = generatorHelper.SimplificationOptions;
 
-            var lodGroup = GenerateLODs(gameObject, levels, autoCollectRenderers);
+            var lodGroup = GenerateLODs(gameObject, levels, autoCollectRenderers, simplificationOptions);
             lodGroup.animateCrossFading = generatorHelper.AnimateCrossFading;
             lodGroup.fadeMode = generatorHelper.FadeMode;
             return lodGroup;
@@ -67,8 +68,9 @@ namespace UnityMeshSimplifier
         /// <param name="levels">The LOD levels to set up.</param>
         /// <param name="autoCollectRenderers">If the renderers under the game object and any children should be automatically collected.
         /// Enabling this will ignore any renderers defined under each LOD level.</param>
+        /// <param name="simplificationOptions">The mesh simplification options.</param>
         /// <returns>The generated LOD Group.</returns>
-        public static LODGroup GenerateLODs(GameObject gameObject, LODLevel[] levels, bool autoCollectRenderers)
+        public static LODGroup GenerateLODs(GameObject gameObject, LODLevel[] levels, bool autoCollectRenderers, SimplificationOptions simplificationOptions)
         {
             if (gameObject == null)
                 throw new System.ArgumentNullException(nameof(gameObject));
@@ -120,7 +122,7 @@ namespace UnityMeshSimplifier
                             // Simplify the mesh if necessary
                             if (level.Quality < 1f)
                             {
-                                var simplifiedMesh = SimplifyMesh(combinedMesh, level.Quality);
+                                var simplifiedMesh = SimplifyMesh(combinedMesh, level.Quality, simplificationOptions);
                                 DestroyObject(combinedMesh); // We delete the combined mesh since it's no longer to be used
                                 combinedMesh = simplifiedMesh;
                             }
@@ -142,7 +144,7 @@ namespace UnityMeshSimplifier
                             // Simplify the mesh if necessary
                             if (level.Quality < 1f)
                             {
-                                var simplifiedMesh = SimplifyMesh(combinedMesh, level.Quality);
+                                var simplifiedMesh = SimplifyMesh(combinedMesh, level.Quality, simplificationOptions);
                                 DestroyObject(combinedMesh); // We delete the combined mesh since it's no longer to be used
                                 combinedMesh = simplifiedMesh;
                             }
@@ -171,7 +173,7 @@ namespace UnityMeshSimplifier
                             // Simplify the mesh if necessary
                             if (level.Quality < 1f)
                             {
-                                mesh = SimplifyMesh(mesh, level.Quality);
+                                mesh = SimplifyMesh(mesh, level.Quality, simplificationOptions);
 
                                 // TODO: Save asset file!
                             }
@@ -191,7 +193,7 @@ namespace UnityMeshSimplifier
                             // Simplify the mesh if necessary
                             if (level.Quality < 1f)
                             {
-                                mesh = SimplifyMesh(mesh, level.Quality);
+                                mesh = SimplifyMesh(mesh, level.Quality, simplificationOptions);
 
                                 // TODO: Save asset file!
                             }
@@ -332,9 +334,17 @@ namespace UnityMeshSimplifier
             }
         }
 
-        private static Mesh SimplifyMesh(Mesh mesh, float quality)
+        private static Mesh SimplifyMesh(Mesh mesh, float quality, SimplificationOptions options)
         {
             var meshSimplifier = new MeshSimplifier();
+            meshSimplifier.PreserveBorderEdges = options.PreserveBorderEdges;
+            meshSimplifier.PreserveUVSeamEdges = options.PreserveUVSeamEdges;
+            meshSimplifier.PreserveUVFoldoverEdges = options.PreserveUVFoldoverEdges;
+            meshSimplifier.EnableSmartLink = options.EnableSmartLink;
+            meshSimplifier.VertexLinkDistance = options.VertexLinkDistance;
+            meshSimplifier.MaxIterationCount = options.MaxIterationCount;
+            meshSimplifier.Agressiveness = options.Agressiveness;
+
             meshSimplifier.Initialize(mesh);
             meshSimplifier.SimplifyMesh(quality);
 

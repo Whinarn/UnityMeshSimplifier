@@ -43,6 +43,9 @@ namespace UnityMeshSimplifier
         [SerializeField, Tooltip("If the renderers under this game object and any children should be automatically collected.")]
         private bool autoCollectRenderers = true;
 
+        [SerializeField, Tooltip("The simplification options.")]
+        private SimplificationOptions simplificationOptions = SimplificationOptions.Default;
+
         [SerializeField, Tooltip("The LOD levels.")]
         private LODLevel[] levels = null;
         #endregion
@@ -77,6 +80,15 @@ namespace UnityMeshSimplifier
         }
 
         /// <summary>
+        /// Gets or sets the simplification options.
+        /// </summary>
+        public SimplificationOptions SimplificationOptions
+        {
+            get { return simplificationOptions; }
+            set { simplificationOptions = value; }
+        }
+
+        /// <summary>
         /// Gets or sets the LOD levels for this generator.
         /// </summary>
         public LODLevel[] Levels
@@ -92,6 +104,7 @@ namespace UnityMeshSimplifier
             fadeMode = LODFadeMode.None;
             animateCrossFading = false;
             autoCollectRenderers = true;
+            simplificationOptions = SimplificationOptions.Default;
 
             levels = new LODLevel[]
             {

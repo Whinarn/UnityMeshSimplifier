@@ -37,11 +37,14 @@ namespace UnityMeshSimplifier.Editor
         private const string FadeModeFieldName = "fadeMode";
         private const string AnimateCrossFadingFieldName = "animateCrossFading";
         private const string AutoCollectRenderersFieldName = "autoCollectRenderers";
+        private const string SimplificationOptionsFieldName = "simplificationOptions";
         private const string LevelsFieldName = "levels";
         private const string LevelScreenRelativeHeightFieldName = "screenRelativeTransitionHeight";
         private const string LevelFadeTransitionWidthFieldName = "fadeTransitionWidth";
         private const string LevelQualityFieldName = "quality";
         private const string LevelRenderersFieldName = "renderers";
+        private const string SimplificationOptionsEnableSmartLinkFieldName = "EnableSmartLink";
+        private const string SimplificationOptionsVertexLinkDistanceFieldName = "VertexLinkDistance";
         private const float RemoveLevelButtonSize = 20f;
         private const float RendererButtonWidth = 60f;
         private const float RemoveRendererButtonSize = 20f;
@@ -49,6 +52,7 @@ namespace UnityMeshSimplifier.Editor
         private SerializedProperty fadeModeProperty = null;
         private SerializedProperty animateCrossFadingProperty = null;
         private SerializedProperty autoCollectRenderersProperty = null;
+        private SerializedProperty simplificationOptionsProperty = null;
         private SerializedProperty levelsProperty = null;
 
         private bool[] settingsExpanded = null;
@@ -70,6 +74,7 @@ namespace UnityMeshSimplifier.Editor
             fadeModeProperty = serializedObject.FindProperty(FadeModeFieldName);
             animateCrossFadingProperty = serializedObject.FindProperty(AnimateCrossFadingFieldName);
             autoCollectRenderersProperty = serializedObject.FindProperty(AutoCollectRenderersFieldName);
+            simplificationOptionsProperty = serializedObject.FindProperty(SimplificationOptionsFieldName);
             levelsProperty = serializedObject.FindProperty(LevelsFieldName);
 
             lodGeneratorHelper = target as LODGeneratorHelper;
@@ -89,6 +94,7 @@ namespace UnityMeshSimplifier.Editor
             }
 
             EditorGUILayout.PropertyField(autoCollectRenderersProperty);
+            DrawSimplificationOptions();
 
             if (settingsExpanded == null || settingsExpanded.Length != levelsProperty.arraySize)
             {
@@ -117,6 +123,27 @@ namespace UnityMeshSimplifier.Editor
             }
 
             serializedObject.ApplyModifiedProperties();
+        }
+
+        private void DrawSimplificationOptions()
+        {
+            if (EditorGUILayout.PropertyField(simplificationOptionsProperty, false))
+            {
+                ++EditorGUI.indentLevel;
+
+                var enableSmartLinkProperty = simplificationOptionsProperty.FindPropertyRelative(SimplificationOptionsEnableSmartLinkFieldName);
+
+                var childProperties = simplificationOptionsProperty.GetChildProperties();
+                foreach (var childProperty in childProperties)
+                {
+                    if (!enableSmartLinkProperty.boolValue && string.Equals(childProperty.name, SimplificationOptionsVertexLinkDistanceFieldName))
+                        continue;
+
+                    EditorGUILayout.PropertyField(childProperty, true);
+                }
+
+                --EditorGUI.indentLevel;
+            }
         }
 
         private void DrawLevel(int index, SerializedProperty levelProperty, bool hasCrossFade)
