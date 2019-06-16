@@ -39,6 +39,7 @@ namespace UnityMeshSimplifier.Editor
         private const string AutoCollectRenderersFieldName = "autoCollectRenderers";
         private const string SimplificationOptionsFieldName = "simplificationOptions";
         private const string LevelsFieldName = "levels";
+        private const string IsGeneratedFieldName = "isGenerated";
         private const string LevelScreenRelativeHeightFieldName = "screenRelativeTransitionHeight";
         private const string LevelFadeTransitionWidthFieldName = "fadeTransitionWidth";
         private const string LevelQualityFieldName = "quality";
@@ -56,6 +57,7 @@ namespace UnityMeshSimplifier.Editor
         private SerializedProperty autoCollectRenderersProperty = null;
         private SerializedProperty simplificationOptionsProperty = null;
         private SerializedProperty levelsProperty = null;
+        private SerializedProperty isGeneratedProperty = null;
 
         private bool[] settingsExpanded = null;
         private LODGeneratorHelper lodGeneratorHelper = null;
@@ -63,6 +65,7 @@ namespace UnityMeshSimplifier.Editor
         private static readonly GUIContent createLevelButtonContent = new GUIContent("Create Level", "Creates a new LOD level.");
         private static readonly GUIContent deleteLevelButtonContent = new GUIContent("X", "Deletes this LOD level.");
         private static readonly GUIContent generateLODButtonContent = new GUIContent("Generate LODs", "Generates the LOD levels.");
+        private static readonly GUIContent destroyLODButtonContent = new GUIContent("Destroy LODs", "Destroys the LOD levels.");
         private static readonly GUIContent settingsContent = new GUIContent("Settings", "The settings for the LOD level.");
         private static readonly GUIContent renderersHeaderContent = new GUIContent("Renderers:", "The renderers used for this LOD level.");
         private static readonly GUIContent removeRendererButtonContent = new GUIContent("X", "Removes this renderer.");
@@ -78,6 +81,7 @@ namespace UnityMeshSimplifier.Editor
             autoCollectRenderersProperty = serializedObject.FindProperty(AutoCollectRenderersFieldName);
             simplificationOptionsProperty = serializedObject.FindProperty(SimplificationOptionsFieldName);
             levelsProperty = serializedObject.FindProperty(LevelsFieldName);
+            isGeneratedProperty = serializedObject.FindProperty(IsGeneratedFieldName);
 
             lodGeneratorHelper = target as LODGeneratorHelper;
         }
@@ -86,6 +90,29 @@ namespace UnityMeshSimplifier.Editor
         {
             serializedObject.UpdateIfRequiredOrScript();
 
+            bool isGenerated = isGeneratedProperty.boolValue;
+            if (isGenerated)
+            {
+                DrawGeneratedView();
+            }
+            else
+            {
+                DrawNotGeneratedView();
+            }
+
+            serializedObject.ApplyModifiedProperties();
+        }
+
+        private void DrawGeneratedView()
+        {
+            if (GUILayout.Button(destroyLODButtonContent))
+            {
+                DestroyLODs();
+            }
+        }
+
+        private void DrawNotGeneratedView()
+        {
             EditorGUILayout.PropertyField(fadeModeProperty);
             var fadeMode = (LODFadeMode)fadeModeProperty.intValue;
 
@@ -123,8 +150,6 @@ namespace UnityMeshSimplifier.Editor
             {
                 GenerateLODs();
             }
-
-            serializedObject.ApplyModifiedProperties();
         }
 
         private void DrawSimplificationOptions()
@@ -447,7 +472,14 @@ namespace UnityMeshSimplifier.Editor
 
         private void GenerateLODs()
         {
-            // TODO: Implement!
+            isGeneratedProperty.boolValue = true;
+            LODGenerator.GenerateLODs(lodGeneratorHelper);
+        }
+
+        private void DestroyLODs()
+        {
+            isGeneratedProperty.boolValue = false;
+            LODGenerator.DestroyLODs(lodGeneratorHelper);
         }
 
         private Renderer[] GetRenderers(IEnumerable<GameObject> gameObjects, bool searchChildren)

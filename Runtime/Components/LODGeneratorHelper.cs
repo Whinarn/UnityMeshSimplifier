@@ -48,6 +48,9 @@ namespace UnityMeshSimplifier
 
         [SerializeField, Tooltip("The LOD levels.")]
         private LODLevel[] levels = null;
+
+        [SerializeField]
+        private bool isGenerated = false;
         #endregion
 
         #region Properties
@@ -95,6 +98,14 @@ namespace UnityMeshSimplifier
         {
             get { return levels; }
             set { levels = value; }
+        }
+
+        /// <summary>
+        /// Gets if the LODs have been generated.
+        /// </summary>
+        public bool IsGenerated
+        {
+            get { return isGenerated; }
         }
         #endregion
 
