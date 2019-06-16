@@ -36,7 +36,27 @@ namespace UnityMeshSimplifier
     public static class LODGenerator
     {
         #region Consts
-        private const string LODParentGameObjectName = "_LOD_";
+        private const string LODParentGameObjectName = "_UMS_LODs_";
+        #endregion
+
+        #region Structs
+        private struct StaticRenderer
+        {
+            public string name;
+            public bool isNewMesh;
+            public Mesh mesh;
+            public Material[] materials;
+        }
+
+        private struct SkinnedRenderer
+        {
+            public string name;
+            public bool isNewMesh;
+            public Mesh mesh;
+            public Material[] materials;
+            public Transform rootBone;
+            public Transform[] bones;
+        }
         #endregion
 
         #region Public Methods
@@ -111,95 +131,67 @@ namespace UnityMeshSimplifier
                                                 where renderer as SkinnedMeshRenderer != null
                                                 select renderer as SkinnedMeshRenderer).ToArray();
 
+                    StaticRenderer[] staticRenderers;
+                    SkinnedRenderer[] skinnedRenderers;
                     if (level.CombineMeshes)
                     {
-                        if (meshRenderers.Length > 0)
-                        {
-                            Material[] combinedMaterials;
-                            var combinedMesh = MeshCombiner.CombineMeshes(transform, meshRenderers, out combinedMaterials);
-                            combinedMesh.name = string.Format("{0}_static{1:00}", gameObject.name, levelIndex);
-
-                            // Simplify the mesh if necessary
-                            if (level.Quality < 1f)
-                            {
-                                var simplifiedMesh = SimplifyMesh(combinedMesh, level.Quality, simplificationOptions);
-                                DestroyObject(combinedMesh); // We delete the combined mesh since it's no longer to be used
-                                combinedMesh = simplifiedMesh;
-                            }
-
-                            // TODO: Save asset file!
-
-                            string rendererName = string.Format("{0}_combined_static", gameObject.name);
-                            var combinedRenderer = CreateLevelRenderer(rendererName, levelTransform, combinedMesh, combinedMaterials, ref level);
-                            levelRenderers.Add(combinedRenderer);
-                        }
-
-                        if (skinnedMeshRenderers.Length > 0)
-                        {
-                            Material[] combinedMaterials;
-                            Transform[] combinedBones;
-                            var combinedMesh = MeshCombiner.CombineMeshes(transform, skinnedMeshRenderers, out combinedMaterials, out combinedBones);
-                            combinedMesh.name = string.Format("{0}_skinned{1:00}", gameObject.name, levelIndex);
-
-                            // Simplify the mesh if necessary
-                            if (level.Quality < 1f)
-                            {
-                                var simplifiedMesh = SimplifyMesh(combinedMesh, level.Quality, simplificationOptions);
-                                DestroyObject(combinedMesh); // We delete the combined mesh since it's no longer to be used
-                                combinedMesh = simplifiedMesh;
-                            }
-
-                            // TODO: Save asset file!
-
-                            var rootBone = FindBestRootBone(transform, skinnedMeshRenderers);
-                            string rendererName = string.Format("{0}_combined_skinned", gameObject.name);
-                            var combinedRenderer = CreateSkinnedLevelRenderer(rendererName, levelTransform, combinedMesh, combinedMaterials, rootBone, combinedBones, ref level);
-                            levelRenderers.Add(combinedRenderer);
-                        }
+                        staticRenderers = CombineStaticMeshes(transform, levelIndex, meshRenderers);
+                        skinnedRenderers = CombineSkinnedMeshes(transform, levelIndex, skinnedMeshRenderers);
                     }
                     else
                     {
-                        for (int rendererIndex = 0; rendererIndex < meshRenderers.Length; rendererIndex++)
-                        {
-                            var renderer = meshRenderers[rendererIndex];
-                            var meshFilter = renderer.GetComponent<MeshFilter>();
-                            if (meshFilter == null)
-                                continue;
+                        staticRenderers = GetStaticRenderers(meshRenderers);
+                        skinnedRenderers = GetSkinnedRenderers(skinnedMeshRenderers);
+                    }
 
-                            var mesh = meshFilter.sharedMesh;
-                            if (mesh == null)
-                                continue;
+                    if (staticRenderers != null)
+                    {
+                        for (int rendererIndex = 0; rendererIndex < staticRenderers.Length; rendererIndex++)
+                        {
+                            var renderer = staticRenderers[rendererIndex];
+                            var mesh = renderer.mesh;
 
                             // Simplify the mesh if necessary
                             if (level.Quality < 1f)
                             {
                                 mesh = SimplifyMesh(mesh, level.Quality, simplificationOptions);
+                                SaveAsset(mesh);
 
-                                // TODO: Save asset file!
+                                if (renderer.isNewMesh)
+                                {
+                                    DestroyObject(renderer.mesh);
+                                    renderer.mesh = null;
+                                }
                             }
 
                             string rendererName = string.Format("{0:000}_static_{1}", rendererIndex, renderer.name);
-                            var levelRenderer = CreateLevelRenderer(rendererName, levelTransform, mesh, renderer.sharedMaterials, ref level);
+                            var levelRenderer = CreateLevelRenderer(rendererName, levelTransform, mesh, renderer.materials, ref level);
                             levelRenderers.Add(levelRenderer);
                         }
+                    }
 
-                        for (int rendererIndex = 0; rendererIndex < skinnedMeshRenderers.Length; rendererIndex++)
+                    if (skinnedRenderers != null)
+                    {
+                        for (int rendererIndex = 0; rendererIndex < skinnedRenderers.Length; rendererIndex++)
                         {
-                            var renderer = skinnedMeshRenderers[rendererIndex];
-                            var mesh = renderer.sharedMesh;
-                            if (mesh == null)
-                                continue;
+                            var renderer = skinnedRenderers[rendererIndex];
+                            var mesh = renderer.mesh;
 
                             // Simplify the mesh if necessary
                             if (level.Quality < 1f)
                             {
                                 mesh = SimplifyMesh(mesh, level.Quality, simplificationOptions);
+                                SaveAsset(mesh);
 
-                                // TODO: Save asset file!
+                                if (renderer.isNewMesh)
+                                {
+                                    DestroyObject(renderer.mesh);
+                                    renderer.mesh = null;
+                                }
                             }
 
                             string rendererName = string.Format("{0:000}_skinned_{1}", rendererIndex, renderer.name);
-                            var levelRenderer = CreateSkinnedLevelRenderer(rendererName, levelTransform, mesh, renderer.sharedMaterials, renderer.rootBone, renderer.bones, ref level);
+                            var levelRenderer = CreateSkinnedLevelRenderer(rendererName, levelTransform, mesh, renderer.materials, renderer.rootBone, renderer.bones, ref level);
                             levelRenderers.Add(levelRenderer);
                         }
                     }
@@ -258,6 +250,149 @@ namespace UnityMeshSimplifier
         #endregion
 
         #region Private Methods
+        private static StaticRenderer[] GetStaticRenderers(MeshRenderer[] renderers)
+        {
+            var newRenderers = new List<StaticRenderer>(renderers.Length);
+            for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+            {
+                var renderer = renderers[rendererIndex];
+                var meshFilter = renderer.GetComponent<MeshFilter>();
+                if (meshFilter == null)
+                {
+                    Debug.LogWarning("A renderer was missing a mesh filter and was ignored.", renderer);
+                    continue;
+                }
+
+                var mesh = meshFilter.sharedMesh;
+                if (mesh == null)
+                {
+                    Debug.LogWarning("A renderer was missing a mesh and was ignored.", renderer);
+                    continue;
+                }
+
+                newRenderers.Add(new StaticRenderer()
+                {
+                    name = renderer.name,
+                    isNewMesh = false,
+                    mesh = mesh,
+                    materials = renderer.sharedMaterials
+                });
+            }
+            return newRenderers.ToArray();
+        }
+
+        private static SkinnedRenderer[] GetSkinnedRenderers(SkinnedMeshRenderer[] renderers)
+        {
+            var newRenderers = new List<SkinnedRenderer>(renderers.Length);
+            for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+            {
+                var renderer = renderers[rendererIndex];
+
+                var mesh = renderer.sharedMesh;
+                if (mesh == null)
+                {
+                    Debug.LogWarning("A renderer was missing a mesh and was ignored.", renderer);
+                    continue;
+                }
+
+                newRenderers.Add(new SkinnedRenderer()
+                {
+                    name = renderer.name,
+                    isNewMesh = false,
+                    mesh = mesh,
+                    materials = renderer.sharedMaterials,
+                    rootBone = renderer.rootBone,
+                    bones = renderer.bones
+                });
+            }
+            return newRenderers.ToArray();
+        }
+
+        private static StaticRenderer[] CombineStaticMeshes(Transform transform, int levelIndex, MeshRenderer[] renderers)
+        {
+            if (renderers.Length == 0)
+                return null;
+
+            // TODO: Support to merge sub-meshes and atlas textures
+
+            var newRenderers = new List<StaticRenderer>(renderers.Length);
+
+            Material[] combinedMaterials;
+            var combinedMesh = MeshCombiner.CombineMeshes(transform, renderers, out combinedMaterials);
+            combinedMesh.name = string.Format("{0}_static{1:00}", transform.name, levelIndex);
+            string rendererName = string.Format("{0}_combined_static", transform.name);
+            newRenderers.Add(new StaticRenderer()
+            {
+                name = rendererName,
+                isNewMesh = true,
+                mesh = combinedMesh,
+                materials = combinedMaterials
+            });
+
+            return newRenderers.ToArray();
+        }
+
+        private static SkinnedRenderer[] CombineSkinnedMeshes(Transform transform, int levelIndex, SkinnedMeshRenderer[] renderers)
+        {
+            if (renderers.Length == 0)
+                return null;
+
+            // TODO: Support to merge sub-meshes and atlas textures
+
+            var newRenderers = new List<SkinnedRenderer>(renderers.Length);
+            var blendShapeRenderers = (from renderer in renderers
+                                       where renderer.sharedMesh != null && renderer.sharedMesh.blendShapeCount > 0
+                                       select renderer);
+            var renderersWithoutMesh = (from renderer in renderers
+                                        where renderer.sharedMesh == null
+                                        select renderer);
+            var combineRenderers = (from renderer in renderers
+                                    where renderer.sharedMesh != null && renderer.sharedMesh.blendShapeCount == 0
+                                    select renderer).ToArray();
+
+            // Warn about renderers without a mesh
+            foreach (var renderer in renderersWithoutMesh)
+            {
+                Debug.LogWarning("A renderer was missing a mesh and was ignored.", renderer);
+            }
+
+            // Don't combine meshes with blend shapes
+            foreach (var renderer in blendShapeRenderers)
+            {
+                newRenderers.Add(new SkinnedRenderer()
+                {
+                    name = renderer.name,
+                    isNewMesh = false,
+                    mesh = renderer.sharedMesh,
+                    materials = renderer.sharedMaterials,
+                    rootBone = renderer.rootBone,
+                    bones = renderer.bones
+                });
+            }
+
+            if (combineRenderers.Length > 0)
+            {
+                Material[] combinedMaterials;
+                Transform[] combinedBones;
+                var combinedMesh = MeshCombiner.CombineMeshes(transform, combineRenderers, out combinedMaterials, out combinedBones);
+                combinedMesh.name = string.Format("{0}_skinned{1:00}", transform.name, levelIndex);
+
+                var rootBone = FindBestRootBone(transform, combineRenderers);
+                string rendererName = string.Format("{0}_combined_skinned", transform.name);
+                newRenderers.Add(new SkinnedRenderer()
+                {
+                    name = rendererName,
+                    isNewMesh = false,
+                    mesh = combinedMesh,
+                    materials = combinedMaterials,
+                    rootBone = rootBone,
+                    bones = combinedBones
+                });
+            }
+
+            return newRenderers.ToArray();
+        }
+
         private static void ParentAndResetTransform(Transform transform, Transform parentTransform)
         {
             transform.SetParent(parentTransform);
@@ -366,6 +501,11 @@ namespace UnityMeshSimplifier
             {
                 Object.DestroyImmediate(obj);
             }
+        }
+
+        private static void SaveAsset(Object asset)
+        {
+            // TODO: Save asset!
         }
         #endregion
     }
