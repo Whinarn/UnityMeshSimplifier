@@ -407,9 +407,9 @@ namespace UnityMeshSimplifier
         #endregion
 
         #region Fields
-        private bool preserveBorders = false;
-        private bool preserveSeams = false;
-        private bool preserveFoldovers = false;
+        private bool preserveBorderEdges = false;
+        private bool preserveUVSeamEdges = false;
+        private bool preserveUVFoldoverEdges = false;
         private bool enableSmartLink = true;
         private int maxIterationCount = 100;
         private double agressiveness = 7.0;
@@ -441,44 +441,77 @@ namespace UnityMeshSimplifier
 
         #region Properties
         /// <summary>
-        /// Gets or sets if borders should be preserved.
+        /// Gets or sets if the border edges should be preserved.
         /// Default value: false
         /// </summary>
-        [Obsolete("Use the 'MeshSimplifier.PreserveBorders' property instead.", false)]
+        [Obsolete("Use the 'MeshSimplifier.PreserveBorderEdges' property instead.", false)]
         public bool KeepBorders
         {
-            get { return preserveBorders; }
-            set { preserveBorders = value; }
+            get { return this.PreserveBorderEdges; }
+            set { this.PreserveBorderEdges = value; }
         }
 
         /// <summary>
-        /// Gets or sets if borders should be preserved.
+        /// Gets or sets if the border edges should be preserved.
         /// Default value: false
         /// </summary>
+        [Obsolete("Use the 'MeshSimplifier.PreserveBorderEdges' property instead.", false)]
         public bool PreserveBorders
         {
-            get { return preserveBorders; }
-            set { preserveBorders = value; }
+            get { return this.PreserveBorderEdges; }
+            set { this.PreserveBorderEdges = value; }
         }
 
         /// <summary>
-        /// Gets or sets if seams should be preserved.
+        /// Gets or sets if the border edges should be preserved.
         /// Default value: false
         /// </summary>
+        public bool PreserveBorderEdges
+        {
+            get { return preserveBorderEdges; }
+            set { preserveBorderEdges = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets if the UV seam edges should be preserved.
+        /// Default value: false
+        /// </summary>
+        [Obsolete("Use the 'MeshSimplifier.PreserveUVSeamEdges' property instead.", false)]
         public bool PreserveSeams
         {
-            get { return preserveSeams; }
-            set { preserveSeams = value; }
+            get { return this.PreserveUVSeamEdges; }
+            set { this.PreserveUVSeamEdges = value; }
         }
 
         /// <summary>
-        /// Gets or sets if foldovers should be preserved.
+        /// Gets or sets if the UV seam edges should be preserved.
         /// Default value: false
         /// </summary>
+        public bool PreserveUVSeamEdges
+        {
+            get { return preserveUVSeamEdges; }
+            set { preserveUVSeamEdges = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets if the UV foldover edges should be preserved.
+        /// Default value: false
+        /// </summary>
+        [Obsolete("Use the 'MeshSimplifier.PreserveUVFoldoverEdges' property instead.", false)]
         public bool PreserveFoldovers
         {
-            get { return preserveFoldovers; }
-            set { preserveFoldovers = value; }
+            get { return this.PreserveUVFoldoverEdges; }
+            set { this.PreserveUVFoldoverEdges = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets if the UV foldover edges should be preserved.
+        /// Default value: false
+        /// </summary>
+        public bool PreserveUVFoldoverEdges
+        {
+            get { return preserveUVFoldoverEdges; }
+            set { preserveUVFoldoverEdges = value; }
         }
 
         /// <summary>
