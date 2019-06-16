@@ -43,8 +43,10 @@ namespace UnityMeshSimplifier
         private float fadeTransitionWidth;
         [SerializeField, Range(0f, 1f), Tooltip("The desired quality for this level.")]
         private float quality;
-        [SerializeField, Tooltip("If all renderers and meshes under this level should be combined into one.")]
+        [SerializeField, Tooltip("If all renderers and meshes under this level should be combined into one, where possible.")]
         private bool combineMeshes;
+        [SerializeField, Tooltip("If all sub-meshes should be combined into one, where possible.")]
+        private bool combineSubMeshes;
 
         [SerializeField, Tooltip("The renderers used in this level.")]
         private Renderer[] renderers;
@@ -94,12 +96,22 @@ namespace UnityMeshSimplifier
         }
 
         /// <summary>
-        /// Gets or sets if all renderers and meshes under this level should be combined into one.
+        /// Gets or sets if all renderers and meshes under this level should be combined into one, where possible.
         /// </summary>
         public bool CombineMeshes
         {
             get { return combineMeshes; }
             set { combineMeshes = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets if all sub-meshes should be combined into one, where possible.
+        /// NOTE: This is only used if <see cref="CombineMeshes"/> is true.
+        /// </summary>
+        public bool CombineSubMeshes
+        {
+            get { return combineSubMeshes; }
+            set { combineSubMeshes = value; }
         }
 
         /// <summary>
@@ -183,7 +195,7 @@ namespace UnityMeshSimplifier
         /// <param name="screenRelativeTransitionHeight">The screen relative height to use for the transition [0-1].</param>
         /// <param name="quality">The quality of this level [0-1].</param>
         public LODLevel(float screenRelativeTransitionHeight, float quality)
-            : this(screenRelativeTransitionHeight, 0f, quality, false, null)
+            : this(screenRelativeTransitionHeight, 0f, quality, false, false, null)
         {
 
         }
@@ -194,9 +206,10 @@ namespace UnityMeshSimplifier
         /// <param name="screenRelativeTransitionHeight">The screen relative height to use for the transition [0-1].</param>
         /// <param name="fadeTransitionWidth">The width of the cross-fade transition zone (proportion to the current LOD's whole length) [0-1]. Only used if it's not animated.</param>
         /// <param name="quality">The quality of this level [0-1].</param>
-        /// <param name="combineMeshes">If all renderers and meshes under this level should be combined into one.</param>
-        public LODLevel(float screenRelativeTransitionHeight, float fadeTransitionWidth, float quality, bool combineMeshes)
-            : this(screenRelativeTransitionHeight, fadeTransitionWidth, quality, combineMeshes, null)
+        /// <param name="combineMeshes">If all renderers and meshes under this level should be combined into one, where possible.</param>
+        /// <param name="combineSubMeshes">If all sub-meshes should be combined into one, where possible.</param>
+        public LODLevel(float screenRelativeTransitionHeight, float fadeTransitionWidth, float quality, bool combineMeshes, bool combineSubMeshes)
+            : this(screenRelativeTransitionHeight, fadeTransitionWidth, quality, combineMeshes, combineSubMeshes, null)
         {
 
         }
@@ -207,14 +220,16 @@ namespace UnityMeshSimplifier
         /// <param name="screenRelativeTransitionHeight">The screen relative height to use for the transition [0-1].</param>
         /// <param name="fadeTransitionWidth">The width of the cross-fade transition zone (proportion to the current LOD's whole length) [0-1]. Only used if it's not animated.</param>
         /// <param name="quality">The quality of this level [0-1].</param>
-        /// <param name="combineMeshes">If all renderers and meshes under this level should be combined into one.</param>
+        /// <param name="combineMeshes">If all renderers and meshes under this level should be combined into one, where possible.</param>
+        /// <param name="combineSubMeshes">If all sub-meshes should be combined into one, where possible.</param>
         /// <param name="renderers">The renderers used in this level.</param>
-        public LODLevel(float screenRelativeTransitionHeight, float fadeTransitionWidth, float quality, bool combineMeshes, Renderer[] renderers)
+        public LODLevel(float screenRelativeTransitionHeight, float fadeTransitionWidth, float quality, bool combineMeshes, bool combineSubMeshes, Renderer[] renderers)
         {
             this.screenRelativeTransitionHeight = Mathf.Clamp01(screenRelativeTransitionHeight);
             this.fadeTransitionWidth = fadeTransitionWidth;
             this.quality = Mathf.Clamp01(quality);
             this.combineMeshes = combineMeshes;
+            this.combineSubMeshes = combineSubMeshes;
 
             this.renderers = renderers;
 

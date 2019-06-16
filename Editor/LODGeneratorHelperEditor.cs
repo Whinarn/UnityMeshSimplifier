@@ -42,6 +42,8 @@ namespace UnityMeshSimplifier.Editor
         private const string LevelScreenRelativeHeightFieldName = "screenRelativeTransitionHeight";
         private const string LevelFadeTransitionWidthFieldName = "fadeTransitionWidth";
         private const string LevelQualityFieldName = "quality";
+        private const string LevelCombineMeshesFieldName = "combineMeshes";
+        private const string LevelCombineSubMeshesFieldName = "combineSubMeshes";
         private const string LevelRenderersFieldName = "renderers";
         private const string SimplificationOptionsEnableSmartLinkFieldName = "EnableSmartLink";
         private const string SimplificationOptionsVertexLinkDistanceFieldName = "VertexLinkDistance";
@@ -175,10 +177,20 @@ namespace UnityMeshSimplifier.Editor
             {
                 ++EditorGUI.indentLevel;
 
+                var combineMeshesProperty = levelProperty.FindPropertyRelative(LevelCombineMeshesFieldName);
+                EditorGUILayout.PropertyField(combineMeshesProperty);
+
+                if (combineMeshesProperty.boolValue)
+                {
+                    var combineSubMeshesProperty = levelProperty.FindPropertyRelative(LevelCombineSubMeshesFieldName);
+                    EditorGUILayout.PropertyField(combineSubMeshesProperty);
+                }
+
                 var childProperties = levelProperty.GetChildProperties();
                 foreach (var childProperty in childProperties)
                 {
                     if (string.Equals(childProperty.name, LevelScreenRelativeHeightFieldName) || string.Equals(childProperty.name, LevelQualityFieldName) ||
+                        string.Equals(childProperty.name, LevelCombineMeshesFieldName) || string.Equals(childProperty.name, LevelCombineSubMeshesFieldName) ||
                         string.Equals(childProperty.name, LevelRenderersFieldName))
                     {
                         continue;

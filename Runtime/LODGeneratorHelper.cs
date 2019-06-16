@@ -111,6 +111,7 @@ namespace UnityMeshSimplifier
                 new LODLevel(0.6f, 1f)
                 {
                     CombineMeshes = false,
+                    CombineSubMeshes = false,
                     SkinQuality = SkinQuality.Auto,
                     ShadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On,
                     ReceiveShadows = true,
@@ -121,6 +122,7 @@ namespace UnityMeshSimplifier
                 new LODLevel(0.3f, 0.65f)
                 {
                     CombineMeshes = true,
+                    CombineSubMeshes = false,
                     SkinQuality = SkinQuality.Auto,
                     ShadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On,
                     ReceiveShadows = true,
@@ -131,6 +133,7 @@ namespace UnityMeshSimplifier
                 new LODLevel(0.1f, 0.4225f)
                 {
                     CombineMeshes = true,
+                    CombineSubMeshes = true,
                     SkinQuality = SkinQuality.Bone2,
                     ShadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off,
                     ReceiveShadows = false,
