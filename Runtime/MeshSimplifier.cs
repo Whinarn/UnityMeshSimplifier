@@ -558,6 +558,16 @@ namespace UnityMeshSimplifier
         }
 
         /// <summary>
+        /// Gets or sets the maximum distance between two vertices in order to link them.
+        /// Note that this value is only used if EnableSmartLink is true.
+        /// </summary>
+        public double VertexLinkDistance
+        {
+            get { return Math.Sqrt(vertexLinkDistanceSqr); }
+            set { vertexLinkDistanceSqr = (value > double.Epsilon ? value * value : double.Epsilon); }
+        }
+
+        /// <summary>
         /// Gets or sets the maximum squared distance between two vertices in order to link them.
         /// Note that this value is only used if EnableSmartLink is true.
         /// Default value: double.Epsilon
