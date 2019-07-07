@@ -285,8 +285,10 @@ namespace UnityMeshSimplifier
                     RemapBones(meshBoneWeights, boneIndices);
                 }
 
-                // Transforms the vertices
+                // Transforms the vertices, normals and tangents using the mesh transform
                 TransformVertices(meshVertices, ref meshTransform);
+                TransformNormals(meshNormals, ref meshTransform);
+                TransformTangents(meshTangents, ref meshTransform);
 
                 // Copy vertex positions & attributes
                 CopyVertexPositions(combinedVertices, meshVertices);
@@ -399,6 +401,30 @@ namespace UnityMeshSimplifier
             for (int i = 0; i < vertices.Length; i++)
             {
                 vertices[i] = transform.MultiplyPoint3x4(vertices[i]);
+            }
+        }
+
+        private static void TransformNormals(Vector3[] normals, ref Matrix4x4 transform)
+        {
+            if (normals == null)
+                return;
+
+            for (int i = 0; i < normals.Length; i++)
+            {
+                normals[i] = transform.MultiplyVector(normals[i]);
+            }
+        }
+
+        private static void TransformTangents(Vector4[] tangents, ref Matrix4x4 transform)
+        {
+            if (tangents == null)
+                return;
+
+            Vector3 tengentDir;
+            for (int i = 0; i < tangents.Length; i++)
+            {
+                tengentDir = transform.MultiplyVector(new Vector3(tangents[i].x, tangents[i].y, tangents[i].z));
+                tangents[i] = new Vector4(tengentDir.x, tengentDir.y, tengentDir.z, tangents[i].w);
             }
         }
 
