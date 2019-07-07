@@ -465,16 +465,10 @@ namespace UnityMeshSimplifier
 
         private static void ParentAndOffsetTransform(Transform transform, Transform parentTransform, Transform originalTransform)
         {
-            transform.SetParent(parentTransform);
             transform.position = originalTransform.position;
             transform.rotation = originalTransform.rotation;
-            transform.localScale = Vector3.one;
-
-            var worldToLocalMatrix = parentTransform.worldToLocalMatrix;
-            worldToLocalMatrix.SetColumn(3, new Vector4(0f, 0f, 0f, 1f));
-            var localScale = worldToLocalMatrix.MultiplyPoint3x4(originalTransform.lossyScale);
-            localScale.x = -localScale.x;
-            transform.localScale = localScale;
+            transform.localScale = originalTransform.lossyScale;
+            transform.SetParent(parentTransform, true);
         }
 
         private static MeshRenderer CreateLevelRenderer(string name, Transform parentTransform, Transform originalTransform, Mesh mesh, Material[] materials, ref LODLevel level)
