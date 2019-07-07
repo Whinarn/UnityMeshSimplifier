@@ -492,29 +492,45 @@ namespace UnityMeshSimplifier.Editor
 
         private void GenerateLODs()
         {
-            var lodGroup = LODGenerator.GenerateLODs(lodGeneratorHelper);
-            if (lodGroup != null)
+            try
             {
-                using (var serializedObject = new SerializedObject(lodGeneratorHelper))
+                var lodGroup = LODGenerator.GenerateLODs(lodGeneratorHelper);
+                if (lodGroup != null)
                 {
-                    var isGeneratedProperty = serializedObject.FindProperty(IsGeneratedFieldName);
-                    serializedObject.UpdateIfRequiredOrScript();
-                    isGeneratedProperty.boolValue = true;
-                    serializedObject.ApplyModifiedPropertiesWithoutUndo();
+                    using (var serializedObject = new SerializedObject(lodGeneratorHelper))
+                    {
+                        var isGeneratedProperty = serializedObject.FindProperty(IsGeneratedFieldName);
+                        serializedObject.UpdateIfRequiredOrScript();
+                        isGeneratedProperty.boolValue = true;
+                        serializedObject.ApplyModifiedPropertiesWithoutUndo();
+                    }
                 }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogException(ex);
+                DisplayError("Failed to generate LODs!", ex.Message, "OK", lodGeneratorHelper);
             }
         }
 
         private void DestroyLODs()
         {
-            LODGenerator.DestroyLODs(lodGeneratorHelper);
-
-            using (var serializedObject = new SerializedObject(lodGeneratorHelper))
+            try
             {
-                var isGeneratedProperty = serializedObject.FindProperty(IsGeneratedFieldName);
-                serializedObject.UpdateIfRequiredOrScript();
-                isGeneratedProperty.boolValue = false;
-                serializedObject.ApplyModifiedPropertiesWithoutUndo();
+                LODGenerator.DestroyLODs(lodGeneratorHelper);
+
+                using (var serializedObject = new SerializedObject(lodGeneratorHelper))
+                {
+                    var isGeneratedProperty = serializedObject.FindProperty(IsGeneratedFieldName);
+                    serializedObject.UpdateIfRequiredOrScript();
+                    isGeneratedProperty.boolValue = false;
+                    serializedObject.ApplyModifiedPropertiesWithoutUndo();
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogException(ex);
+                DisplayError("Failed to destroy LODs!", ex.Message, "OK", lodGeneratorHelper);
             }
         }
 
@@ -581,6 +597,11 @@ namespace UnityMeshSimplifier.Editor
             }
 
             return rendererList.ToArray();
+        }
+
+        private static void DisplayError(string title, string message, string ok, Object context)
+        {
+            EditorUtility.DisplayDialog(title, message, ok);
         }
     }
 }

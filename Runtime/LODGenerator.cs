@@ -129,17 +129,11 @@ namespace UnityMeshSimplifier
             var transform = gameObject.transform;
             var existingLodParent = transform.Find(LODParentGameObjectName);
             if (existingLodParent != null)
-            {
-                DisplayError("The game object already has LODs!", "The game object already appears to have LODs. Please remove them first.", "OK", existingLodParent);
-                return null;
-            }
+                throw new System.InvalidOperationException("The game object already appears to have LODs. Please remove them first.");
 
             var existingLodGroup = gameObject.GetComponent<LODGroup>();
             if (existingLodGroup != null)
-            {
-                DisplayError("The game object already has LODs!", "The game object already appears to have a LOD Group. Please remove it first.", "OK", existingLodGroup);
-                return null;
-            }
+                throw new System.InvalidOperationException("The game object already appears to have a LOD Group. Please remove it first.");
 
             saveAssetsPath = ValidateSaveAssetsPath(saveAssetsPath);
 
@@ -877,15 +871,6 @@ namespace UnityMeshSimplifier
             return UnityEditor.AssetDatabase.DeleteAsset(path);
 #else
             return false;
-#endif
-        }
-
-        private static void DisplayError(string title, string message, string ok, Object context)
-        {
-            Debug.LogErrorFormat(context, "{0}\n{1}", title, message);
-
-#if UNITY_EDITOR
-            UnityEditor.EditorUtility.DisplayDialog(title, message, ok);
 #endif
         }
         #endregion
