@@ -25,6 +25,7 @@ SOFTWARE.
 #endregion
 
 using System;
+using System.Runtime.CompilerServices;
 
 namespace UnityMeshSimplifier
 {
@@ -47,6 +48,7 @@ namespace UnityMeshSimplifier
         /// </summary>
         public int Length
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get { return length; }
         }
 
@@ -55,6 +57,7 @@ namespace UnityMeshSimplifier
         /// </summary>
         public T[] Data
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get { return items; }
         }
 
@@ -65,7 +68,9 @@ namespace UnityMeshSimplifier
         /// <returns>The element value.</returns>
         public T this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get { return items[index]; }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set { items[index] = value; }
         }
         #endregion
@@ -89,9 +94,9 @@ namespace UnityMeshSimplifier
         public ResizableArray(int capacity, int length)
         {
             if (capacity < 0)
-                throw new ArgumentOutOfRangeException("capacity");
+                throw new ArgumentOutOfRangeException(nameof(capacity));
             else if (length < 0 || length > capacity)
-                throw new ArgumentOutOfRangeException("length");
+                throw new ArgumentOutOfRangeException(nameof(length));
 
             if (capacity > 0)
                 items = new T[capacity];
@@ -99,6 +104,28 @@ namespace UnityMeshSimplifier
                 items = emptyArr;
 
             this.length = length;
+        }
+
+        /// <summary>
+        /// Creates a new resizable array.
+        /// </summary>
+        /// <param name="initialArray">The initial array.</param>
+        public ResizableArray(T[] initialArray)
+        {
+            if (initialArray == null)
+                throw new ArgumentNullException(nameof(initialArray));
+
+            if (initialArray.Length > 0)
+            {
+                items = new T[initialArray.Length];
+                length = initialArray.Length;
+                Array.Copy(initialArray, 0, items, 0, initialArray.Length);
+            }
+            else
+            {
+                items = emptyArr;
+                length = 0;
+            }
         }
         #endregion
 
@@ -129,7 +156,7 @@ namespace UnityMeshSimplifier
         public void Resize(int length, bool trimExess = false)
         {
             if (length < 0)
-                throw new ArgumentOutOfRangeException("capacity");
+                throw new ArgumentOutOfRangeException(nameof(length));
 
             if (length > items.Length)
             {
@@ -156,7 +183,7 @@ namespace UnityMeshSimplifier
             if (items.Length == length) // Nothing to do
                 return;
 
-            T[] newItems = new T[length];
+            var newItems = new T[length];
             Array.Copy(items, 0, newItems, 0, length);
             items = newItems;
         }
@@ -173,6 +200,17 @@ namespace UnityMeshSimplifier
             }
 
             items[length++] = item;
+        }
+
+        /// <summary>
+        /// Returns a copy of the resizable array as an actually array.
+        /// </summary>
+        /// <returns>The array.</returns>
+        public T[] ToArray()
+        {
+            var newItems = new T[length];
+            Array.Copy(items, 0, newItems, 0, length);
+            return newItems;
         }
         #endregion
     }

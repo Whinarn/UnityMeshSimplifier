@@ -25,6 +25,7 @@ SOFTWARE.
 #endregion
 
 using System;
+using System.Runtime.CompilerServices;
 
 namespace UnityMeshSimplifier
 {
@@ -84,6 +85,7 @@ namespace UnityMeshSimplifier
         /// <returns>The value.</returns>
         public double this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 switch (index)
@@ -120,6 +122,7 @@ namespace UnityMeshSimplifier
         /// Creates a symmetric matrix with a value in each component.
         /// </summary>
         /// <param name="c">The component value.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SymmetricMatrix(double c)
         {
             this.m0 = c;
@@ -147,6 +150,7 @@ namespace UnityMeshSimplifier
         /// <param name="m7">The m33 component.</param>
         /// <param name="m8">The m34 component.</param>
         /// <param name="m9">The m44 component.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SymmetricMatrix(double m0, double m1, double m2, double m3,
             double m4, double m5, double m6, double m7, double m8, double m9)
         {
@@ -169,6 +173,7 @@ namespace UnityMeshSimplifier
         /// <param name="b">The plane y-component</param>
         /// <param name="c">The plane z-component</param>
         /// <param name="d">The plane w-component</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SymmetricMatrix(double a, double b, double c, double d)
         {
             this.m0 = a * a;
@@ -194,6 +199,7 @@ namespace UnityMeshSimplifier
         /// <param name="a">The left hand side.</param>
         /// <param name="b">The right hand side.</param>
         /// <returns>The resulting matrix.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SymmetricMatrix operator +(SymmetricMatrix a, SymmetricMatrix b)
         {
             return new SymmetricMatrix(
@@ -210,6 +216,7 @@ namespace UnityMeshSimplifier
         /// Determinant(0, 1, 2, 1, 4, 5, 2, 5, 7)
         /// </summary>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal double Determinant1()
         {
             double det =
@@ -226,6 +233,7 @@ namespace UnityMeshSimplifier
         /// Determinant(1, 2, 3, 4, 5, 6, 5, 7, 8)
         /// </summary>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal double Determinant2()
         {
             double det =
@@ -242,6 +250,7 @@ namespace UnityMeshSimplifier
         /// Determinant(0, 2, 3, 1, 5, 6, 2, 7, 8)
         /// </summary>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal double Determinant3()
         {
             double det =
@@ -258,6 +267,7 @@ namespace UnityMeshSimplifier
         /// Determinant(0, 1, 3, 1, 4, 6, 2, 5, 8)
         /// </summary>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal double Determinant4()
         {
             double det =
@@ -285,6 +295,7 @@ namespace UnityMeshSimplifier
         /// <param name="a32">The a32 index.</param>
         /// <param name="a33">The a33 index.</param>
         /// <returns>The determinant value.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public double Determinant(int a11, int a12, int a13,
             int a21, int a22, int a23,
             int a31, int a32, int a33)

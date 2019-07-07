@@ -1,0 +1,21 @@
+{
+  "name": "com.whinarn.unitymeshsimplifier",
+  "displayName": "Unity Mesh Simplifier",
+  "version": "2.0.0",
+  "unity": "2017.1",
+  "description": "Simplifies 3D meshes with ease. Works both in the editor and during runtime in builds.",
+  "keywords": [
+    "3d",
+    "mesh",
+    "polygon",
+    "triangle",
+    "simplification",
+    "decimation",
+    "reduction",
+    "optimization"
+  ],
+  "author": {
+    "name": "Mattias Edlund",
+    "url": "https://github.com/Whinarn"
+  }
+}
