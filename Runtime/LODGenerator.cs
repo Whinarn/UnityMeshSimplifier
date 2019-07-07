@@ -36,9 +36,15 @@ namespace UnityMeshSimplifier
     public static class LODGenerator
     {
         #region Consts
-        private const string LODParentGameObjectName = "_UMS_LODs_";
-        private const string LODAssetParentPath = "Assets/UMS_LODs";
-        private const string LODAssetParentPathWithSlash = LODAssetParentPath + "/";
+        /// <summary>
+        /// The name of the game object where generated LODs are parented under.
+        /// </summary>
+        public const string LODParentGameObjectName = "_UMS_LODs_";
+
+        /// <summary>
+        /// The parent path for generated LOD assets.
+        /// </summary>
+        public const string LODAssetParentPath = "Assets/UMS_LODs/";
         #endregion
 
         #region Structs
@@ -78,8 +84,9 @@ namespace UnityMeshSimplifier
             var levels = generatorHelper.Levels;
             bool autoCollectRenderers = generatorHelper.AutoCollectRenderers;
             var simplificationOptions = generatorHelper.SimplificationOptions;
+            string saveAssetsPath = generatorHelper.SaveAssetsPath;
 
-            var lodGroup = GenerateLODs(gameObject, levels, autoCollectRenderers, simplificationOptions);
+            var lodGroup = GenerateLODs(gameObject, levels, autoCollectRenderers, simplificationOptions, saveAssetsPath);
             if (lodGroup == null)
                 return null;
 
@@ -99,11 +106,25 @@ namespace UnityMeshSimplifier
         /// <returns>The generated LOD Group.</returns>
         public static LODGroup GenerateLODs(GameObject gameObject, LODLevel[] levels, bool autoCollectRenderers, SimplificationOptions simplificationOptions)
         {
+            return GenerateLODs(gameObject, levels, autoCollectRenderers, simplificationOptions, null);
+        }
+
+        /// <summary>
+        /// Generates the LODs and sets up a LOD Group for the specified game object.
+        /// </summary>
+        /// <param name="gameObject">The game object to set up.</param>
+        /// <param name="levels">The LOD levels to set up.</param>
+        /// <param name="autoCollectRenderers">If the renderers under the game object and any children should be automatically collected.
+        /// Enabling this will ignore any renderers defined under each LOD level.</param>
+        /// <param name="simplificationOptions">The mesh simplification options.</param>
+        /// <param name="saveAssetsPath">The path to where the generated assets should be saved. Can be null or empty to use the default path.</param>
+        /// <returns>The generated LOD Group.</returns>
+        public static LODGroup GenerateLODs(GameObject gameObject, LODLevel[] levels, bool autoCollectRenderers, SimplificationOptions simplificationOptions, string saveAssetsPath)
+        {
             if (gameObject == null)
                 throw new System.ArgumentNullException(nameof(gameObject));
             else if (levels == null)
                 throw new System.ArgumentNullException(nameof(levels));
-
 
             var transform = gameObject.transform;
             var existingLodParent = transform.Find(LODParentGameObjectName);
@@ -119,6 +140,8 @@ namespace UnityMeshSimplifier
                 DisplayError("The game object already has LODs!", "The game object already appears to have a LOD Group. Please remove it first.", "OK", existingLodGroup);
                 return null;
             }
+
+            saveAssetsPath = ValidateSaveAssetsPath(saveAssetsPath);
 
             var lodParentGameObject = new GameObject(LODParentGameObjectName);
             var lodParent = lodParentGameObject.transform;
@@ -178,7 +201,7 @@ namespace UnityMeshSimplifier
                             if (level.Quality < 1f)
                             {
                                 mesh = SimplifyMesh(mesh, level.Quality, simplificationOptions);
-                                SaveLODMeshAsset(mesh, gameObject.name, renderer.name, levelIndex, renderer.mesh.name);
+                                SaveLODMeshAsset(mesh, gameObject.name, renderer.name, levelIndex, renderer.mesh.name, saveAssetsPath);
 
                                 if (renderer.isNewMesh)
                                 {
@@ -204,7 +227,7 @@ namespace UnityMeshSimplifier
                             if (level.Quality < 1f)
                             {
                                 mesh = SimplifyMesh(mesh, level.Quality, simplificationOptions);
-                                SaveLODMeshAsset(mesh, gameObject.name, renderer.name, levelIndex, renderer.mesh.name);
+                                SaveLODMeshAsset(mesh, gameObject.name, renderer.name, levelIndex, renderer.mesh.name, saveAssetsPath);
 
                                 if (renderer.isNewMesh)
                                 {
@@ -671,7 +694,7 @@ namespace UnityMeshSimplifier
             }
 
             // Delete any empty LOD asset directories
-            DeleteEmptyDirectory(LODAssetParentPath);
+            DeleteEmptyDirectory(LODAssetParentPath.TrimEnd('/'));
 #endif
         }
 
@@ -710,20 +733,30 @@ namespace UnityMeshSimplifier
 #if UNITY_EDITOR
             // We only delete assets that we have automatically generated
             string assetPath = UnityEditor.AssetDatabase.GetAssetPath(asset);
-            if (assetPath.StartsWith(LODAssetParentPathWithSlash))
+            if (assetPath.StartsWith(LODAssetParentPath))
             {
                 UnityEditor.AssetDatabase.DeleteAsset(assetPath);
             }
 #endif
         }
 
-        private static void SaveLODMeshAsset(Object asset, string gameObjectName, string rendererName, int levelIndex, string meshName)
+        private static void SaveLODMeshAsset(Object asset, string gameObjectName, string rendererName, int levelIndex, string meshName, string saveAssetsPath)
         {
             gameObjectName = MakePathSafe(gameObjectName);
             rendererName = MakePathSafe(rendererName);
             meshName = MakePathSafe(meshName);
             meshName = string.Format("{0:00}_{1}", levelIndex, meshName);
-            string path = string.Format("{0}{1}/{2}/{3}.mesh", LODAssetParentPathWithSlash, gameObjectName, rendererName, meshName);
+
+            string path;
+            if (!string.IsNullOrEmpty(saveAssetsPath))
+            {
+                path = string.Format("{0}{1}/{2}.mesh", LODAssetParentPath, saveAssetsPath, meshName);
+            }
+            else
+            {
+                path = string.Format("{0}{1}/{2}/{3}.mesh", LODAssetParentPath, gameObjectName, rendererName, meshName);
+            }
+
             SaveAsset(asset, path);
         }
 
@@ -795,6 +828,30 @@ namespace UnityMeshSimplifier
                 }
             }
             return sb.ToString();
+        }
+
+        private static string ValidateSaveAssetsPath(string saveAssetsPath)
+        {
+            if (string.IsNullOrEmpty(saveAssetsPath))
+                return null;
+
+            saveAssetsPath = saveAssetsPath.Replace('\\', '/');
+            saveAssetsPath = saveAssetsPath.Trim('/');
+
+            if (System.IO.Path.IsPathRooted(saveAssetsPath))
+                throw new System.InvalidOperationException("The save assets path cannot be rooted.");
+            else if (saveAssetsPath.Length > 100)
+                throw new System.InvalidOperationException("The save assets path cannot be more than 100 characters long to avoid I/O issues.");
+
+            // Make the path safe
+            var pathParts = saveAssetsPath.Split('/');
+            for (int i = 0; i < pathParts.Length; i++)
+            {
+                pathParts[i] = MakePathSafe(pathParts[i]);
+            }
+            saveAssetsPath = string.Join("/", pathParts);
+
+            return saveAssetsPath;
         }
 
         private static bool DeleteEmptyDirectory(string path)

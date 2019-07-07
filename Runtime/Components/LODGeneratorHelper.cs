@@ -46,6 +46,9 @@ namespace UnityMeshSimplifier
         [SerializeField, Tooltip("The simplification options.")]
         private SimplificationOptions simplificationOptions = SimplificationOptions.Default;
 
+        [SerializeField, Tooltip("The path within the project to save the generated assets. Leave this empty to use the default path.")]
+        private string saveAssetsPath = string.Empty;
+
         [SerializeField, Tooltip("The LOD levels.")]
         private LODLevel[] levels = null;
 
@@ -89,6 +92,16 @@ namespace UnityMeshSimplifier
         {
             get { return simplificationOptions; }
             set { simplificationOptions = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the path within the project to save the generated assets.
+        /// Leave this empty to use the default path.
+        /// </summary>
+        public string SaveAssetsPath
+        {
+            get { return saveAssetsPath; }
+            set { saveAssetsPath = value; }
         }
 
         /// <summary>

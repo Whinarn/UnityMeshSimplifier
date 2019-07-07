@@ -38,6 +38,7 @@ namespace UnityMeshSimplifier.Editor
         private const string AnimateCrossFadingFieldName = "animateCrossFading";
         private const string AutoCollectRenderersFieldName = "autoCollectRenderers";
         private const string SimplificationOptionsFieldName = "simplificationOptions";
+        private const string SaveAssetsPathFieldName = "saveAssetsPath";
         private const string LevelsFieldName = "levels";
         private const string IsGeneratedFieldName = "isGenerated";
         private const string LevelScreenRelativeHeightFieldName = "screenRelativeTransitionHeight";
@@ -56,9 +57,11 @@ namespace UnityMeshSimplifier.Editor
         private SerializedProperty animateCrossFadingProperty = null;
         private SerializedProperty autoCollectRenderersProperty = null;
         private SerializedProperty simplificationOptionsProperty = null;
+        private SerializedProperty saveAssetsPathProperty = null;
         private SerializedProperty levelsProperty = null;
         private SerializedProperty isGeneratedProperty = null;
 
+        private bool overrideSaveAssetsPath = false;
         private bool[] settingsExpanded = null;
         private LODGeneratorHelper lodGeneratorHelper = null;
 
@@ -70,6 +73,7 @@ namespace UnityMeshSimplifier.Editor
         private static readonly GUIContent renderersHeaderContent = new GUIContent("Renderers:", "The renderers used for this LOD level.");
         private static readonly GUIContent removeRendererButtonContent = new GUIContent("X", "Removes this renderer.");
         private static readonly GUIContent addRendererButtonContent = new GUIContent("Add", "Adds a renderer to this LOD level.");
+        private static readonly GUIContent overrideSaveAssetsPathContent = new GUIContent("Override Save Assets Path", "If you want to override the path where the generated assets are saved.");
         private static readonly Color removeColor = new Color(1f, 0.6f, 0.6f, 1f);
 
         private static readonly int ObjectPickerControlID = "LODGeneratorSelector".GetHashCode();
@@ -80,9 +84,11 @@ namespace UnityMeshSimplifier.Editor
             animateCrossFadingProperty = serializedObject.FindProperty(AnimateCrossFadingFieldName);
             autoCollectRenderersProperty = serializedObject.FindProperty(AutoCollectRenderersFieldName);
             simplificationOptionsProperty = serializedObject.FindProperty(SimplificationOptionsFieldName);
+            saveAssetsPathProperty = serializedObject.FindProperty(SaveAssetsPathFieldName);
             levelsProperty = serializedObject.FindProperty(LevelsFieldName);
             isGeneratedProperty = serializedObject.FindProperty(IsGeneratedFieldName);
 
+            overrideSaveAssetsPath = (saveAssetsPathProperty.stringValue.Length > 0);
             lodGeneratorHelper = target as LODGeneratorHelper;
         }
 
@@ -124,6 +130,20 @@ namespace UnityMeshSimplifier.Editor
 
             EditorGUILayout.PropertyField(autoCollectRenderersProperty);
             DrawSimplificationOptions();
+
+            bool newHasSaveAssetsPath = EditorGUILayout.Toggle(overrideSaveAssetsPathContent, overrideSaveAssetsPath);
+            if (newHasSaveAssetsPath != overrideSaveAssetsPath)
+            {
+                overrideSaveAssetsPath = newHasSaveAssetsPath;
+                saveAssetsPathProperty.stringValue = string.Empty;
+                serializedObject.ApplyModifiedProperties();
+                GUIUtility.ExitGUI();
+            }
+
+            if (overrideSaveAssetsPath)
+            {
+                EditorGUILayout.PropertyField(saveAssetsPathProperty);
+            }
 
             if (settingsExpanded == null || settingsExpanded.Length != levelsProperty.arraySize)
             {
