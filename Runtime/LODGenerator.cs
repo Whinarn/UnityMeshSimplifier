@@ -129,11 +129,8 @@ namespace UnityMeshSimplifier
             Renderer[] allRenderers = null;
             if (autoCollectRenderers)
             {
-                // Collect all enabled renderers
-                var allChildRenderers = gameObject.GetComponentsInChildren<Renderer>();
-                allRenderers = (from renderer in allChildRenderers
-                                where renderer.enabled
-                                select renderer).ToArray();
+                // Collect all enabled renderers under the game object
+                allRenderers = GetChildRenderersForLOD(gameObject);
             }
 
             var renderersToDisable = new List<Renderer>((allRenderers != null ? allRenderers.Length : 10));
@@ -544,6 +541,42 @@ namespace UnityMeshSimplifier
             {
                 skinnedMeshRenderer.quality = level.SkinQuality;
                 skinnedMeshRenderer.skinnedMotionVectors = level.SkinnedMotionVectors;
+            }
+        }
+        
+        private static Renderer[] GetChildRenderersForLOD(GameObject gameObject)
+        {
+            var resultRenderers = new List<Renderer>();
+            CollectChildRenderersForLOD(gameObject.transform, resultRenderers);
+            return resultRenderers.ToArray();
+        }
+
+        private static void CollectChildRenderersForLOD(Transform transform, List<Renderer> resultRenderers)
+        {
+            // Collect the rendererers of this transform
+            var childRenderers = transform.GetComponents<Renderer>();
+            resultRenderers.AddRange(childRenderers);
+
+            int childCount = transform.childCount;
+            for (int i = 0; i < childCount; i++)
+            {
+                // Skip children that are not active
+                var childTransform = transform.GetChild(i);
+                if (!childTransform.gameObject.activeSelf)
+                    continue;
+
+                // If the transform have the identical name as to our LOD Parent GO name, then we also skip it
+                if (string.Equals(childTransform.name, LODParentGameObjectName))
+                    continue;
+
+                // Skip children that has a LOD Group or a LOD Generator Helper component
+                if (childTransform.GetComponent<LODGroup>() != null)
+                    continue;
+                else if (childTransform.GetComponent<LODGeneratorHelper>() != null)
+                    continue;
+
+                // Continue recursively through the children of this transform
+                CollectChildRenderersForLOD(childTransform, resultRenderers);
             }
         }
 
