@@ -46,6 +46,7 @@ namespace UnityMeshSimplifier
         {
             public string name;
             public bool isNewMesh;
+            public Transform transform;
             public Mesh mesh;
             public Material[] materials;
         }
@@ -54,6 +55,7 @@ namespace UnityMeshSimplifier
         {
             public string name;
             public bool isNewMesh;
+            public Transform transform;
             public Mesh mesh;
             public Material[] materials;
             public Transform rootBone;
@@ -124,7 +126,16 @@ namespace UnityMeshSimplifier
 
             var lodGroup = gameObject.AddComponent<LODGroup>();
 
-            Renderer[] allRenderers = (autoCollectRenderers ? gameObject.GetComponentsInChildren<Renderer>() : null);
+            Renderer[] allRenderers = null;
+            if (autoCollectRenderers)
+            {
+                // Collect all enabled renderers
+                var allChildRenderers = gameObject.GetComponentsInChildren<Renderer>();
+                allRenderers = (from renderer in allChildRenderers
+                                where renderer.enabled
+                                select renderer).ToArray();
+            }
+
             var renderersToDisable = new List<Renderer>((allRenderers != null ? allRenderers.Length : 10));
             var lods = new LOD[levels.Length];
             for (int levelIndex = 0; levelIndex < levels.Length; levelIndex++)
@@ -137,13 +148,13 @@ namespace UnityMeshSimplifier
                 Renderer[] originalLevelRenderers = allRenderers ?? level.Renderers;
                 var levelRenderers = new List<Renderer>((originalLevelRenderers != null ? originalLevelRenderers.Length : 0));
 
-                if (originalLevelRenderers != null)
+                if (originalLevelRenderers != null && originalLevelRenderers.Length > 0)
                 {
                     var meshRenderers = (from renderer in originalLevelRenderers
-                                        where renderer as MeshRenderer != null
-                                        select renderer as MeshRenderer).ToArray();
+                                         where renderer.enabled && renderer as MeshRenderer != null
+                                         select renderer as MeshRenderer).ToArray();
                     var skinnedMeshRenderers = (from renderer in originalLevelRenderers
-                                                where renderer as SkinnedMeshRenderer != null
+                                                where renderer.enabled && renderer as SkinnedMeshRenderer != null
                                                 select renderer as SkinnedMeshRenderer).ToArray();
 
                     StaticRenderer[] staticRenderers;
@@ -180,7 +191,7 @@ namespace UnityMeshSimplifier
                             }
 
                             string rendererName = string.Format("{0:000}_static_{1}", rendererIndex, renderer.name);
-                            var levelRenderer = CreateLevelRenderer(rendererName, levelTransform, mesh, renderer.materials, ref level);
+                            var levelRenderer = CreateLevelRenderer(rendererName, levelTransform, renderer.transform, mesh, renderer.materials, ref level);
                             levelRenderers.Add(levelRenderer);
                         }
                     }
@@ -206,7 +217,7 @@ namespace UnityMeshSimplifier
                             }
 
                             string rendererName = string.Format("{0:000}_skinned_{1}", rendererIndex, renderer.name);
-                            var levelRenderer = CreateSkinnedLevelRenderer(rendererName, levelTransform, mesh, renderer.materials, renderer.rootBone, renderer.bones, ref level);
+                            var levelRenderer = CreateSkinnedLevelRenderer(rendererName, levelTransform, renderer.transform, mesh, renderer.materials, renderer.rootBone, renderer.bones, ref level);
                             levelRenderers.Add(levelRenderer);
                         }
                     }
@@ -306,6 +317,7 @@ namespace UnityMeshSimplifier
                 {
                     name = renderer.name,
                     isNewMesh = false,
+                    transform = renderer.transform,
                     mesh = mesh,
                     materials = renderer.sharedMaterials
                 });
@@ -331,6 +343,7 @@ namespace UnityMeshSimplifier
                 {
                     name = renderer.name,
                     isNewMesh = false,
+                    transform = renderer.transform,
                     mesh = mesh,
                     materials = renderer.sharedMaterials,
                     rootBone = renderer.rootBone,
@@ -357,6 +370,7 @@ namespace UnityMeshSimplifier
             {
                 name = rendererName,
                 isNewMesh = true,
+                transform = null,
                 mesh = combinedMesh,
                 materials = combinedMaterials
             });
@@ -395,6 +409,7 @@ namespace UnityMeshSimplifier
                 {
                     name = renderer.name,
                     isNewMesh = false,
+                    transform = renderer.transform,
                     mesh = renderer.sharedMesh,
                     materials = renderer.sharedMaterials,
                     rootBone = renderer.rootBone,
@@ -415,6 +430,7 @@ namespace UnityMeshSimplifier
                 {
                     name = rendererName,
                     isNewMesh = false,
+                    transform = null,
                     mesh = combinedMesh,
                     materials = combinedMaterials,
                     rootBone = rootBone,
@@ -433,26 +449,56 @@ namespace UnityMeshSimplifier
             transform.localScale = Vector3.one;
         }
 
-        private static MeshRenderer CreateLevelRenderer(string name, Transform parentTransform, Mesh mesh, Material[] materials, ref LODLevel level)
+        private static void ParentAndOffsetTransform(Transform transform, Transform parentTransform, Transform originalTransform)
         {
-            var gameObject = new GameObject(name, typeof(MeshFilter), typeof(MeshRenderer));
-            ParentAndResetTransform(gameObject.transform, parentTransform);
+            transform.SetParent(parentTransform);
+            transform.position = originalTransform.position;
+            transform.rotation = originalTransform.rotation;
+            transform.localScale = Vector3.one;
 
-            var meshFilter = gameObject.GetComponent<MeshFilter>();
+            var worldToLocalMatrix = parentTransform.worldToLocalMatrix;
+            worldToLocalMatrix.SetColumn(3, new Vector4(0f, 0f, 0f, 1f));
+            var localScale = worldToLocalMatrix.MultiplyPoint3x4(originalTransform.lossyScale);
+            localScale.x = -localScale.x;
+            transform.localScale = localScale;
+        }
+
+        private static MeshRenderer CreateLevelRenderer(string name, Transform parentTransform, Transform originalTransform, Mesh mesh, Material[] materials, ref LODLevel level)
+        {
+            var levelGameObject = new GameObject(name, typeof(MeshFilter), typeof(MeshRenderer));
+            var levelTransform = levelGameObject.transform;
+            if (originalTransform != null)
+            {
+                ParentAndOffsetTransform(levelTransform, parentTransform, originalTransform);
+            }
+            else
+            {
+                ParentAndResetTransform(levelTransform, parentTransform);
+            }
+
+            var meshFilter = levelGameObject.GetComponent<MeshFilter>();
             meshFilter.sharedMesh = mesh;
 
-            var meshRenderer = gameObject.GetComponent<MeshRenderer>();
+            var meshRenderer = levelGameObject.GetComponent<MeshRenderer>();
             meshRenderer.sharedMaterials = materials;
             SetupLevelRenderer(meshRenderer, ref level);
             return meshRenderer;
         }
 
-        private static SkinnedMeshRenderer CreateSkinnedLevelRenderer(string name, Transform parentTransform, Mesh mesh, Material[] materials, Transform rootBone, Transform[] bones, ref LODLevel level)
+        private static SkinnedMeshRenderer CreateSkinnedLevelRenderer(string name, Transform parentTransform, Transform originalTransform, Mesh mesh, Material[] materials, Transform rootBone, Transform[] bones, ref LODLevel level)
         {
-            var gameObject = new GameObject(name, typeof(SkinnedMeshRenderer));
-            ParentAndResetTransform(gameObject.transform, parentTransform);
+            var levelGameObject = new GameObject(name, typeof(SkinnedMeshRenderer));
+            var levelTransform = levelGameObject.transform;
+            if (originalTransform != null)
+            {
+                ParentAndOffsetTransform(levelTransform, parentTransform, originalTransform);
+            }
+            else
+            {
+                ParentAndResetTransform(levelTransform, parentTransform);
+            }
 
-            var skinnedMeshRenderer = gameObject.GetComponent<SkinnedMeshRenderer>();
+            var skinnedMeshRenderer = levelGameObject.GetComponent<SkinnedMeshRenderer>();
             skinnedMeshRenderer.sharedMesh = mesh;
             skinnedMeshRenderer.sharedMaterials = materials;
             skinnedMeshRenderer.rootBone = rootBone;
