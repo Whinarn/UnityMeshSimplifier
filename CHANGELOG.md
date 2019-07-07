@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - LOD generator.
 - Component to assist with LOD generation.
 - Added support to interpolate blend shapes.
+- Added support for up to 8 UV channels.
 
 ### Removed
 - Removed the long obsolete KeepBorders property on the MeshSimplifier class.
