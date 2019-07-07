@@ -7,9 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Unity package manifest file.
+- LOD generator.
+- Component to assist with LOD generation.
+- Added support to interpolate blend shapes.
 
 ### Changed
 - Reorganized the project layout to match the Unity convention.
+- The vertex attributes are now interpolated using barycentric coordinates.
 
 ## [v1.0.3] - 2018-10-20
 ### Fixed
