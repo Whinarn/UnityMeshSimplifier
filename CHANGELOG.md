@@ -7,9 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Unity package manifest file.
+- LOD generator.
+- Component to assist with LOD generation.
+- Added support to interpolate blend shapes.
 
 ### Changed
 - Reorganized the project layout to match the Unity convention.
+- The vertex attributes are now interpolated using barycentric coordinates.
 
 ## [v1.0.3] - 2018-10-20
 ### Fixed
@@ -36,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better support for skinned meshes.
 - Support for Unity 2017.4 and 2018.X
 
-## v0.1.0 - 2018-04-01
+## [v0.1.0] - 2018-04-01
 ### Added
 - A mesh simplification algorithm based on the [Fast Quadric Mesh Simplification](https://github.com/sp4cerat/Fast-Quadric-Mesh-Simplification) algorithm.
 - A feature (Smart Linking) that attempts to solve problems where holes could appear in simplified meshes.
@@ -48,3 +52,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.0.2]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v1.0.1...v1.0.2
 [v1.0.1]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v1.0.0...v1.0.1
 [v1.0.0]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v0.1.0...v1.0.0
+[v0.1.0]: https://github.com/Whinarn/UnityMeshSimplifier/releases/tag/v0.1.0

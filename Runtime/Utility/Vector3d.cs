@@ -25,6 +25,7 @@ SOFTWARE.
 #endregion
 
 using System;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace UnityMeshSimplifier
@@ -69,6 +70,7 @@ namespace UnityMeshSimplifier
         /// </summary>
         public double Magnitude
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get { return System.Math.Sqrt(x * x + y * y + z * z); }
         }
 
@@ -77,6 +79,7 @@ namespace UnityMeshSimplifier
         /// </summary>
         public double MagnitudeSqr
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get { return (x * x + y * y + z * z); }
         }
 
@@ -85,6 +88,7 @@ namespace UnityMeshSimplifier
         /// </summary>
         public Vector3d Normalized
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 Vector3d result;
@@ -99,6 +103,7 @@ namespace UnityMeshSimplifier
         /// <param name="index">The component index.</param>
         public double this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 switch (index)
@@ -113,6 +118,7 @@ namespace UnityMeshSimplifier
                         throw new IndexOutOfRangeException("Invalid Vector3d index!");
                 }
             }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
                 switch (index)
@@ -138,6 +144,7 @@ namespace UnityMeshSimplifier
         /// Creates a new vector with one value for all components.
         /// </summary>
         /// <param name="value">The value.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3d(double value)
         {
             this.x = value;
@@ -151,6 +158,7 @@ namespace UnityMeshSimplifier
         /// <param name="x">The x value.</param>
         /// <param name="y">The y value.</param>
         /// <param name="z">The z value.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3d(double x, double y, double z)
         {
             this.x = x;
@@ -162,6 +170,7 @@ namespace UnityMeshSimplifier
         /// Creates a new vector from a single precision vector.
         /// </summary>
         /// <param name="vector">The single precision vector.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3d(Vector3 vector)
         {
             this.x = vector.x;
@@ -177,6 +186,7 @@ namespace UnityMeshSimplifier
         /// <param name="a">The first vector.</param>
         /// <param name="b">The second vector.</param>
         /// <returns>The resulting vector.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3d operator +(Vector3d a, Vector3d b)
         {
             return new Vector3d(a.x + b.x, a.y + b.y, a.z + b.z);
@@ -188,6 +198,7 @@ namespace UnityMeshSimplifier
         /// <param name="a">The first vector.</param>
         /// <param name="b">The second vector.</param>
         /// <returns>The resulting vector.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3d operator -(Vector3d a, Vector3d b)
         {
             return new Vector3d(a.x - b.x, a.y - b.y, a.z - b.z);
@@ -199,6 +210,7 @@ namespace UnityMeshSimplifier
         /// <param name="a">The vector.</param>
         /// <param name="d">The scaling value.</param>
         /// <returns>The resulting vector.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3d operator *(Vector3d a, double d)
         {
             return new Vector3d(a.x * d, a.y * d, a.z * d);
@@ -210,6 +222,7 @@ namespace UnityMeshSimplifier
         /// <param name="d">The scaling vlaue.</param>
         /// <param name="a">The vector.</param>
         /// <returns>The resulting vector.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3d operator *(double d, Vector3d a)
         {
             return new Vector3d(a.x * d, a.y * d, a.z * d);
@@ -221,6 +234,7 @@ namespace UnityMeshSimplifier
         /// <param name="a">The vector.</param>
         /// <param name="d">The dividing float value.</param>
         /// <returns>The resulting vector.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3d operator /(Vector3d a, double d)
         {
             return new Vector3d(a.x / d, a.y / d, a.z / d);
@@ -231,6 +245,7 @@ namespace UnityMeshSimplifier
         /// </summary>
         /// <param name="a">The vector.</param>
         /// <returns>The resulting vector.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3d operator -(Vector3d a)
         {
             return new Vector3d(-a.x, -a.y, -a.z);
@@ -242,6 +257,7 @@ namespace UnityMeshSimplifier
         /// <param name="lhs">The left hand side vector.</param>
         /// <param name="rhs">The right hand side vector.</param>
         /// <returns>If equals.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(Vector3d lhs, Vector3d rhs)
         {
             return (lhs - rhs).MagnitudeSqr < Epsilon;
@@ -253,6 +269,7 @@ namespace UnityMeshSimplifier
         /// <param name="lhs">The left hand side vector.</param>
         /// <param name="rhs">The right hand side vector.</param>
         /// <returns>If not equals.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(Vector3d lhs, Vector3d rhs)
         {
             return (lhs - rhs).MagnitudeSqr >= Epsilon;
@@ -262,6 +279,7 @@ namespace UnityMeshSimplifier
         /// Implicitly converts from a single-precision vector into a double-precision vector.
         /// </summary>
         /// <param name="v">The single-precision vector.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Vector3d(Vector3 v)
         {
             return new Vector3d(v.x, v.y, v.z);
@@ -271,6 +289,7 @@ namespace UnityMeshSimplifier
         /// Implicitly converts from a double-precision vector into a single-precision vector.
         /// </summary>
         /// <param name="v">The double-precision vector.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static explicit operator Vector3(Vector3d v)
         {
             return new Vector3((float)v.x, (float)v.y, (float)v.z);
@@ -285,6 +304,7 @@ namespace UnityMeshSimplifier
         /// <param name="x">The x value.</param>
         /// <param name="y">The y value.</param>
         /// <param name="z">The z value.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set(double x, double y, double z)
         {
             this.x = x;
@@ -296,6 +316,7 @@ namespace UnityMeshSimplifier
         /// Multiplies with another vector component-wise.
         /// </summary>
         /// <param name="scale">The vector to multiply with.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Scale(ref Vector3d scale)
         {
             x *= scale.x;
@@ -306,6 +327,7 @@ namespace UnityMeshSimplifier
         /// <summary>
         /// Normalizes this vector.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Normalize()
         {
             double mag = this.Magnitude;
@@ -326,6 +348,7 @@ namespace UnityMeshSimplifier
         /// </summary>
         /// <param name="min">The minimum component value.</param>
         /// <param name="max">The maximum component value.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Clamp(double min, double max)
         {
             if (x < min) x = min;
@@ -400,6 +423,7 @@ namespace UnityMeshSimplifier
         /// </summary>
         /// <param name="lhs">The left hand side vector.</param>
         /// <param name="rhs">The right hand side vector.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Dot(ref Vector3d lhs, ref Vector3d rhs)
         {
             return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z;
@@ -411,6 +435,7 @@ namespace UnityMeshSimplifier
         /// <param name="lhs">The left hand side vector.</param>
         /// <param name="rhs">The right hand side vector.</param>
         /// <param name="result">The resulting vector.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Cross(ref Vector3d lhs, ref Vector3d rhs, out Vector3d result)
         {
             result = new Vector3d(lhs.y * rhs.z - lhs.z * rhs.y, lhs.z * rhs.x - lhs.x * rhs.z, lhs.x * rhs.y - lhs.y * rhs.x);
@@ -422,6 +447,7 @@ namespace UnityMeshSimplifier
         /// <param name="from">The from vector.</param>
         /// <param name="to">The to vector.</param>
         /// <returns>The angle.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Angle(ref Vector3d from, ref Vector3d to)
         {
             Vector3d fromNormalized = from.Normalized;
@@ -436,6 +462,7 @@ namespace UnityMeshSimplifier
         /// <param name="b">The vector to interpolate to.</param>
         /// <param name="t">The time fraction.</param>
         /// <param name="result">The resulting vector.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Lerp(ref Vector3d a, ref Vector3d b, double t, out Vector3d result)
         {
             result = new Vector3d(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t);
@@ -447,6 +474,7 @@ namespace UnityMeshSimplifier
         /// <param name="a">The first vector.</param>
         /// <param name="b">The second vector.</param>
         /// <param name="result">The resulting vector.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Scale(ref Vector3d a, ref Vector3d b, out Vector3d result)
         {
             result = new Vector3d(a.x * b.x, a.y * b.y, a.z * b.z);
@@ -457,6 +485,7 @@ namespace UnityMeshSimplifier
         /// </summary>
         /// <param name="value">The vector to normalize.</param>
         /// <param name="result">The resulting normalized vector.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Normalize(ref Vector3d value, out Vector3d result)
         {
             double mag = value.Magnitude;
