@@ -494,6 +494,7 @@ namespace UnityMeshSimplifier.Editor
         {
             try
             {
+                EditorUtility.DisplayProgressBar("Generating LODs", "Generating LODs...", 0f);
                 var lodGroup = LODGenerator.GenerateLODs(lodGeneratorHelper);
                 if (lodGroup != null)
                 {
@@ -511,12 +512,17 @@ namespace UnityMeshSimplifier.Editor
                 Debug.LogException(ex);
                 DisplayError("Failed to generate LODs!", ex.Message, "OK", lodGeneratorHelper);
             }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
         }
 
         private void DestroyLODs()
         {
             try
             {
+                EditorUtility.DisplayProgressBar("Destroying LODs", "Destroying LODs...", 0f);
                 LODGenerator.DestroyLODs(lodGeneratorHelper);
 
                 using (var serializedObject = new SerializedObject(lodGeneratorHelper))
@@ -531,6 +537,10 @@ namespace UnityMeshSimplifier.Editor
             {
                 Debug.LogException(ex);
                 DisplayError("Failed to destroy LODs!", ex.Message, "OK", lodGeneratorHelper);
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
             }
         }
 
