@@ -1,7 +1,7 @@
 {
     "name": "Whinarn.UnityMeshSimplifier.Editor",
     "references": [
-        "GUID:77ccaf49895b0d64e87cd4b4faf83c49"
+        "Whinarn.UnityMeshSimplifier.Runtime"
     ],
     "optionalUnityReferences": [],
     "includePlatforms": [
