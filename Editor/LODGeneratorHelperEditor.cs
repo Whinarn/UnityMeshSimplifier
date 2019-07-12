@@ -551,10 +551,15 @@ namespace UnityMeshSimplifier.Editor
             var childGameObjects = from go in gameObjects
                           where go.transform.IsChildOf(ourTransform)
                           select go;
+
             var notChildGameObjects = from go in gameObjects
-                                      where !go.transform.IsChildOf(ourTransform) &&
-                                        !PrefabUtility.IsPartOfAnyPrefab(go)
+                                      where !go.transform.IsChildOf(ourTransform)
+#if UNITY_2018_3 || UNITY_2018_4 || UNITY_2019
+                                         && !PrefabUtility.IsPartOfAnyPrefab(go)
+#endif
                                       select go;
+
+#if UNITY_2018_3 || UNITY_2018_4 || UNITY_2019
             var prefabGameObjects = from go in gameObjects
                                     where !go.transform.IsChildOf(ourTransform) &&
                                         PrefabUtility.IsPartOfAnyPrefab(go)
@@ -565,6 +570,7 @@ namespace UnityMeshSimplifier.Editor
                 EditorUtility.DisplayDialog("Invalid GameObjects", "Some objects are not children of the LODGenerator GameObject," + 
                     " as well as being part of a prefab. They will not be added.", "OK");
             }
+#endif
 
             if (notChildGameObjects.Any())
             {
