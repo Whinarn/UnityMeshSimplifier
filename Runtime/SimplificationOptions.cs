@@ -87,7 +87,7 @@ namespace UnityMeshSimplifier
         /// Sometimes a lower maximum count might be desired in order to lower the performance cost.
         /// Default value: 100
         /// </summary>
-        [Tooltip("The maximum squared distance between two vertices in order to link them.")]
+        [Tooltip("The maximum iteration count. Higher number is more expensive but can bring you closer to your target quality.")]
         public int MaxIterationCount;
         /// <summary>
         /// The agressiveness of the mesh simplification. Higher number equals higher quality, but more expensive to run.
