@@ -646,7 +646,10 @@ namespace UnityMeshSimplifier
                 {
                     foreach (var renderer in originalRenderers)
                     {
-                        renderer.enabled = true;
+                        if (renderer != null)
+                        {
+                            renderer.enabled = true;
+                        }
                     }
                 }
                 DestroyObject(backupComponent);
