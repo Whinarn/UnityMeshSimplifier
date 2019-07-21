@@ -209,6 +209,23 @@ namespace UnityMeshSimplifier
                 a.m9 + b.m9
             );
         }
+
+        /// <summary>
+        /// Scales the matrix.
+        /// </summary>
+        /// <param name="m">The matrix.</param>
+        /// <param name="s">The scale factor.</param>
+        /// <returns>The resulting matrix.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static SymmetricMatrix operator *(SymmetricMatrix m, double s)
+        {
+            return new SymmetricMatrix(
+                m.m0 * s, m.m1 * s, m.m2 * s, m.m3 * s,
+                m.m4 * s, m.m5 * s, m.m6 * s,
+                m.m7 * s, m.m8 * s,
+                m.m9 * s
+            );
+        }
         #endregion
 
         #region Internal Methods

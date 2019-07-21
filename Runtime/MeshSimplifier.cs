@@ -413,6 +413,7 @@ namespace UnityMeshSimplifier
         private bool enableSmartLink = true;
         private int maxIterationCount = 100;
         private double agressiveness = 7.0;
+        private double boundaryWeight = 1000.0;
         private bool verbose = false;
 
         private double vertexLinkDistanceSqr = double.Epsilon;
@@ -534,6 +535,17 @@ namespace UnityMeshSimplifier
         {
             get { return agressiveness; }
             set { agressiveness = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the weight for the mesh boundaries. Increase this weight to leave the boundaries with a higher quality.
+        /// Setting this to zero means that boundaries will not be treated differently from other edges.
+        /// Default value: 1000.0
+        /// </summary>
+        public double BoundaryWeight
+        {
+            get { return boundaryWeight; }
+            set { boundaryWeight = value; }
         }
 
         /// <summary>
@@ -795,8 +807,8 @@ namespace UnityMeshSimplifier
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private double VertexError(ref SymmetricMatrix q, double x, double y, double z)
         {
-            return q.m0 * x * x + 2 * q.m1 * x * y + 2 * q.m2 * x * z + 2 * q.m3 * x + q.m4 * y * y
-                + 2 * q.m5 * y * z + 2 * q.m6 * y + q.m7 * z * z + 2 * q.m8 * z + q.m9;
+            return (q.m0 * x * x) + (2 * q.m1 * x * y) + (2 * q.m2 * x * z) + (2 * q.m3 * x) + (q.m4 * y * y)
+                + (2 * q.m5 * y * z) + (2 * q.m6 * y) + (q.m7 * z * z) + (2 * q.m8 * z) + q.m9;
         }
 
         private double CalculateError(ref Vertex vert0, ref Vertex vert1, out Vector3d result)
@@ -824,24 +836,31 @@ namespace UnityMeshSimplifier
                 double error1 = VertexError(ref q, p1.x, p1.y, p1.z);
                 double error2 = VertexError(ref q, p2.x, p2.y, p2.z);
                 double error3 = VertexError(ref q, p3.x, p3.y, p3.z);
-                error = MathHelper.Min(error1, error2, error3);
-                if (error == error3)
+                if (error1 <= error2)
                 {
-                    result = p3;
+                    if (error1 <= error3)
+                    {
+                        error = error1;
+                        result = p1;
+                    }
+                    else
+                    {
+                        error = error3;
+                        result = p3;
+                    }
                 }
-                else if (error == error2)
+                else if (error2 <= error3)
                 {
+                    error = error2;
                     result = p2;
-                }
-                else if (error == error1)
-                {
-                    result = p1;
                 }
                 else
                 {
+                    error = error3;
                     result = p3;
                 }
             }
+
             return error;
         }
         #endregion
@@ -1208,6 +1227,40 @@ namespace UnityMeshSimplifier
             {
                 var refs = this.refs.Data;
 
+                // Init Quadrics by Plane
+                //
+                // required at the beginning ( iteration == 0 )
+                // recomputing during the simplification is not required,
+                // but mostly improves the result for closed meshes
+                for (int i = 0; i < vertexCount; i++)
+                {
+                    vertices[i].q = new SymmetricMatrix();
+                }
+
+                int v0, v1, v2;
+                Vector3d n, p0, p1, p2, p10, p20, dummy;
+                SymmetricMatrix sm;
+                for (int i = 0; i < triangleCount; i++)
+                {
+                    v0 = triangles[i].v0;
+                    v1 = triangles[i].v1;
+                    v2 = triangles[i].v2;
+
+                    p0 = vertices[v0].p;
+                    p1 = vertices[v1].p;
+                    p2 = vertices[v2].p;
+                    p10 = p1 - p0;
+                    p20 = p2 - p0;
+                    Vector3d.Cross(ref p10, ref p20, out n);
+                    n.Normalize();
+                    triangles[i].n = n;
+
+                    sm = new SymmetricMatrix(n.x, n.y, n.z, -Vector3d.Dot(ref n, ref p0));
+                    vertices[v0].q += sm;
+                    vertices[v1].q += sm;
+                    vertices[v2].q += sm;
+                }
+
                 var vcount = new List<int>(8);
                 var vids = new List<int>(8);
                 int vsize = 0;
@@ -1359,40 +1412,37 @@ namespace UnityMeshSimplifier
                     UpdateReferences();
                 }
 
-                // Init Quadrics by Plane & Edge Errors
-                //
-                // required at the beginning ( iteration == 0 )
-                // recomputing during the simplification is not required,
-                // but mostly improves the result for closed meshes
-                for (int i = 0; i < vertexCount; i++)
+                // Add weight for boundaries
+                if (boundaryWeight > 0.0)
                 {
-                    vertices[i].q = new SymmetricMatrix();
+                    for (int i = 0; i < vertexCount; i++)
+                    {
+                        if (!vertices[i].borderEdge && !vertices[i].uvFoldoverEdge && !vertices[i].uvSeamEdge)
+                            continue;
+
+                        int tstart = vertices[i].tstart;
+                        int tcount = vertices[i].tcount;
+
+                        Vector3d n2;
+                        for (int j = 0; j < tcount; j++)
+                        {
+                            int tid = refs[tstart + j].tid;
+                            int tvertex = refs[tstart + j].tvertex;
+                            int tvertex2 = (tvertex + 1) % 3;
+                            int k = triangles[tid][tvertex2];
+
+                            var e = vertices[k].p - vertices[i].p;
+                            Vector3d.Cross(ref e, ref triangles[tid].n, out n2);
+
+                            sm = new SymmetricMatrix(n2.x, n2.y, n2.z, -Vector3d.Dot(ref n2, ref vertices[i].p));
+                            sm *= boundaryWeight;
+                            vertices[i].q += sm;
+                            vertices[k].q += sm;
+                        }
+                    }
                 }
 
-                int v0, v1, v2;
-                Vector3d n, p0, p1, p2, p10, p20, dummy;
-                SymmetricMatrix sm;
-                for (int i = 0; i < triangleCount; i++)
-                {
-                    v0 = triangles[i].v0;
-                    v1 = triangles[i].v1;
-                    v2 = triangles[i].v2;
-
-                    p0 = vertices[v0].p;
-                    p1 = vertices[v1].p;
-                    p2 = vertices[v2].p;
-                    p10 = p1 - p0;
-                    p20 = p2 - p0;
-                    Vector3d.Cross(ref p10, ref p20, out n);
-                    n.Normalize();
-                    triangles[i].n = n;
-
-                    sm = new SymmetricMatrix(n.x, n.y, n.z, -Vector3d.Dot(ref n, ref p0));
-                    vertices[v0].q += sm;
-                    vertices[v1].q += sm;
-                    vertices[v2].q += sm;
-                }
-
+                // Init Edge Errors
                 for (int i = 0; i < triangleCount; i++)
                 {
                     // Calc Edge Error
