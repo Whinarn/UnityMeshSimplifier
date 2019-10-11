@@ -69,6 +69,7 @@ namespace UnityMeshSimplifier.Editor
         private static readonly GUIContent deleteLevelButtonContent = new GUIContent("X", "Deletes this LOD level.");
         private static readonly GUIContent generateLODButtonContent = new GUIContent("Generate LODs", "Generates the LOD levels.");
         private static readonly GUIContent destroyLODButtonContent = new GUIContent("Destroy LODs", "Destroys the LOD levels.");
+        private static readonly GUIContent copyVisibilityChangesContent = new GUIContent("Copy Visibility Changes", "Copy changed LODGroup visibility settings to LODGeneratorHelper.");
         private static readonly GUIContent settingsContent = new GUIContent("Settings", "The settings for the LOD level.");
         private static readonly GUIContent renderersHeaderContent = new GUIContent("Renderers:", "The renderers used for this LOD level.");
         private static readonly GUIContent removeRendererButtonContent = new GUIContent("X", "Removes this renderer.");
@@ -115,6 +116,13 @@ namespace UnityMeshSimplifier.Editor
             {
                 DestroyLODs();
             }
+
+            EditorGUI.BeginDisabledGroup(!VisibilitySettingsHaveChanged());
+            if(GUILayout.Button(copyVisibilityChangesContent))
+            {
+                CopyVisibilityChanges();
+            }
+            EditorGUI.EndDisabledGroup();
         }
 
         private void DrawNotGeneratedView()
@@ -541,6 +549,54 @@ namespace UnityMeshSimplifier.Editor
             finally
             {
                 EditorUtility.ClearProgressBar();
+            }
+        }
+
+        bool VisibilitySettingsHaveChanged()
+        {
+            var lodGeneratorHelper = target as LODGeneratorHelper;
+            var lodGroup = lodGeneratorHelper.GetComponent<LODGroup>();
+            if(!lodGroup) return false;
+            if(lodGroup.lodCount != lodGeneratorHelper.Levels.Length) return true;
+
+            var lods = lodGroup.GetLODs();            
+
+            bool settingsHaveChanged = false;
+            for(int i = 0; i < lodGroup.lodCount; i++)
+            {
+                var level = lodGeneratorHelper.Levels[i];
+                var lod = lods[i];
+                settingsHaveChanged |= !Mathf.Approximately(level.ScreenRelativeTransitionHeight, lod.screenRelativeTransitionHeight);
+                settingsHaveChanged |= !Mathf.Approximately(level.FadeTransitionWidth, lod.fadeTransitionWidth);
+                
+                if(settingsHaveChanged)
+                    return true;
+            }
+
+            return settingsHaveChanged;
+        }
+
+        private void CopyVisibilityChanges()
+        {
+            // access generated LODGroup and copy the visibility settings back to LODGeneratorHelper
+            var lodGeneratorHelper = target as LODGeneratorHelper;
+            var lodGroup = lodGeneratorHelper.GetComponent<LODGroup>();
+
+            if(!lodGroup) return;
+            if(lodGeneratorHelper.Levels.Length != lodGroup.lodCount)
+            {
+                Debug.LogWarning("Can't copy visibility changes - LODGroup element count does not match LODGeneratorHelper level settings.", this);
+                return;
+            }
+
+            var lods = lodGroup.GetLODs();
+            for(int i = 0; i < lodGroup.lodCount; i++)
+            {
+                var level = lodGeneratorHelper.Levels[i];
+                var lod = lods[i];
+                level.ScreenRelativeTransitionHeight = lod.screenRelativeTransitionHeight;
+                level.FadeTransitionWidth = lod.fadeTransitionWidth;
+                lodGeneratorHelper.Levels[i] = level;
             }
         }
 
