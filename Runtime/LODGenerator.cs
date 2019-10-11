@@ -598,6 +598,7 @@ namespace UnityMeshSimplifier
             meshSimplifier.PreserveUVSeamEdges = options.PreserveUVSeamEdges;
             meshSimplifier.PreserveUVFoldoverEdges = options.PreserveUVFoldoverEdges;
             meshSimplifier.EnableSmartLink = options.EnableSmartLink;
+            meshSimplifier.UsedUVComponentCount = options.UsedUVComponentCount;
             meshSimplifier.VertexLinkDistance = options.VertexLinkDistance;
             meshSimplifier.MaxIterationCount = options.MaxIterationCount;
             meshSimplifier.Agressiveness = options.Agressiveness;

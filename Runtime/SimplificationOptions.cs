@@ -44,6 +44,7 @@ namespace UnityMeshSimplifier
             PreserveUVSeamEdges = false,
             PreserveUVFoldoverEdges = false,
             EnableSmartLink = true,
+            UsedUVComponentCount = 0,
             VertexLinkDistance = double.Epsilon,
             MaxIterationCount = 100,
             Agressiveness = 7.0
@@ -75,6 +76,12 @@ namespace UnityMeshSimplifier
         /// </summary>
         [Tooltip("If a feature for smarter vertex linking should be enabled, reducing artifacts at the cost of slower simplification.")]
         public bool EnableSmartLink;
+        /// <summary>
+        /// By default (if this value is 0), used UV components are automatically detected. Set them here if that introduces issues.
+        /// </summary>
+        [Tooltip("Number of UV Components used. 0 means automatic detection will be used.")]
+        [Range(0,4)]
+        public int UsedUVComponentCount;
         /// <summary>
         /// The maximum distance between two vertices in order to link them.
         /// Note that this value is only used if EnableSmartLink is true.

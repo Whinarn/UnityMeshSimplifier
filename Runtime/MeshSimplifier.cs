@@ -411,6 +411,7 @@ namespace UnityMeshSimplifier
         private bool preserveUVSeamEdges = false;
         private bool preserveUVFoldoverEdges = false;
         private bool enableSmartLink = true;
+        private int usedUVComponentCount = 0;
         private int maxIterationCount = 100;
         private double agressiveness = 7.0;
         private bool verbose = false;
@@ -513,6 +514,16 @@ namespace UnityMeshSimplifier
         {
             get { return enableSmartLink; }
             set { enableSmartLink = value; }
+        }
+
+        /// <summary>
+        /// Defines how many UV components are used. 0 means UV components are automatically detected.
+        /// Default value: 0 (auto)
+        /// </summary>
+        public int UsedUVComponentCount
+        {
+            get { return usedUVComponentCount; }
+            set { usedUVComponentCount = Mathf.Clamp(value, 0, 4); }
         }
 
         /// <summary>
@@ -2257,7 +2268,7 @@ namespace UnityMeshSimplifier
 
             if (uvs != null && uvs.Count > 0)
             {
-                int usedComponents = MeshUtils.GetUsedUVComponents(uvs);
+                int usedComponents = usedUVComponentCount == 0 ? MeshUtils.GetUsedUVComponents(uvs) : usedUVComponentCount;
                 if (usedComponents <= 2)
                 {
                     var uv2D = MeshUtils.ConvertUVsTo2D(uvs);
