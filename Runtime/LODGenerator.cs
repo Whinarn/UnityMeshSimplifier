@@ -860,6 +860,8 @@ namespace UnityMeshSimplifier
 
             if (!deletedAllSubFolders)
                 return false;
+            else if (!UnityEditor.AssetDatabase.IsValidFolder(path))
+                return true;
 
             string[] assetGuids = UnityEditor.AssetDatabase.FindAssets(string.Empty, new string[] { path });
             if (assetGuids.Length > 0)
