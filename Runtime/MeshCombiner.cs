@@ -248,37 +248,17 @@ namespace UnityMeshSimplifier
                         usedBones = new List<Transform>(meshBones);
                     }
 
-                    bool bindPoseMismatch = false;
                     int[] boneIndices = new int[meshBones.Length];
                     for (int i = 0; i < meshBones.Length; i++)
                     {
                         int usedBoneIndex = usedBones.IndexOf(meshBones[i]);
-                        if (usedBoneIndex == -1)
+                        if (usedBoneIndex == -1 || meshBindposes[i] != usedBindposes[usedBoneIndex])
                         {
                             usedBoneIndex = usedBones.Count;
                             usedBones.Add(meshBones[i]);
                             usedBindposes.Add(meshBindposes[i]);
                         }
-                        else
-                        {
-                            if (meshBindposes[i] != usedBindposes[usedBoneIndex])
-                            {
-                                bindPoseMismatch = true;
-                            }
-                        }
                         boneIndices[i] = usedBoneIndex;
-                    }
-
-                    // If any bindpose is mismatching, we correct it first
-                    if (bindPoseMismatch)
-                    {
-                        var correctedBindposes = new Matrix4x4[meshBindposes.Length];
-                        for (int i = 0; i < meshBindposes.Length; i++)
-                        {
-                            int usedBoneIndex = boneIndices[i];
-                            correctedBindposes[i] = usedBindposes[usedBoneIndex];
-                        }
-                        TransformVertices(meshVertices, meshBoneWeights, meshBindposes, correctedBindposes);
                     }
 
                     // Then we remap the bones
@@ -425,46 +405,6 @@ namespace UnityMeshSimplifier
             {
                 tengentDir = transform.MultiplyVector(new Vector3(tangents[i].x, tangents[i].y, tangents[i].z));
                 tangents[i] = new Vector4(tengentDir.x, tengentDir.y, tengentDir.z, tangents[i].w);
-            }
-        }
-
-        private static void TransformVertices(Vector3[] vertices, BoneWeight[] boneWeights, Matrix4x4[] oldBindposes, Matrix4x4[] newBindposes)
-        {
-            // TODO: Is this method doing what it is supposed to?? It has not been properly tested
-
-            // First invert the old bindposes
-            for (int i = 0; i < oldBindposes.Length; i++)
-            {
-                oldBindposes[i] = oldBindposes[i].inverse;
-            }
-
-            // The transform the vertices
-            for (int i = 0; i < vertices.Length; i++)
-            {
-                if (boneWeights[i].weight0 > 0f)
-                {
-                    int boneIndex = boneWeights[i].boneIndex0;
-                    float weight = boneWeights[i].weight0;
-                    vertices[i] = ScaleMatrix(ref newBindposes[boneIndex], weight) * (ScaleMatrix(ref oldBindposes[boneIndex], weight) * vertices[i]);
-                }
-                if (boneWeights[i].weight1 > 0f)
-                {
-                    int boneIndex = boneWeights[i].boneIndex1;
-                    float weight = boneWeights[i].weight1;
-                    vertices[i] = ScaleMatrix(ref newBindposes[boneIndex], weight) * (ScaleMatrix(ref oldBindposes[boneIndex], weight) * vertices[i]);
-                }
-                if (boneWeights[i].weight2 > 0f)
-                {
-                    int boneIndex = boneWeights[i].boneIndex2;
-                    float weight = boneWeights[i].weight2;
-                    vertices[i] = ScaleMatrix(ref newBindposes[boneIndex], weight) * (ScaleMatrix(ref oldBindposes[boneIndex], weight) * vertices[i]);
-                }
-                if (boneWeights[i].weight3 > 0f)
-                {
-                    int boneIndex = boneWeights[i].boneIndex3;
-                    float weight = boneWeights[i].weight3;
-                    vertices[i] = ScaleMatrix(ref newBindposes[boneIndex], weight) * (ScaleMatrix(ref oldBindposes[boneIndex], weight) * vertices[i]);
-                }
             }
         }
 
