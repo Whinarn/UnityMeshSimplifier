@@ -517,37 +517,47 @@ namespace UnityMeshSimplifier
             };
         }
 
-        static bool CanReadMesh(Mesh mesh) {
-            #if UNITY_EDITOR
+        private static bool CanReadMesh(Mesh mesh) {
+#if UNITY_EDITOR
             return CanReadMeshInEditor(mesh);
-            #else
+#else
             return mesh.isReadable;
-            #endif
+#endif
         }
 
 #if UNITY_EDITOR
-        static System.Reflection.MethodInfo Mesh_canAccess;
+        private static System.Reflection.MethodInfo meshCanAccessMethodInfo;
+
         // This is a workaround for a Unity peculiarity - 
         // non-readable meshes are actually always accessible from the Editor.
         // We're still logging a warning since this won't work in a build.
-        static bool CanReadMeshInEditor(Mesh mesh)
+        private static bool CanReadMeshInEditor(Mesh mesh)
         {
-            if (mesh.isReadable) return true;
-            if (!Application.isPlaying) return true;
+            if (mesh.isReadable)
+                return true;
+            else if (!Application.isPlaying)
+                return true;
 
-            if (Mesh_canAccess == null)
-                Mesh_canAccess = typeof(Mesh).GetProperty("canAccess", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetMethod;
-
-            if(Mesh_canAccess != null)
+            if (meshCanAccessMethodInfo == null)
             {
-                try {
-                    bool canAccess = (bool) Mesh_canAccess.Invoke(mesh, null);
-                    if(canAccess) {
-                        Debug.LogWarning("The mesh you are trying to export is not marked as readable. This will only work in the Editor and fail in a Build.", mesh);
+                var canAccessProperty = typeof(Mesh).GetProperty("canAccess", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (canAccessProperty != null)
+                    meshCanAccessMethodInfo = canAccessProperty.GetMethod;
+            }
+
+            if (meshCanAccessMethodInfo != null)
+            {
+                try
+                {
+                    bool canAccess = (bool)meshCanAccessMethodInfo.Invoke(mesh, null);
+                    if (canAccess)
+                    {
+                        Debug.LogWarning("The mesh you are trying to access is not marked as readable. This will only work in the Editor and fail in a build.", mesh);
                         return true;
                     }
                 }
-                catch { 
+                catch
+                {
                     // There has probably been an Unity internal API update causing an error on this call.
                     return false;
                 }
