@@ -1,4 +1,7 @@
 # UnityMeshSimplifier
+[![openupm](https://img.shields.io/npm/v/com.whinarn.unitymeshsimplifier?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.whinarn.unitymeshsimplifier/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://github.com/Whinarn/UnityMeshSimplifier/blob/master/LICENSE.md)
+
 Mesh simplification for [Unity](https://unity3d.com/). The project is deeply based on the [Fast Quadric Mesh Simplification](https://github.com/sp4cerat/Fast-Quadric-Mesh-Simplification) algorithm, but rewritten entirely in C# and released under the MIT license.
 
 Because of the fact that this project is entirely in C# it *should* work on all platforms that Unity officially supports, as well as both in the editor and at runtime in builds.
