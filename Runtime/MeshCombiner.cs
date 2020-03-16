@@ -457,7 +457,8 @@ namespace UnityMeshSimplifier
             };
         }
 
-        private static bool CanReadMesh(Mesh mesh) {
+        private static bool CanReadMesh(Mesh mesh)
+        {
 #if UNITY_EDITOR
             return CanReadMeshInEditor(mesh);
 #else
