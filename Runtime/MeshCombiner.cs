@@ -70,7 +70,7 @@ namespace UnityMeshSimplifier
                     throw new System.ArgumentException(string.Format("The renderer at index {0} has no mesh filter.", i), nameof(renderers));
                 else if (meshFilter.sharedMesh == null)
                     throw new System.ArgumentException(string.Format("The mesh filter for renderer at index {0} has no mesh.", i), nameof(renderers));
-                else if (!meshFilter.sharedMesh.isReadable)
+                else if (!CanReadMesh(meshFilter.sharedMesh))
                     throw new System.ArgumentException(string.Format("The mesh in the mesh filter for renderer at index {0} is not readable.", i), nameof(renderers));
 
                 meshes[i] = meshFilter.sharedMesh;
@@ -108,7 +108,7 @@ namespace UnityMeshSimplifier
                     throw new System.ArgumentException(string.Format("The renderer at index {0} is null.", i), nameof(renderers));
                 else if (renderer.sharedMesh == null)
                     throw new System.ArgumentException(string.Format("The renderer at index {0} has no mesh.", i), nameof(renderers));
-                else if (!renderer.sharedMesh.isReadable)
+                else if (!CanReadMesh(renderer.sharedMesh))
                     throw new System.ArgumentException(string.Format("The mesh in the renderer at index {0} is not readable.", i), nameof(renderers));
 
                 var rendererTransform = renderer.transform;
@@ -174,7 +174,7 @@ namespace UnityMeshSimplifier
                 var mesh = meshes[meshIndex];
                 if (mesh == null)
                     throw new System.ArgumentException(string.Format("The mesh at index {0} is null.", meshIndex), nameof(meshes));
-                else if (!mesh.isReadable)
+                else if (!CanReadMesh(mesh))
                     throw new System.ArgumentException(string.Format("The mesh at index {0} is not readable.", meshIndex), nameof(meshes));
 
                 totalVertexCount += mesh.vertexCount;
@@ -456,6 +456,56 @@ namespace UnityMeshSimplifier
                 m33 = matrix.m33 * scale
             };
         }
+
+        private static bool CanReadMesh(Mesh mesh) {
+#if UNITY_EDITOR
+            return CanReadMeshInEditor(mesh);
+#else
+            return mesh.isReadable;
+#endif
+        }
+
+#if UNITY_EDITOR
+        private static System.Reflection.MethodInfo meshCanAccessMethodInfo;
+
+        // This is a workaround for a Unity peculiarity - 
+        // non-readable meshes are actually always accessible from the Editor.
+        // We're still logging a warning since this won't work in a build.
+        private static bool CanReadMeshInEditor(Mesh mesh)
+        {
+            if (mesh.isReadable)
+                return true;
+            else if (!Application.isPlaying)
+                return true;
+
+            if (meshCanAccessMethodInfo == null)
+            {
+                var canAccessProperty = typeof(Mesh).GetProperty("canAccess", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (canAccessProperty != null)
+                    meshCanAccessMethodInfo = canAccessProperty.GetMethod;
+            }
+
+            if (meshCanAccessMethodInfo != null)
+            {
+                try
+                {
+                    bool canAccess = (bool)meshCanAccessMethodInfo.Invoke(mesh, null);
+                    if (canAccess)
+                    {
+                        Debug.LogWarning("The mesh you are trying to access is not marked as readable. This will only work in the Editor and fail in a build.", mesh);
+                        return true;
+                    }
+                }
+                catch
+                {
+                    // There has probably been an Unity internal API update causing an error on this call.
+                    return false;
+                }
+            }
+            return false;
+        }
+#endif
+
         #endregion
     }
 }
