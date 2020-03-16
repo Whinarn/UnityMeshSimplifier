@@ -26,7 +26,7 @@ Unity introduced the package manager in Unity 2017.2, but at a very early state.
 }
 ```
 5. You can also specify to use a specific version of UnityMeshSimplifier if you wish by appending # to the Git URL followed by the package version. For example:
-```"com.whinarn.unitymeshsimplifier": "https://github.com/Whinarn/UnityMeshSimplifier.git#v1.1.0",```
+```"com.whinarn.unitymeshsimplifier": "https://github.com/Whinarn/UnityMeshSimplifier.git#v2.1.0",```
 6. Success! Start up Unity with your Unity project and you should see UnityMeshSimplifier appear in the Unity Package Manager.
 
 ## How do I use this?
