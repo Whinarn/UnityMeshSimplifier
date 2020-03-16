@@ -552,25 +552,26 @@ namespace UnityMeshSimplifier.Editor
             }
         }
 
-        bool VisibilitySettingsHaveChanged()
+        private bool VisibilitySettingsHaveChanged()
         {
-            var lodGeneratorHelper = target as LODGeneratorHelper;
             var lodGroup = lodGeneratorHelper.GetComponent<LODGroup>();
-            if(!lodGroup) return false;
-            if(lodGroup.lodCount != lodGeneratorHelper.Levels.Length) return true;
+            if (!lodGroup)
+                return false;
+            else if (lodGroup.lodCount != lodGeneratorHelper.Levels.Length)
+                return true;
 
-            var lods = lodGroup.GetLODs();            
-
+            var lods = lodGroup.GetLODs();
             bool settingsHaveChanged = false;
-            for(int i = 0; i < lodGroup.lodCount; i++)
+            for (int i = 0; i < lodGroup.lodCount; i++)
             {
                 var level = lodGeneratorHelper.Levels[i];
                 var lod = lods[i];
+
                 settingsHaveChanged |= !Mathf.Approximately(level.ScreenRelativeTransitionHeight, lod.screenRelativeTransitionHeight);
                 settingsHaveChanged |= !Mathf.Approximately(level.FadeTransitionWidth, lod.fadeTransitionWidth);
-                
-                if(settingsHaveChanged)
-                    return true;
+
+                if (settingsHaveChanged)
+                    break;
             }
 
             return settingsHaveChanged;
@@ -578,14 +579,13 @@ namespace UnityMeshSimplifier.Editor
 
         private void CopyVisibilityChanges()
         {
-            // access generated LODGroup and copy the visibility settings back to LODGeneratorHelper
-            var lodGeneratorHelper = target as LODGeneratorHelper;
             var lodGroup = lodGeneratorHelper.GetComponent<LODGroup>();
+            if (!lodGroup)
+                return;
 
-            if(!lodGroup) return;
-            if(lodGeneratorHelper.Levels.Length != lodGroup.lodCount)
+            if (lodGeneratorHelper.Levels.Length != lodGroup.lodCount)
             {
-                Debug.LogWarning("Can't copy visibility changes - LODGroup element count does not match LODGeneratorHelper level settings.", this);
+                Debug.LogError("Can't copy visibility changes - LODGroup element count does not match LODGeneratorHelper level settings.\nPlease regenerate the LOD levels.", this);
                 return;
             }
 
