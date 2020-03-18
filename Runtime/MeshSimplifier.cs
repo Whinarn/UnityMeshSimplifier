@@ -410,6 +410,7 @@ namespace UnityMeshSimplifier
         private bool preserveBorderEdges = false;
         private bool preserveUVSeamEdges = false;
         private bool preserveUVFoldoverEdges = false;
+        private bool preserveSurfaceCurvature = false;
         private bool enableSmartLink = true;
         private int maxIterationCount = 100;
         private double agressiveness = 7.0;
@@ -501,6 +502,17 @@ namespace UnityMeshSimplifier
         {
             get { return preserveUVFoldoverEdges; }
             set { preserveUVFoldoverEdges = value; }
+        }
+
+
+        /// <summary>
+        /// Gets or sets if the discrete curvature of the mesh surface be taken into account during simplification.
+        /// Default value: false
+        /// </summary>
+        public bool PreserveSurfaceCurvature
+        {
+            get { return preserveSurfaceCurvature; }
+            set { preserveSurfaceCurvature = value; }
         }
 
         /// <summary>
@@ -763,6 +775,7 @@ namespace UnityMeshSimplifier
         #endregion
 
         #region Private Methods
+
         #region Initialize Vertex Attribute
         private void InitializeVertexAttribute<T>(T[] attributeValues, ref ResizableArray<T> attributeArray, string attributeName)
         {
@@ -799,6 +812,51 @@ namespace UnityMeshSimplifier
                 + 2 * q.m5 * y * z + 2 * q.m6 * y + q.m7 * z * z + 2 * q.m8 * z + q.m9;
         }
 
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private double CurvatureError(Vertex Vi, Vertex Vj)
+        {
+            //System.Diagnostics.Stopwatch w = new System.Diagnostics.Stopwatch();
+            //w.Start();
+
+            double diffVector = (Vi.p - Vj.p).Magnitude;
+
+            HashSet<Triangle> trianglesWithVi = GetTrianglesContainingVertex(Vi);
+            HashSet<Triangle> trianglesWithVj = GetTrianglesContainingVertex(Vj);
+            HashSet<Triangle> trianglesWithViOrVjOrBoth = new HashSet<Triangle>(trianglesWithVi);
+            trianglesWithViOrVjOrBoth.UnionWith(trianglesWithVj);
+            HashSet<Triangle> trianglesWithViAndVjBoth = GetTrianglesContainingBothVertices(Vi, Vj);
+
+
+            double maxDotOuter = 0;
+
+            foreach (var triangleWithViOrVjOrBoth in trianglesWithViOrVjOrBoth)
+            {
+                double maxDotInner = 0;
+
+                Vector3 normVecWithViOrVjOrBoth = GetTriangleNormalVector(triangleWithViOrVjOrBoth);
+
+                foreach (var triangleWithViAndVjBoth in trianglesWithViAndVjBoth)
+                {
+                    Vector3 normVecTriangleWithViAndVjBoth = GetTriangleNormalVector(triangleWithViAndVjBoth);
+
+                    double dot = Vector3.Dot(normVecWithViOrVjOrBoth, normVecTriangleWithViAndVjBoth);
+
+                    if (dot > maxDotInner) { maxDotInner = dot; }
+                }
+
+                if (maxDotInner > maxDotOuter) { maxDotOuter = maxDotInner; }
+
+            }
+
+            //w.Stop();
+            //Debug.Log("Time ellapsed =  " + w.ElapsedMilliseconds);
+
+            return diffVector * maxDotOuter;
+        }
+
+
         private double CalculateError(ref Vertex vert0, ref Vertex vert1, out Vector3d result)
         {
             // compute interpolated vertex
@@ -813,7 +871,15 @@ namespace UnityMeshSimplifier
                     -1.0 / det * q.Determinant2(),  // vx = A41/det(q_delta)
                     1.0 / det * q.Determinant3(),   // vy = A42/det(q_delta)
                     -1.0 / det * q.Determinant4()); // vz = A43/det(q_delta)
-                error = VertexError(ref q, result.x, result.y, result.z);
+
+                double curvatureError = 0;
+
+                if (preserveSurfaceCurvature)
+                {
+                    curvatureError = CurvatureError(vert0, vert1);
+                }
+
+                error = VertexError(ref q, result.x, result.y, result.z) + curvatureError;
             }
             else
             {
@@ -844,6 +910,7 @@ namespace UnityMeshSimplifier
             }
             return error;
         }
+
         #endregion
 
         #region Calculate Barycentric Coordinates
@@ -1675,6 +1742,84 @@ namespace UnityMeshSimplifier
             }
         }
         #endregion
+
+        #region Traingle helper functions
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private HashSet<Triangle> GetTrianglesContainingVertex(Vertex toCheck)
+        {
+            int trianglesCount = toCheck.tcount;
+            int startIndex = toCheck.tstart;
+
+            HashSet<Triangle> tris = new HashSet<Triangle>();
+
+            for (int a = startIndex; a < startIndex + trianglesCount; a++)
+            {
+                tris.Add(triangles[refs[a].tid]);
+            }
+
+            return tris;
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private HashSet<Triangle> GetTrianglesContainingBothVertices(Vertex vertex1, Vertex vertex2)
+        {
+            HashSet<Triangle> tris = new HashSet<Triangle>();
+
+
+            int trianglesCount = vertex1.tcount;
+            int startIndex = vertex1.tstart;
+
+            for (int a = startIndex; a < startIndex + trianglesCount; a++)
+            {
+                Triangle tri = triangles[refs[a].tid];
+
+                Vertex v1 = vertices[tri.v0];
+                Vertex v2 = vertices[tri.v1];
+                Vertex v3 = vertices[tri.v2];
+
+                int hashcode = vertex2.GetHashCode();
+
+                if (v1.GetHashCode().Equals(hashcode) || v2.GetHashCode().Equals(hashcode) || v3.GetHashCode().Equals(hashcode))
+                {
+                    tris.Add(tri);
+                }
+
+            }
+
+
+
+            return tris;
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private Vector3 GetTriangleNormalVector(Triangle triangle)
+        {
+            Vector3 normal = Vector3.zero;
+
+            Vertex V0 = vertices[triangle.v0];
+            Vertex V1 = vertices[triangle.v1];
+            Vertex V2 = vertices[triangle.v2];
+
+            Vector3 a = new Vector3((float)V0.p.x, (float)V0.p.y, (float)V0.p.z);
+            Vector3 b = new Vector3((float)V1.p.x, (float)V1.p.y, (float)V1.p.z);
+            Vector3 c = new Vector3((float)V2.p.x, (float)V2.p.y, (float)V2.p.z);
+
+
+            Vector3 side1 = b - a;
+            Vector3 side2 = c - a;
+
+            Vector3 perp = Vector3.Cross(side1, side2);
+
+            float perpLength = perp.magnitude;
+            normal = perp / perpLength;
+
+            return normal;
+        }
+        #endregion Traingle helper functions
+
+
         #endregion
 
         #region Public Methods
