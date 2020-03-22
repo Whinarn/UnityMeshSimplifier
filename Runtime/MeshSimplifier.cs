@@ -504,7 +504,6 @@ namespace UnityMeshSimplifier
             set { preserveUVFoldoverEdges = value; }
         }
 
-
         /// <summary>
         /// Gets or sets if the discrete curvature of the mesh surface be taken into account during simplification.
         /// Default value: false
