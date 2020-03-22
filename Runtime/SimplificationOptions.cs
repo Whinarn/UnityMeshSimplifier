@@ -43,6 +43,7 @@ namespace UnityMeshSimplifier
             PreserveBorderEdges = false,
             PreserveUVSeamEdges = false,
             PreserveUVFoldoverEdges = false,
+            PreserveSurfaceCurvature = false,
             EnableSmartLink = true,
             VertexLinkDistance = double.Epsilon,
             MaxIterationCount = 100,
@@ -67,6 +68,12 @@ namespace UnityMeshSimplifier
         /// </summary>
         [Tooltip("If the UV foldover edges should be preserved.")]
         public bool PreserveUVFoldoverEdges;
+        /// <summary>
+        /// If the discrete curvature of the mesh surface be taken into account during simplification. Taking surface curvature into account can result in good quality mesh simplification, but it can slow the simplification process significantly.
+        /// Default value: false
+        /// </summary>
+        [Tooltip("If the discrete curvature of the mesh surface be taken into account during simplification. Taking surface curvature into account can result in very good quality mesh simplification, but it can slow the simplification process significantly.")]
+        public bool PreserveSurfaceCurvature;
         /// <summary>
         /// If a feature for smarter vertex linking should be enabled, reducing artifacts in the
         /// decimated result at the cost of a slightly more expensive initialization by treating vertices at
