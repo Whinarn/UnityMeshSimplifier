@@ -24,20 +24,30 @@ SOFTWARE.
 */
 #endregion
 
-using UnityEngine;
+using System.Runtime.CompilerServices;
 
-namespace UnityMeshSimplifier
+namespace UnityMeshSimplifier.Internal
 {
-    [AddComponentMenu("")]
-    internal class LODBackupComponent : MonoBehaviour
+    internal struct Vertex
     {
-        [SerializeField]
-        private Renderer[] originalRenderers = null;
+        public Vector3d p;
+        public int tstart;
+        public int tcount;
+        public SymmetricMatrix q;
+        public bool borderEdge;
+        public bool uvSeamEdge;
+        public bool uvFoldoverEdge;
 
-        public Renderer[] OriginalRenderers
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vertex(Vector3d p)
         {
-            get { return originalRenderers; }
-            set { originalRenderers = value; }
+            this.p = p;
+            this.tstart = 0;
+            this.tcount = 0;
+            this.q = new SymmetricMatrix();
+            this.borderEdge = true;
+            this.uvSeamEdge = false;
+            this.uvFoldoverEdge = false;
         }
     }
 }

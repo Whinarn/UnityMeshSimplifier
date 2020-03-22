@@ -2,7 +2,7 @@
 /*
 MIT License
 
-Copyright(c) 2019 Mattias Edlund
+Copyright(c) 2017-2020 Mattias Edlund
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -35,31 +35,23 @@ namespace UnityMeshSimplifier
     /// </summary>
     public static class LODGenerator
     {
-        #region Consts
+        #region Static Read-Only
         /// <summary>
         /// The name of the game object where generated LODs are parented under.
         /// </summary>
-        public const string LODParentGameObjectName = "_UMS_LODs_";
+        public static readonly string LODParentGameObjectName = "_UMS_LODs_";
 
         /// <summary>
         /// The parent path for generated LOD assets.
         /// </summary>
-        public const string LODAssetParentPath = "Assets/UMS_LODs/";
+        public static readonly string LODAssetParentPath = "Assets/UMS_LODs/";
         #endregion
 
-        #region Structs
-        private struct StaticRenderer
+        #region Nested Types
+        private struct RendererInfo
         {
             public string name;
-            public bool isNewMesh;
-            public Transform transform;
-            public Mesh mesh;
-            public Material[] materials;
-        }
-
-        private struct SkinnedRenderer
-        {
-            public string name;
+            public bool isStatic;
             public bool isNewMesh;
             public Transform transform;
             public Mesh mesh;
@@ -171,8 +163,8 @@ namespace UnityMeshSimplifier
                                                 where renderer.enabled && renderer as SkinnedMeshRenderer != null
                                                 select renderer as SkinnedMeshRenderer).ToArray();
 
-                    StaticRenderer[] staticRenderers;
-                    SkinnedRenderer[] skinnedRenderers;
+                    RendererInfo[] staticRenderers;
+                    RendererInfo[] skinnedRenderers;
                     if (level.CombineMeshes)
                     {
                         staticRenderers = CombineStaticMeshes(transform, levelIndex, meshRenderers);
@@ -189,23 +181,7 @@ namespace UnityMeshSimplifier
                         for (int rendererIndex = 0; rendererIndex < staticRenderers.Length; rendererIndex++)
                         {
                             var renderer = staticRenderers[rendererIndex];
-                            var mesh = renderer.mesh;
-
-                            // Simplify the mesh if necessary
-                            if (level.Quality < 1f)
-                            {
-                                mesh = SimplifyMesh(mesh, level.Quality, simplificationOptions);
-                                SaveLODMeshAsset(mesh, gameObject.name, renderer.name, levelIndex, renderer.mesh.name, saveAssetsPath);
-
-                                if (renderer.isNewMesh)
-                                {
-                                    DestroyObject(renderer.mesh);
-                                    renderer.mesh = null;
-                                }
-                            }
-
-                            string rendererName = string.Format("{0:000}_static_{1}", rendererIndex, renderer.name);
-                            var levelRenderer = CreateLevelRenderer(rendererName, levelTransform, renderer.transform, mesh, renderer.materials, ref level);
+                            var levelRenderer = CreateLevelRenderer(gameObject, levelIndex, ref level, levelTransform, rendererIndex, renderer, ref simplificationOptions, saveAssetsPath);
                             levelRenderers.Add(levelRenderer);
                         }
                     }
@@ -215,33 +191,17 @@ namespace UnityMeshSimplifier
                         for (int rendererIndex = 0; rendererIndex < skinnedRenderers.Length; rendererIndex++)
                         {
                             var renderer = skinnedRenderers[rendererIndex];
-                            var mesh = renderer.mesh;
-
-                            // Simplify the mesh if necessary
-                            if (level.Quality < 1f)
-                            {
-                                mesh = SimplifyMesh(mesh, level.Quality, simplificationOptions);
-                                SaveLODMeshAsset(mesh, gameObject.name, renderer.name, levelIndex, renderer.mesh.name, saveAssetsPath);
-
-                                if (renderer.isNewMesh)
-                                {
-                                    DestroyObject(renderer.mesh);
-                                    renderer.mesh = null;
-                                }
-                            }
-
-                            string rendererName = string.Format("{0:000}_skinned_{1}", rendererIndex, renderer.name);
-                            var levelRenderer = CreateSkinnedLevelRenderer(rendererName, levelTransform, renderer.transform, mesh, renderer.materials, renderer.rootBone, renderer.bones, ref level);
+                            var levelRenderer = CreateLevelRenderer(gameObject, levelIndex, ref level, levelTransform, rendererIndex, renderer, ref simplificationOptions, saveAssetsPath);
                             levelRenderers.Add(levelRenderer);
                         }
                     }
-                }
 
-                foreach (var renderer in originalLevelRenderers)
-                {
-                    if (!renderersToDisable.Contains(renderer))
+                    foreach (var renderer in originalLevelRenderers)
                     {
-                        renderersToDisable.Add(renderer);
+                        if (!renderersToDisable.Contains(renderer))
+                        {
+                            renderersToDisable.Add(renderer);
+                        }
                     }
                 }
 
@@ -289,8 +249,10 @@ namespace UnityMeshSimplifier
             if (lodParent == null)
                 return false;
 
+#if UNITY_EDITOR
             // Destroy LOD assets
             DestroyLODAssets(lodParent);
+#endif
 
             // Destroy the LOD parent
             DestroyObject(lodParent.gameObject);
@@ -307,9 +269,9 @@ namespace UnityMeshSimplifier
         #endregion
 
         #region Private Methods
-        private static StaticRenderer[] GetStaticRenderers(MeshRenderer[] renderers)
+        private static RendererInfo[] GetStaticRenderers(MeshRenderer[] renderers)
         {
-            var newRenderers = new List<StaticRenderer>(renderers.Length);
+            var newRenderers = new List<RendererInfo>(renderers.Length);
             for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
             {
                 var renderer = renderers[rendererIndex];
@@ -327,9 +289,10 @@ namespace UnityMeshSimplifier
                     continue;
                 }
 
-                newRenderers.Add(new StaticRenderer()
+                newRenderers.Add(new RendererInfo
                 {
                     name = renderer.name,
+                    isStatic = true,
                     isNewMesh = false,
                     transform = renderer.transform,
                     mesh = mesh,
@@ -339,9 +302,9 @@ namespace UnityMeshSimplifier
             return newRenderers.ToArray();
         }
 
-        private static SkinnedRenderer[] GetSkinnedRenderers(SkinnedMeshRenderer[] renderers)
+        private static RendererInfo[] GetSkinnedRenderers(SkinnedMeshRenderer[] renderers)
         {
-            var newRenderers = new List<SkinnedRenderer>(renderers.Length);
+            var newRenderers = new List<RendererInfo>(renderers.Length);
             for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
             {
                 var renderer = renderers[rendererIndex];
@@ -353,9 +316,10 @@ namespace UnityMeshSimplifier
                     continue;
                 }
 
-                newRenderers.Add(new SkinnedRenderer()
+                newRenderers.Add(new RendererInfo
                 {
                     name = renderer.name,
+                    isStatic = false,
                     isNewMesh = false,
                     transform = renderer.transform,
                     mesh = mesh,
@@ -367,39 +331,42 @@ namespace UnityMeshSimplifier
             return newRenderers.ToArray();
         }
 
-        private static StaticRenderer[] CombineStaticMeshes(Transform transform, int levelIndex, MeshRenderer[] renderers)
+        private static RendererInfo[] CombineStaticMeshes(Transform transform, int levelIndex, MeshRenderer[] renderers)
         {
             if (renderers.Length == 0)
                 return null;
 
             // TODO: Support to merge sub-meshes and atlas textures
 
-            var newRenderers = new List<StaticRenderer>(renderers.Length);
+            var newRenderers = new List<RendererInfo>(renderers.Length);
 
             Material[] combinedMaterials;
             var combinedMesh = MeshCombiner.CombineMeshes(transform, renderers, out combinedMaterials);
             combinedMesh.name = string.Format("{0}_static{1:00}", transform.name, levelIndex);
             string rendererName = string.Format("{0}_combined_static", transform.name);
-            newRenderers.Add(new StaticRenderer()
+            newRenderers.Add(new RendererInfo
             {
                 name = rendererName,
+                isStatic = true,
                 isNewMesh = true,
                 transform = null,
                 mesh = combinedMesh,
-                materials = combinedMaterials
+                materials = combinedMaterials,
+                rootBone = null,
+                bones = null
             });
 
             return newRenderers.ToArray();
         }
 
-        private static SkinnedRenderer[] CombineSkinnedMeshes(Transform transform, int levelIndex, SkinnedMeshRenderer[] renderers)
+        private static RendererInfo[] CombineSkinnedMeshes(Transform transform, int levelIndex, SkinnedMeshRenderer[] renderers)
         {
             if (renderers.Length == 0)
                 return null;
 
             // TODO: Support to merge sub-meshes and atlas textures
 
-            var newRenderers = new List<SkinnedRenderer>(renderers.Length);
+            var newRenderers = new List<RendererInfo>(renderers.Length);
             var blendShapeRenderers = (from renderer in renderers
                                        where renderer.sharedMesh != null && renderer.sharedMesh.blendShapeCount > 0
                                        select renderer);
@@ -419,9 +386,10 @@ namespace UnityMeshSimplifier
             // Don't combine meshes with blend shapes
             foreach (var renderer in blendShapeRenderers)
             {
-                newRenderers.Add(new SkinnedRenderer()
+                newRenderers.Add(new RendererInfo
                 {
                     name = renderer.name,
+                    isStatic = false,
                     isNewMesh = false,
                     transform = renderer.transform,
                     mesh = renderer.sharedMesh,
@@ -440,9 +408,10 @@ namespace UnityMeshSimplifier
 
                 var rootBone = FindBestRootBone(transform, combineRenderers);
                 string rendererName = string.Format("{0}_combined_skinned", transform.name);
-                newRenderers.Add(new SkinnedRenderer()
+                newRenderers.Add(new RendererInfo
                 {
                     name = rendererName,
+                    isStatic = false,
                     isNewMesh = false,
                     transform = null,
                     mesh = combinedMesh,
@@ -471,7 +440,38 @@ namespace UnityMeshSimplifier
             transform.SetParent(parentTransform, true);
         }
 
-        private static MeshRenderer CreateLevelRenderer(string name, Transform parentTransform, Transform originalTransform, Mesh mesh, Material[] materials, ref LODLevel level)
+        private static Renderer CreateLevelRenderer(GameObject gameObject, int levelIndex, ref LODLevel level, Transform levelTransform, int rendererIndex, RendererInfo renderer, ref SimplificationOptions simplificationOptions, string saveAssetsPath)
+        {
+            var mesh = renderer.mesh;
+
+            // Simplify the mesh if necessary
+            if (level.Quality < 1f)
+            {
+                mesh = SimplifyMesh(mesh, level.Quality, simplificationOptions);
+
+#if UNITY_EDITOR
+                SaveLODMeshAsset(mesh, gameObject.name, renderer.name, levelIndex, mesh.name, saveAssetsPath);
+#endif
+
+                if (renderer.isNewMesh)
+                {
+                    DestroyObject(renderer.mesh);
+                }
+            }
+
+            if (renderer.isStatic)
+            {
+                string rendererName = string.Format("{0:000}_static_{1}", rendererIndex, renderer.name);
+                return CreateStaticLevelRenderer(rendererName, levelTransform, renderer.transform, mesh, renderer.materials, ref level);
+            }
+            else
+            {
+                string rendererName = string.Format("{0:000}_skinned_{1}", rendererIndex, renderer.name);
+                return CreateSkinnedLevelRenderer(rendererName, levelTransform, renderer.transform, mesh, renderer.materials, renderer.rootBone, renderer.bones, ref level);
+            }
+        }
+
+        private static MeshRenderer CreateStaticLevelRenderer(string name, Transform parentTransform, Transform originalTransform, Mesh mesh, Material[] materials, ref LODLevel level)
         {
             var levelGameObject = new GameObject(name, typeof(MeshFilter), typeof(MeshRenderer));
             var levelTransform = levelGameObject.transform;
@@ -656,9 +656,93 @@ namespace UnityMeshSimplifier
             }
         }
 
+        private static string ValidateSaveAssetsPath(string saveAssetsPath)
+        {
+            if (string.IsNullOrEmpty(saveAssetsPath))
+                return null;
+
+#if UNITY_EDITOR
+            saveAssetsPath = saveAssetsPath.Replace('\\', '/');
+            saveAssetsPath = saveAssetsPath.Trim('/');
+
+            if (System.IO.Path.IsPathRooted(saveAssetsPath))
+                throw new System.InvalidOperationException("The save assets path cannot be rooted.");
+            else if (saveAssetsPath.Length > 100)
+                throw new System.InvalidOperationException("The save assets path cannot be more than 100 characters long to avoid I/O issues.");
+
+            // Make the path safe
+            var pathParts = saveAssetsPath.Split('/');
+            for (int i = 0; i < pathParts.Length; i++)
+            {
+                pathParts[i] = MakePathSafe(pathParts[i]);
+            }
+            saveAssetsPath = string.Join("/", pathParts);
+
+            return saveAssetsPath;
+#else
+            Debug.LogWarning("Unable to save assets when not running in the Unity Editor.");
+            return null;
+#endif
+        }
+
+        #region Editor Functions
+#if UNITY_EDITOR
+        private static void SaveLODMeshAsset(Object asset, string gameObjectName, string rendererName, int levelIndex, string meshName, string saveAssetsPath)
+        {
+            gameObjectName = MakePathSafe(gameObjectName);
+            rendererName = MakePathSafe(rendererName);
+            meshName = MakePathSafe(meshName);
+            meshName = string.Format("{0:00}_{1}", levelIndex, meshName);
+
+            string path;
+            if (!string.IsNullOrEmpty(saveAssetsPath))
+            {
+                path = string.Format("{0}{1}/{2}.mesh", LODAssetParentPath, saveAssetsPath, meshName);
+            }
+            else
+            {
+                path = string.Format("{0}{1}/{2}/{3}.mesh", LODAssetParentPath, gameObjectName, rendererName, meshName);
+            }
+
+            SaveAsset(asset, path);
+        }
+
+        private static void SaveAsset(Object asset, string path)
+        {
+            CreateParentDirectory(path);
+
+            // Make sure that there is no asset with the same path already
+            path = UnityEditor.AssetDatabase.GenerateUniqueAssetPath(path);
+
+            UnityEditor.AssetDatabase.CreateAsset(asset, path);
+        }
+
+        private static void CreateParentDirectory(string path)
+        {
+            int lastSlashIndex = path.LastIndexOf('/');
+            if (lastSlashIndex != -1)
+            {
+                string parentPath = path.Substring(0, lastSlashIndex);
+                if (!UnityEditor.AssetDatabase.IsValidFolder(parentPath))
+                {
+                    lastSlashIndex = parentPath.LastIndexOf('/');
+                    if (lastSlashIndex != -1)
+                    {
+                        string folderName = parentPath.Substring(lastSlashIndex + 1);
+                        string folderParentPath = parentPath.Substring(0, lastSlashIndex);
+                        CreateParentDirectory(parentPath);
+                        UnityEditor.AssetDatabase.CreateFolder(folderParentPath, folderName);
+                    }
+                    else
+                    {
+                        UnityEditor.AssetDatabase.CreateFolder(string.Empty, parentPath);
+                    }
+                }
+            }
+        }
+
         private static void DestroyLODAssets(Transform transform)
         {
-#if UNITY_EDITOR
             var renderers = transform.GetComponentsInChildren<Renderer>(true);
             foreach (var renderer in renderers)
             {
@@ -686,7 +770,6 @@ namespace UnityMeshSimplifier
 
             // Delete any empty LOD asset directories
             DeleteEmptyDirectory(LODAssetParentPath.TrimEnd('/'));
-#endif
         }
 
         private static void DestroyLODMaterialAsset(Material material)
@@ -694,7 +777,6 @@ namespace UnityMeshSimplifier
             if (material == null)
                 return;
 
-#if UNITY_EDITOR
             var shader = material.shader;
             if (shader == null)
                 return;
@@ -713,7 +795,6 @@ namespace UnityMeshSimplifier
             }
 
             DestroyLODAsset(material);
-#endif
         }
 
         private static void DestroyLODAsset(Object asset)
@@ -721,72 +802,36 @@ namespace UnityMeshSimplifier
             if (asset == null)
                 return;
 
-#if UNITY_EDITOR
             // We only delete assets that we have automatically generated
             string assetPath = UnityEditor.AssetDatabase.GetAssetPath(asset);
             if (assetPath.StartsWith(LODAssetParentPath))
             {
                 UnityEditor.AssetDatabase.DeleteAsset(assetPath);
             }
-#endif
         }
 
-        private static void SaveLODMeshAsset(Object asset, string gameObjectName, string rendererName, int levelIndex, string meshName, string saveAssetsPath)
+        private static bool DeleteEmptyDirectory(string path)
         {
-            gameObjectName = MakePathSafe(gameObjectName);
-            rendererName = MakePathSafe(rendererName);
-            meshName = MakePathSafe(meshName);
-            meshName = string.Format("{0:00}_{1}", levelIndex, meshName);
-
-            string path;
-            if (!string.IsNullOrEmpty(saveAssetsPath))
+            bool deletedAllSubFolders = true;
+            var subFolders = UnityEditor.AssetDatabase.GetSubFolders(path);
+            for (int i = 0; i < subFolders.Length; i++)
             {
-                path = string.Format("{0}{1}/{2}.mesh", LODAssetParentPath, saveAssetsPath, meshName);
-            }
-            else
-            {
-                path = string.Format("{0}{1}/{2}/{3}.mesh", LODAssetParentPath, gameObjectName, rendererName, meshName);
-            }
-
-            SaveAsset(asset, path);
-        }
-
-        private static void SaveAsset(Object asset, string path)
-        {
-#if UNITY_EDITOR
-            CreateParentDirectory(path);
-
-            // Make sure that there is no asset with the same path already
-            path = UnityEditor.AssetDatabase.GenerateUniqueAssetPath(path);
-
-            UnityEditor.AssetDatabase.CreateAsset(asset, path);
-#endif
-        }
-
-        private static void CreateParentDirectory(string path)
-        {
-#if UNITY_EDITOR
-            int lastSlashIndex = path.LastIndexOf('/');
-            if (lastSlashIndex != -1)
-            {
-                string parentPath = path.Substring(0, lastSlashIndex);
-                if (!UnityEditor.AssetDatabase.IsValidFolder(parentPath))
+                if (!DeleteEmptyDirectory(subFolders[i]))
                 {
-                    lastSlashIndex = parentPath.LastIndexOf('/');
-                    if (lastSlashIndex != -1)
-                    {
-                        string folderName = parentPath.Substring(lastSlashIndex + 1);
-                        string folderParentPath = parentPath.Substring(0, lastSlashIndex);
-                        CreateParentDirectory(parentPath);
-                        UnityEditor.AssetDatabase.CreateFolder(folderParentPath, folderName);
-                    }
-                    else
-                    {
-                        UnityEditor.AssetDatabase.CreateFolder(string.Empty, parentPath);
-                    }
+                    deletedAllSubFolders = false;
                 }
             }
-#endif
+
+            if (!deletedAllSubFolders)
+                return false;
+            else if (!UnityEditor.AssetDatabase.IsValidFolder(path))
+                return true;
+
+            string[] assetGuids = UnityEditor.AssetDatabase.FindAssets(string.Empty, new string[] { path });
+            if (assetGuids.Length > 0)
+                return false;
+
+            return UnityEditor.AssetDatabase.DeleteAsset(path);
         }
 
         private static string MakePathSafe(string name)
@@ -820,58 +865,8 @@ namespace UnityMeshSimplifier
             }
             return sb.ToString();
         }
-
-        private static string ValidateSaveAssetsPath(string saveAssetsPath)
-        {
-            if (string.IsNullOrEmpty(saveAssetsPath))
-                return null;
-
-            saveAssetsPath = saveAssetsPath.Replace('\\', '/');
-            saveAssetsPath = saveAssetsPath.Trim('/');
-
-            if (System.IO.Path.IsPathRooted(saveAssetsPath))
-                throw new System.InvalidOperationException("The save assets path cannot be rooted.");
-            else if (saveAssetsPath.Length > 100)
-                throw new System.InvalidOperationException("The save assets path cannot be more than 100 characters long to avoid I/O issues.");
-
-            // Make the path safe
-            var pathParts = saveAssetsPath.Split('/');
-            for (int i = 0; i < pathParts.Length; i++)
-            {
-                pathParts[i] = MakePathSafe(pathParts[i]);
-            }
-            saveAssetsPath = string.Join("/", pathParts);
-
-            return saveAssetsPath;
-        }
-
-        private static bool DeleteEmptyDirectory(string path)
-        {
-#if UNITY_EDITOR
-            bool deletedAllSubFolders = true;
-            var subFolders = UnityEditor.AssetDatabase.GetSubFolders(path);
-            for (int i = 0; i < subFolders.Length; i++)
-            {
-                if (!DeleteEmptyDirectory(subFolders[i]))
-                {
-                    deletedAllSubFolders = false;
-                }
-            }
-
-            if (!deletedAllSubFolders)
-                return false;
-            else if (!UnityEditor.AssetDatabase.IsValidFolder(path))
-                return true;
-
-            string[] assetGuids = UnityEditor.AssetDatabase.FindAssets(string.Empty, new string[] { path });
-            if (assetGuids.Length > 0)
-                return false;
-
-            return UnityEditor.AssetDatabase.DeleteAsset(path);
-#else
-            return false;
 #endif
-        }
+        #endregion
         #endregion
     }
 }

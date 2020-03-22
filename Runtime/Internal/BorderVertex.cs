@@ -24,20 +24,32 @@ SOFTWARE.
 */
 #endregion
 
-using UnityEngine;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
-namespace UnityMeshSimplifier
+namespace UnityMeshSimplifier.Internal
 {
-    [AddComponentMenu("")]
-    internal class LODBackupComponent : MonoBehaviour
+    internal struct BorderVertex
     {
-        [SerializeField]
-        private Renderer[] originalRenderers = null;
+        public int index;
+        public int hash;
 
-        public Renderer[] OriginalRenderers
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public BorderVertex(int index, int hash)
         {
-            get { return originalRenderers; }
-            set { originalRenderers = value; }
+            this.index = index;
+            this.hash = hash;
+        }
+    }
+
+    internal class BorderVertexComparer : IComparer<BorderVertex>
+    {
+        public static readonly BorderVertexComparer instance = new BorderVertexComparer();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int Compare(BorderVertex x, BorderVertex y)
+        {
+            return x.hash.CompareTo(y.hash);
         }
     }
 }

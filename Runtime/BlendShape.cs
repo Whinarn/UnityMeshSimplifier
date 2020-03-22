@@ -2,7 +2,7 @@
 /*
 MIT License
 
-Copyright(c) 2019 Mattias Edlund
+Copyright(c) 2017-2020 Mattias Edlund
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@ SOFTWARE.
 #endregion
 
 using System;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 namespace UnityMeshSimplifier
@@ -33,6 +34,7 @@ namespace UnityMeshSimplifier
     /// A blend shape.
     /// </summary>
     [Serializable]
+    [StructLayout(LayoutKind.Auto)]
     public struct BlendShape
     {
         /// <summary>
@@ -60,6 +62,7 @@ namespace UnityMeshSimplifier
     /// A blend shape frame.
     /// </summary>
     [Serializable]
+    [StructLayout(LayoutKind.Auto)]
     public struct BlendShapeFrame
     {
         /// <summary>

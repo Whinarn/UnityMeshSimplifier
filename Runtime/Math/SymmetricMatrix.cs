@@ -2,7 +2,7 @@
 /*
 MIT License
 
-Copyright(c) 2017 Mattias Edlund
+Copyright(c) 2017-2020 Mattias Edlund
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,12 +26,14 @@ SOFTWARE.
 
 using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace UnityMeshSimplifier
 {
     /// <summary>
     /// A symmetric matrix.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct SymmetricMatrix
     {
         #region Fields
@@ -111,7 +113,7 @@ namespace UnityMeshSimplifier
                     case 9:
                         return m9;
                     default:
-                        throw new IndexOutOfRangeException();
+                        throw new ArgumentOutOfRangeException(nameof(index));
                 }
             }
         }

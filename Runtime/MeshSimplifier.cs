@@ -2,7 +2,7 @@
 /*
 MIT License
 
-Copyright(c) 2017 Mattias Edlund
+Copyright(c) 2017-2020 Mattias Edlund
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -49,6 +49,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityMeshSimplifier.Internal;
 
 namespace UnityMeshSimplifier
 {
@@ -58,352 +59,9 @@ namespace UnityMeshSimplifier
     /// </summary>
     public sealed class MeshSimplifier
     {
-        #region Consts
+        #region Consts & Static Read-Only
         private const double DoubleEpsilon = 1.0E-3;
-        private const int UVChannelCount = MeshUtils.UVChannelCount;
-        #endregion
-
-        #region Classes
-        #region Triangle
-        private struct Triangle
-        {
-            #region Fields
-            public int v0;
-            public int v1;
-            public int v2;
-            public int subMeshIndex;
-
-            public int va0;
-            public int va1;
-            public int va2;
-
-            public double err0;
-            public double err1;
-            public double err2;
-            public double err3;
-
-            public bool deleted;
-            public bool dirty;
-            public Vector3d n;
-            #endregion
-
-            #region Properties
-            public int this[int index]
-            {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get
-                {
-                    return (index == 0 ? v0 : (index == 1 ? v1 : v2));
-                }
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                set
-                {
-                    switch (index)
-                    {
-                        case 0:
-                            v0 = value;
-                            break;
-                        case 1:
-                            v1 = value;
-                            break;
-                        case 2:
-                            v2 = value;
-                            break;
-                        default:
-                            throw new IndexOutOfRangeException();
-                    }
-                }
-            }
-            #endregion
-
-            #region Constructor
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public Triangle(int v0, int v1, int v2, int subMeshIndex)
-            {
-                this.v0 = v0;
-                this.v1 = v1;
-                this.v2 = v2;
-                this.subMeshIndex = subMeshIndex;
-
-                this.va0 = v0;
-                this.va1 = v1;
-                this.va2 = v2;
-
-                err0 = err1 = err2 = err3 = 0;
-                deleted = dirty = false;
-                n = new Vector3d();
-            }
-            #endregion
-
-            #region Public Methods
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void GetAttributeIndices(int[] attributeIndices)
-            {
-                attributeIndices[0] = va0;
-                attributeIndices[1] = va1;
-                attributeIndices[2] = va2;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetAttributeIndex(int index, int value)
-            {
-                switch (index)
-                {
-                    case 0:
-                        va0 = value;
-                        break;
-                    case 1:
-                        va1 = value;
-                        break;
-                    case 2:
-                        va2 = value;
-                        break;
-                    default:
-                        throw new IndexOutOfRangeException();
-                }
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void GetErrors(double[] err)
-            {
-                err[0] = err0;
-                err[1] = err1;
-                err[2] = err2;
-            }
-            #endregion
-        }
-        #endregion
-
-        #region Vertex
-        private struct Vertex
-        {
-            public Vector3d p;
-            public int tstart;
-            public int tcount;
-            public SymmetricMatrix q;
-            public bool borderEdge;
-            public bool uvSeamEdge;
-            public bool uvFoldoverEdge;
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public Vertex(Vector3d p)
-            {
-                this.p = p;
-                this.tstart = 0;
-                this.tcount = 0;
-                this.q = new SymmetricMatrix();
-                this.borderEdge = true;
-                this.uvSeamEdge = false;
-                this.uvFoldoverEdge = false;
-            }
-        }
-        #endregion
-
-        #region Ref
-        private struct Ref
-        {
-            public int tid;
-            public int tvertex;
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Set(int tid, int tvertex)
-            {
-                this.tid = tid;
-                this.tvertex = tvertex;
-            }
-        }
-        #endregion
-
-        #region UV Channels
-        private class UVChannels<TVec>
-        {
-            private ResizableArray<TVec>[] channels = null;
-            private TVec[][] channelsData = null;
-
-            public TVec[][] Data
-            {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get
-                {
-                    for (int i = 0; i < UVChannelCount; i++)
-                    {
-                        if (channels[i] != null)
-                        {
-                            channelsData[i] = channels[i].Data;
-                        }
-                        else
-                        {
-                            channelsData[i] = null;
-                        }
-                    }
-                    return channelsData;
-                }
-            }
-
-            /// <summary>
-            /// Gets or sets a specific channel by index.
-            /// </summary>
-            /// <param name="index">The channel index.</param>
-            public ResizableArray<TVec> this[int index]
-            {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return channels[index]; }
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                set { channels[index] = value; }
-            }
-
-            public UVChannels()
-            {
-                channels = new ResizableArray<TVec>[UVChannelCount];
-                channelsData = new TVec[UVChannelCount][];
-            }
-
-            /// <summary>
-            /// Resizes all channels at once.
-            /// </summary>
-            /// <param name="capacity">The new capacity.</param>
-            /// <param name="trimExess">If exess memory should be trimmed.</param>
-            public void Resize(int capacity, bool trimExess = false)
-            {
-                for (int i = 0; i < UVChannelCount; i++)
-                {
-                    if (channels[i] != null)
-                    {
-                        channels[i].Resize(capacity, trimExess);
-                    }
-                }
-            }
-        }
-        #endregion
-
-        #region Blend Shape
-        private class BlendShapeContainer
-        {
-            private string shapeName;
-            private BlendShapeFrameContainer[] frames;
-
-            public BlendShapeContainer(BlendShape blendShape)
-            {
-                shapeName = blendShape.ShapeName;
-                frames = new BlendShapeFrameContainer[blendShape.Frames.Length];
-                for (int i = 0; i < frames.Length; i++)
-                {
-                    frames[i] = new BlendShapeFrameContainer(blendShape.Frames[i]);
-                }
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void MoveVertexElement(int dst, int src)
-            {
-                for (int i = 0; i < frames.Length; i++)
-                {
-                    frames[i].MoveVertexElement(dst, src);
-                }
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void InterpolateVertexAttributes(int dst, int i0, int i1, int i2, ref Vector3 barycentricCoord)
-            {
-                for (int i = 0; i < frames.Length; i++)
-                {
-                    frames[i].InterpolateVertexAttributes(dst, i0, i1, i2, ref barycentricCoord);
-                }
-            }
-
-            public void Resize(int length, bool trimExess = false)
-            {
-                for (int i = 0; i < frames.Length; i++)
-                {
-                    frames[i].Resize(length, trimExess);
-                }
-            }
-
-            public BlendShape ToBlendShape()
-            {
-                var shapeFrames = new BlendShapeFrame[frames.Length];
-                for (int i = 0; i < shapeFrames.Length; i++)
-                {
-                    shapeFrames[i] = frames[i].ToBlendShapeFrame();
-                }
-                return new BlendShape(shapeName, shapeFrames);
-            }
-        }
-
-        private class BlendShapeFrameContainer
-        {
-            private float frameWeight;
-            private ResizableArray<Vector3> deltaVertices;
-            private ResizableArray<Vector3> deltaNormals;
-            private ResizableArray<Vector3> deltaTangents;
-
-            public BlendShapeFrameContainer(BlendShapeFrame frame)
-            {
-                frameWeight = frame.FrameWeight;
-                deltaVertices = new ResizableArray<Vector3>(frame.DeltaVertices);
-                deltaNormals = new ResizableArray<Vector3>(frame.DeltaNormals);
-                deltaTangents = new ResizableArray<Vector3>(frame.DeltaTangents);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void MoveVertexElement(int dst, int src)
-            {
-                deltaVertices[dst] = deltaVertices[src];
-                deltaNormals[dst] = deltaNormals[src];
-                deltaTangents[dst] = deltaTangents[src];
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void InterpolateVertexAttributes(int dst, int i0, int i1, int i2, ref Vector3 barycentricCoord)
-            {
-                deltaVertices[dst] = (deltaVertices[i0] * barycentricCoord.x) + (deltaVertices[i1] * barycentricCoord.y) + (deltaVertices[i2] * barycentricCoord.z);
-                deltaNormals[dst] = Vector3.Normalize((deltaNormals[i0] * barycentricCoord.x) + (deltaNormals[i1] * barycentricCoord.y) + (deltaNormals[i2] * barycentricCoord.z));
-                deltaTangents[dst] = Vector3.Normalize((deltaTangents[i0] * barycentricCoord.x) + (deltaTangents[i1] * barycentricCoord.y) + (deltaTangents[i2] * barycentricCoord.z));
-            }
-
-            public void Resize(int length, bool trimExess = false)
-            {
-                deltaVertices.Resize(length, trimExess);
-                deltaNormals.Resize(length, trimExess);
-                deltaTangents.Resize(length, trimExess);
-            }
-
-            public BlendShapeFrame ToBlendShapeFrame()
-            {
-                var resultVertices = deltaVertices.ToArray();
-                var resultNormals = deltaNormals.ToArray();
-                var resultTangents = deltaTangents.ToArray();
-                return new BlendShapeFrame(frameWeight, resultVertices, resultNormals, resultTangents);
-            }
-        }
-        #endregion
-
-        #region Border Vertex
-        private struct BorderVertex
-        {
-            public int index;
-            public int hash;
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public BorderVertex(int index, int hash)
-            {
-                this.index = index;
-                this.hash = hash;
-            }
-        }
-        #endregion
-
-        #region Border Vertex Comparer
-        private class BorderVertexComparer : IComparer<BorderVertex>
-        {
-            public static readonly BorderVertexComparer instance = new BorderVertexComparer();
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public int Compare(BorderVertex x, BorderVertex y)
-            {
-                return x.hash.CompareTo(y.hash);
-            }
-        }
-        #endregion
+        private static readonly int UVChannelCount = MeshUtils.UVChannelCount;
         #endregion
 
         #region Fields
@@ -774,7 +432,6 @@ namespace UnityMeshSimplifier
         #endregion
 
         #region Private Methods
-
         #region Initialize Vertex Attribute
         private void InitializeVertexAttribute<T>(T[] attributeValues, ref ResizableArray<T> attributeArray, string attributeName)
         {
@@ -883,21 +540,28 @@ namespace UnityMeshSimplifier
                 double error1 = VertexError(ref q, p1.x, p1.y, p1.z);
                 double error2 = VertexError(ref q, p2.x, p2.y, p2.z);
                 double error3 = VertexError(ref q, p3.x, p3.y, p3.z);
-                error = MathHelper.Min(error1, error2, error3);
-                if (error == error3)
+
+                if (error1 < error2)
                 {
-                    result = p3;
+                    if (error1 < error3)
+                    {
+                        error = error1;
+                        result = p1;
+                    }
+                    else
+                    {
+                        error = error3;
+                        result = p3;
+                    }
                 }
-                else if (error == error2)
+                else if (error2 < error3)
                 {
+                    error = error2;
                     result = p2;
-                }
-                else if (error == error1)
-                {
-                    result = p1;
                 }
                 else
                 {
+                    error = error3;
                     result = p3;
                 }
             }
@@ -1753,12 +1417,10 @@ namespace UnityMeshSimplifier
             return tris;
         }
 
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private HashSet<Triangle> GetTrianglesContainingBothVertices(ref Vertex vertex1, ref Vertex vertex2)
         {
             HashSet<Triangle> tris = new HashSet<Triangle>();
-
 
             int trianglesCount = vertex1.tcount;
             int startIndex = vertex1.tstart;
@@ -1777,18 +1439,11 @@ namespace UnityMeshSimplifier
                 {
                     tris.Add(tri);
                 }
-
             }
-
-
 
             return tris;
         }
-
-
         #endregion Triangle helper functions
-
-
         #endregion
 
         #region Public Methods
