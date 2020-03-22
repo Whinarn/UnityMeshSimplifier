@@ -96,8 +96,10 @@ namespace UnityMeshSimplifier
         private Matrix4x4[] bindposes = null;
 
         // Pre-allocated buffers
-        private double[] errArr = new double[3];
-        private int[] attributeIndexArr = new int[3];
+        private readonly double[] errArr = new double[3];
+        private readonly int[] attributeIndexArr = new int[3];
+        private readonly HashSet<Triangle> triangleHashSet1 = new HashSet<Triangle>();
+        private readonly HashSet<Triangle> triangleHashSet2 = new HashSet<Triangle>();
         #endregion
 
         #region Properties
@@ -264,7 +266,7 @@ namespace UnityMeshSimplifier
                 var vertArr = vertices.Data;
                 for (int i = 0; i < value.Length; i++)
                 {
-                    vertArr[i] = new Vertex(value[i]);
+                    vertArr[i] = new Vertex(i, value[i]);
                 }
             }
         }
@@ -464,46 +466,47 @@ namespace UnityMeshSimplifier
 
         #region Calculate Error
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private double VertexError(ref SymmetricMatrix q, double x, double y, double z)
+        private static double VertexError(ref SymmetricMatrix q, double x, double y, double z)
         {
             return q.m0 * x * x + 2 * q.m1 * x * y + 2 * q.m2 * x * z + 2 * q.m3 * x + q.m4 * y * y
                 + 2 * q.m5 * y * z + 2 * q.m6 * y + q.m7 * z * z + 2 * q.m8 * z + q.m9;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private double CurvatureError(ref Vertex Vi, ref Vertex Vj)
+        private double CurvatureError(ref Vertex vert0, ref Vertex vert1)
         {
-            double diffVector = (Vi.p - Vj.p).Magnitude;
+            double diffVector = (vert0.p - vert1.p).Magnitude;
 
-            HashSet<Triangle> trianglesWithVi = GetTrianglesContainingVertex(ref Vi);
-            HashSet<Triangle> trianglesWithVj = GetTrianglesContainingVertex(ref Vj);
-            HashSet<Triangle> trianglesWithViOrVjOrBoth = new HashSet<Triangle>(trianglesWithVi);
-            trianglesWithViOrVjOrBoth.UnionWith(trianglesWithVj);
-            HashSet<Triangle> trianglesWithViAndVjBoth = GetTrianglesContainingBothVertices(ref Vi, ref Vj);
+            var trianglesWithViOrVjOrBoth = triangleHashSet1;
+            trianglesWithViOrVjOrBoth.Clear();
+            GetTrianglesContainingVertex(ref vert0, trianglesWithViOrVjOrBoth);
+            GetTrianglesContainingVertex(ref vert1, trianglesWithViOrVjOrBoth);
+
+            var trianglesWithViAndVjBoth = triangleHashSet2;
+            trianglesWithViAndVjBoth.Clear();
+            GetTrianglesContainingBothVertices(ref vert0, ref vert1, trianglesWithViAndVjBoth);
 
             double maxDotOuter = 0;
             foreach (var triangleWithViOrVjOrBoth in trianglesWithViOrVjOrBoth)
             {
                 double maxDotInner = 0;
-                
                 Vector3d normVecTriangleWithViOrVjOrBoth = triangleWithViOrVjOrBoth.n;
 
                 foreach (var triangleWithViAndVjBoth in trianglesWithViAndVjBoth)
                 {
                     Vector3d normVecTriangleWithViAndVjBoth = triangleWithViAndVjBoth.n;
-
                     double dot = Vector3d.Dot(ref normVecTriangleWithViOrVjOrBoth, ref normVecTriangleWithViAndVjBoth);
                     
-                    if (dot > maxDotInner) { maxDotInner = dot; }
+                    if (dot > maxDotInner)
+                        maxDotInner = dot;
                 }
 
-                if (maxDotInner > maxDotOuter) { maxDotOuter = maxDotInner; }
-
+                if (maxDotInner > maxDotOuter)
+                    maxDotOuter = maxDotInner;
             }
 
             return diffVector * maxDotOuter;
         }
-
 
         private double CalculateError(ref Vertex vert0, ref Vertex vert1, out Vector3d result)
         {
@@ -564,7 +567,6 @@ namespace UnityMeshSimplifier
             }
             return error;
         }
-
         #endregion
 
         #region Calculate Barycentric Coordinates
@@ -913,6 +915,7 @@ namespace UnityMeshSimplifier
                         if (dst != i)
                         {
                             triangles[dst] = triangles[i];
+                            triangles[dst].index = dst;
                         }
                         dst++;
                     }
@@ -1251,6 +1254,7 @@ namespace UnityMeshSimplifier
                     }
                     int newTriangleIndex = dst++;
                     triangles[newTriangleIndex] = triangle;
+                    triangles[newTriangleIndex].index = newTriangleIndex;
 
                     vertices[triangle.v0].tcount = 1;
                     vertices[triangle.v1].tcount = 1;
@@ -1283,11 +1287,11 @@ namespace UnityMeshSimplifier
                 var vert = vertices[i];
                 if (vert.tcount > 0)
                 {
-                    vert.tstart = dst;
-                    vertices[i] = vert;
+                    vertices[i].tstart = dst;
 
                     if (dst != i)
                     {
+                        vertices[dst].index = dst;
                         vertices[dst].p = vert.p;
                         if (vertNormals != null) vertNormals[dst] = vertNormals[i];
                         if (vertTangents != null) vertTangents[dst] = vertTangents[i];
@@ -1399,46 +1403,35 @@ namespace UnityMeshSimplifier
 
         #region Triangle helper functions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private HashSet<Triangle> GetTrianglesContainingVertex(ref Vertex toCheck)
+        private void GetTrianglesContainingVertex(ref Vertex vert, HashSet<Triangle> tris)
         {
-            int trianglesCount = toCheck.tcount;
-            int startIndex = toCheck.tstart;
-
-            HashSet<Triangle> tris = new HashSet<Triangle>();
+            int trianglesCount = vert.tcount;
+            int startIndex = vert.tstart;
 
             for (int a = startIndex; a < startIndex + trianglesCount; a++)
             {
                 tris.Add(triangles[refs[a].tid]);
             }
-
-            return tris;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private HashSet<Triangle> GetTrianglesContainingBothVertices(ref Vertex vertex1, ref Vertex vertex2)
+        private void GetTrianglesContainingBothVertices(ref Vertex vert0, ref Vertex vert1, HashSet<Triangle> tris)
         {
-            HashSet<Triangle> tris = new HashSet<Triangle>();
+            int triangleCount = vert0.tcount;
+            int startIndex = vert0.tstart;
 
-            int trianglesCount = vertex1.tcount;
-            int startIndex = vertex1.tstart;
-
-            for (int a = startIndex; a < startIndex + trianglesCount; a++)
+            for (int refIndex = startIndex; refIndex < (startIndex + triangleCount); refIndex++)
             {
-                Triangle tri = triangles[refs[a].tid];
+                int tid = refs[refIndex].tid;
+                Triangle tri = triangles[tid];
 
-                Vertex v1 = vertices[tri.v0];
-                Vertex v2 = vertices[tri.v1];
-                Vertex v3 = vertices[tri.v2];
-
-                int hashcode = vertex2.GetHashCode();
-
-                if (v1.GetHashCode().Equals(hashcode) || v2.GetHashCode().Equals(hashcode) || v3.GetHashCode().Equals(hashcode))
+                if (vertices[tri.v0].index == vert1.index ||
+                    vertices[tri.v1].index == vert1.index ||
+                    vertices[tri.v2].index == vert1.index)
                 {
                     tris.Add(tri);
                 }
             }
-
-            return tris;
         }
         #endregion Triangle helper functions
         #endregion
@@ -1531,7 +1524,7 @@ namespace UnityMeshSimplifier
                 throw new ArgumentException("The index array length must be a multiple of 3 in order to represent triangles.", nameof(triangles));
 
             int subMeshIndex = subMeshCount++;
-            int triangleIndex = this.triangles.Length;
+            int triangleIndexStart = this.triangles.Length;
             int subMeshTriangleCount = triangles.Length / TriangleVertexCount;
             this.triangles.Resize(this.triangles.Length + subMeshTriangleCount);
             var trisArr = this.triangles.Data;
@@ -1541,7 +1534,8 @@ namespace UnityMeshSimplifier
                 int v0 = triangles[offset];
                 int v1 = triangles[offset + 1];
                 int v2 = triangles[offset + 2];
-                trisArr[triangleIndex + i] = new Triangle(v0, v1, v2, subMeshIndex);
+                int triangleIndex = triangleIndexStart + i;
+                trisArr[triangleIndex] = new Triangle(triangleIndex, v0, v1, v2, subMeshIndex);
             }
         }
 
@@ -1565,7 +1559,7 @@ namespace UnityMeshSimplifier
                 totalTriangleCount += triangles[i].Length / TriangleVertexCount;
             }
 
-            int triangleIndex = this.triangles.Length;
+            int triangleIndexStart = this.triangles.Length;
             this.triangles.Resize(this.triangles.Length + totalTriangleCount);
             var trisArr = this.triangles.Data;
 
@@ -1580,10 +1574,11 @@ namespace UnityMeshSimplifier
                     int v0 = subMeshTriangles[offset];
                     int v1 = subMeshTriangles[offset + 1];
                     int v2 = subMeshTriangles[offset + 2];
-                    trisArr[triangleIndex + j] = new Triangle(v0, v1, v2, subMeshIndex);
+                    int triangleIndex = triangleIndexStart + j;
+                    trisArr[triangleIndex] = new Triangle(triangleIndex, v0, v1, v2, subMeshIndex);
                 }
 
-                triangleIndex += subMeshTriangleCount;
+                triangleIndexStart += subMeshTriangleCount;
             }
         }
         #endregion

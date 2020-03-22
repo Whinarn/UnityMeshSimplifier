@@ -24,12 +24,14 @@ SOFTWARE.
 */
 #endregion
 
+using System;
 using System.Runtime.CompilerServices;
 
 namespace UnityMeshSimplifier.Internal
 {
-    internal struct Vertex
+    internal struct Vertex : IEquatable<Vertex>
     {
+        public int index;
         public Vector3d p;
         public int tstart;
         public int tcount;
@@ -39,8 +41,9 @@ namespace UnityMeshSimplifier.Internal
         public bool uvFoldoverEdge;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vertex(Vector3d p)
+        public Vertex(int index, Vector3d p)
         {
+            this.index = index;
             this.p = p;
             this.tstart = 0;
             this.tcount = 0;
@@ -48,6 +51,27 @@ namespace UnityMeshSimplifier.Internal
             this.borderEdge = true;
             this.uvSeamEdge = false;
             this.uvFoldoverEdge = false;
+        }
+
+        public override int GetHashCode()
+        {
+            return index;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is Vertex)
+            {
+                var other = (Vertex)obj;
+                return index == other.index;
+            }
+
+            return false;
+        }
+
+        public bool Equals(Vertex other)
+        {
+            return index == other.index;
         }
     }
 }

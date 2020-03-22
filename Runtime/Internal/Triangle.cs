@@ -29,9 +29,11 @@ using System.Runtime.CompilerServices;
 
 namespace UnityMeshSimplifier.Internal
 {
-    internal struct Triangle
+    internal struct Triangle : IEquatable<Triangle>
     {
         #region Fields
+        public int index;
+
         public int v0;
         public int v1;
         public int v2;
@@ -82,8 +84,10 @@ namespace UnityMeshSimplifier.Internal
 
         #region Constructor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Triangle(int v0, int v1, int v2, int subMeshIndex)
+        public Triangle(int index, int v0, int v1, int v2, int subMeshIndex)
         {
+            this.index = index;
+
             this.v0 = v0;
             this.v1 = v1;
             this.v2 = v2;
@@ -133,6 +137,27 @@ namespace UnityMeshSimplifier.Internal
             err[0] = err0;
             err[1] = err1;
             err[2] = err2;
+        }
+
+        public override int GetHashCode()
+        {
+            return index;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is Triangle)
+            {
+                var other = (Triangle)obj;
+                return index == other.index;
+            }
+
+            return false;
+        }
+
+        public bool Equals(Triangle other)
+        {
+            return index == other.index;
         }
         #endregion
     }
