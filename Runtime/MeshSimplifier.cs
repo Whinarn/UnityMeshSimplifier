@@ -815,18 +815,15 @@ namespace UnityMeshSimplifier
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private double CurvatureError(Vertex Vi, Vertex Vj)
+        private double CurvatureError(ref Vertex Vi, ref Vertex Vj)
         {
-            //System.Diagnostics.Stopwatch w = new System.Diagnostics.Stopwatch();
-            //w.Start();
-
             double diffVector = (Vi.p - Vj.p).Magnitude;
 
-            HashSet<Triangle> trianglesWithVi = GetTrianglesContainingVertex(Vi);
-            HashSet<Triangle> trianglesWithVj = GetTrianglesContainingVertex(Vj);
+            HashSet<Triangle> trianglesWithVi = GetTrianglesContainingVertex(ref Vi);
+            HashSet<Triangle> trianglesWithVj = GetTrianglesContainingVertex(ref Vj);
             HashSet<Triangle> trianglesWithViOrVjOrBoth = new HashSet<Triangle>(trianglesWithVi);
             trianglesWithViOrVjOrBoth.UnionWith(trianglesWithVj);
-            HashSet<Triangle> trianglesWithViAndVjBoth = GetTrianglesContainingBothVertices(Vi, Vj);
+            HashSet<Triangle> trianglesWithViAndVjBoth = GetTrianglesContainingBothVertices(ref Vi, ref Vj);
 
 
             double maxDotOuter = 0;
@@ -834,24 +831,21 @@ namespace UnityMeshSimplifier
             foreach (var triangleWithViOrVjOrBoth in trianglesWithViOrVjOrBoth)
             {
                 double maxDotInner = 0;
-
-                Vector3 normVecWithViOrVjOrBoth = GetTriangleNormalVector(triangleWithViOrVjOrBoth);
+                
+                Vector3d normVecTriangleWithViOrVjOrBoth = triangleWithViOrVjOrBoth.n;
 
                 foreach (var triangleWithViAndVjBoth in trianglesWithViAndVjBoth)
                 {
-                    Vector3 normVecTriangleWithViAndVjBoth = GetTriangleNormalVector(triangleWithViAndVjBoth);
+                    Vector3d normVecTriangleWithViAndVjBoth = triangleWithViAndVjBoth.n;
 
-                    double dot = Vector3.Dot(normVecWithViOrVjOrBoth, normVecTriangleWithViAndVjBoth);
-
+                    double dot = Vector3d.Dot(ref normVecTriangleWithViOrVjOrBoth, ref normVecTriangleWithViAndVjBoth);
+                    
                     if (dot > maxDotInner) { maxDotInner = dot; }
                 }
 
                 if (maxDotInner > maxDotOuter) { maxDotOuter = maxDotInner; }
 
             }
-
-            //w.Stop();
-            //Debug.Log("Time ellapsed =  " + w.ElapsedMilliseconds);
 
             return diffVector * maxDotOuter;
         }
@@ -873,10 +867,10 @@ namespace UnityMeshSimplifier
                     -1.0 / det * q.Determinant4()); // vz = A43/det(q_delta)
 
                 double curvatureError = 0;
-
+                
                 if (preserveSurfaceCurvature)
                 {
-                    curvatureError = CurvatureError(vert0, vert1);
+                    curvatureError = CurvatureError(ref vert0, ref vert1);
                 }
 
                 error = VertexError(ref q, result.x, result.y, result.z) + curvatureError;
@@ -1743,9 +1737,9 @@ namespace UnityMeshSimplifier
         }
         #endregion
 
-        #region Traingle helper functions
+        #region Triangle helper functions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private HashSet<Triangle> GetTrianglesContainingVertex(Vertex toCheck)
+        private HashSet<Triangle> GetTrianglesContainingVertex(ref Vertex toCheck)
         {
             int trianglesCount = toCheck.tcount;
             int startIndex = toCheck.tstart;
@@ -1762,7 +1756,7 @@ namespace UnityMeshSimplifier
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private HashSet<Triangle> GetTrianglesContainingBothVertices(Vertex vertex1, Vertex vertex2)
+        private HashSet<Triangle> GetTrianglesContainingBothVertices(ref Vertex vertex1, ref Vertex vertex2)
         {
             HashSet<Triangle> tris = new HashSet<Triangle>();
 
@@ -1793,31 +1787,7 @@ namespace UnityMeshSimplifier
         }
 
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private Vector3 GetTriangleNormalVector(Triangle triangle)
-        {
-            Vector3 normal = Vector3.zero;
-
-            Vertex V0 = vertices[triangle.v0];
-            Vertex V1 = vertices[triangle.v1];
-            Vertex V2 = vertices[triangle.v2];
-
-            Vector3 a = new Vector3((float)V0.p.x, (float)V0.p.y, (float)V0.p.z);
-            Vector3 b = new Vector3((float)V1.p.x, (float)V1.p.y, (float)V1.p.z);
-            Vector3 c = new Vector3((float)V2.p.x, (float)V2.p.y, (float)V2.p.z);
-
-
-            Vector3 side1 = b - a;
-            Vector3 side2 = c - a;
-
-            Vector3 perp = Vector3.Cross(side1, side2);
-
-            float perpLength = perp.magnitude;
-            normal = perp / perpLength;
-
-            return normal;
-        }
-        #endregion Traingle helper functions
+        #endregion Triangle helper functions
 
 
         #endregion
