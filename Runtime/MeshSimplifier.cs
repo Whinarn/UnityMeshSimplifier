@@ -60,6 +60,8 @@ namespace UnityMeshSimplifier
     public sealed class MeshSimplifier
     {
         #region Consts & Static Read-Only
+        private const int TriangleEdgeCount = 3;
+        private const int TriangleVertexCount = 3;
         private const double DoubleEpsilon = 1.0E-3;
         private static readonly int UVChannelCount = MeshUtils.UVChannelCount;
         #endregion
@@ -468,8 +470,6 @@ namespace UnityMeshSimplifier
                 + 2 * q.m5 * y * z + 2 * q.m6 * y + q.m7 * z * z + 2 * q.m8 * z + q.m9;
         }
 
-
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private double CurvatureError(ref Vertex Vi, ref Vertex Vj)
         {
@@ -481,9 +481,7 @@ namespace UnityMeshSimplifier
             trianglesWithViOrVjOrBoth.UnionWith(trianglesWithVj);
             HashSet<Triangle> trianglesWithViAndVjBoth = GetTrianglesContainingBothVertices(ref Vi, ref Vj);
 
-
             double maxDotOuter = 0;
-
             foreach (var triangleWithViOrVjOrBoth in trianglesWithViOrVjOrBoth)
             {
                 double maxDotInner = 0;
@@ -511,7 +509,7 @@ namespace UnityMeshSimplifier
         {
             // compute interpolated vertex
             SymmetricMatrix q = (vert0.q + vert1.q);
-            bool borderEdge = (vert0.borderEdge & vert1.borderEdge);
+            bool borderEdge = (vert0.borderEdge && vert1.borderEdge);
             double error = 0.0;
             double det = q.Determinant1();
             if (det != 0.0 && !borderEdge)
@@ -523,7 +521,6 @@ namespace UnityMeshSimplifier
                     -1.0 / det * q.Determinant4()); // vz = A43/det(q_delta)
 
                 double curvatureError = 0;
-                
                 if (preserveSurfaceCurvature)
                 {
                     curvatureError = CurvatureError(ref vert0, ref vert1);
@@ -627,7 +624,7 @@ namespace UnityMeshSimplifier
                 Vector3d d2 = vertices[id2].p - p;
                 d2.Normalize();
                 double dot = Vector3d.Dot(ref d1, ref d2);
-                if (System.Math.Abs(dot) > 0.999)
+                if (Math.Abs(dot) > 0.999)
                     return true;
 
                 Vector3d n;
@@ -804,12 +801,12 @@ namespace UnityMeshSimplifier
 
                 triangles[tid].GetErrors(errArr);
                 triangles[tid].GetAttributeIndices(attributeIndexArr);
-                for (int edgeIndex = 0; edgeIndex < 3; edgeIndex++)
+                for (int edgeIndex = 0; edgeIndex < TriangleEdgeCount; edgeIndex++)
                 {
                     if (errArr[edgeIndex] > threshold)
                         continue;
 
-                    int nextEdgeIndex = ((edgeIndex + 1) % 3);
+                    int nextEdgeIndex = ((edgeIndex + 1) % TriangleEdgeCount);
                     int i0 = triangles[tid][edgeIndex];
                     int i1 = triangles[tid][nextEdgeIndex];
 
@@ -958,7 +955,7 @@ namespace UnityMeshSimplifier
                     for (int j = 0; j < tcount; j++)
                     {
                         int tid = refs[tstart + j].tid;
-                        for (int k = 0; k < 3; k++)
+                        for (int k = 0; k < TriangleVertexCount; k++)
                         {
                             ofs = 0;
                             id = triangles[tid][k];
@@ -1530,12 +1527,12 @@ namespace UnityMeshSimplifier
         {
             if (triangles == null)
                 throw new ArgumentNullException(nameof(triangles));
-            else if ((triangles.Length % 3) != 0)
+            else if ((triangles.Length % TriangleVertexCount) != 0)
                 throw new ArgumentException("The index array length must be a multiple of 3 in order to represent triangles.", nameof(triangles));
 
             int subMeshIndex = subMeshCount++;
             int triangleIndex = this.triangles.Length;
-            int subMeshTriangleCount = triangles.Length / 3;
+            int subMeshTriangleCount = triangles.Length / TriangleVertexCount;
             this.triangles.Resize(this.triangles.Length + subMeshTriangleCount);
             var trisArr = this.triangles.Data;
             for (int i = 0; i < subMeshTriangleCount; i++)
@@ -1546,8 +1543,6 @@ namespace UnityMeshSimplifier
                 int v2 = triangles[offset + 2];
                 trisArr[triangleIndex + i] = new Triangle(v0, v1, v2, subMeshIndex);
             }
-
-            triangleIndex += subMeshTriangleCount;
         }
 
         /// <summary>
@@ -1564,10 +1559,10 @@ namespace UnityMeshSimplifier
             {
                 if (triangles[i] == null)
                     throw new ArgumentException(string.Format("The index array at index {0} is null.", i));
-                else if ((triangles[i].Length % 3) != 0)
+                else if ((triangles[i].Length % TriangleVertexCount) != 0)
                     throw new ArgumentException(string.Format("The index array length at index {0} must be a multiple of 3 in order to represent triangles.", i), nameof(triangles));
 
-                totalTriangleCount += triangles[i].Length / 3;
+                totalTriangleCount += triangles[i].Length / TriangleVertexCount;
             }
 
             int triangleIndex = this.triangles.Length;
@@ -1578,7 +1573,7 @@ namespace UnityMeshSimplifier
             {
                 int subMeshIndex = subMeshCount++;
                 var subMeshTriangles = triangles[i];
-                int subMeshTriangleCount = subMeshTriangles.Length / 3;
+                int subMeshTriangleCount = subMeshTriangles.Length / TriangleVertexCount;
                 for (int j = 0; j < subMeshTriangleCount; j++)
                 {
                     int offset = j * 3;
