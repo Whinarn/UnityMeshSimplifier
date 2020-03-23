@@ -166,10 +166,15 @@ namespace UnityMeshSimplifier
                 {
                     var meshRenderers = (from renderer in originalLevelRenderers
                                          where renderer.enabled && renderer as MeshRenderer != null
+                                        && renderer.transform.GetComponent<MeshFilter>() != null
+                                        && renderer.transform.GetComponent<MeshFilter>().sharedMesh != null
                                          select renderer as MeshRenderer).ToArray();
                     var skinnedMeshRenderers = (from renderer in originalLevelRenderers
                                                 where renderer.enabled && renderer as SkinnedMeshRenderer != null
+                                                && renderer.transform.GetComponent<SkinnedMeshRenderer>().sharedMesh != null
                                                 select renderer as SkinnedMeshRenderer).ToArray();
+
+
 
                     StaticRenderer[] staticRenderers;
                     SkinnedRenderer[] skinnedRenderers;

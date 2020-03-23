@@ -113,7 +113,7 @@ namespace UnityMeshSimplifier
 
                 var rendererTransform = renderer.transform;
                 meshes[i] = renderer.sharedMesh;
-                transforms[i] = rootTransform.worldToLocalMatrix * rendererTransform.localToWorldMatrix;
+                transforms[i] = rendererTransform.worldToLocalMatrix * rendererTransform.localToWorldMatrix;
                 materials[i] = renderer.sharedMaterials;
                 bones[i] = renderer.bones;
             }
