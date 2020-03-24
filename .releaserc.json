@@ -1,0 +1,17 @@
+{
+    "tagFormat": "v${version}",
+    "plugins": [
+        ["@semantic-release/commit-analyzer", { "preset": "angular" }],
+        ["@semantic-release/release-notes-generator", { "preset": "angular" }],
+        ["@semantic-release/changelog", { "preset": "angular" }],
+        ["@semantic-release/npm", { "npmPublish": false }],
+        ["@semantic-release/git", {
+            "assets": [
+                "package.json",
+                "CHANGELOG.md"
+            ],
+            "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+        }],
+        "@semantic-release/github"
+    ]
+}
