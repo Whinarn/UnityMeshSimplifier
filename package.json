@@ -4,6 +4,7 @@
   "version": "2.2.0",
   "unity": "2017.1",
   "description": "Simplifies 3D meshes with ease. Works both in the editor and during runtime in builds.",
+  "type": "library",
   "keywords": [
     "3d",
     "mesh",
