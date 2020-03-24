@@ -1,5 +1,6 @@
 # UnityMeshSimplifier
 [![openupm](https://img.shields.io/npm/v/com.whinarn.unitymeshsimplifier?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.whinarn.unitymeshsimplifier/)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/3c6b55bddfe64912b56e6759c642939d)](https://www.codacy.com/manual/Whinarn/UnityMeshSimplifier?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Whinarn/UnityMeshSimplifier&amp;utm_campaign=Badge_Grade)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://github.com/Whinarn/UnityMeshSimplifier/blob/master/LICENSE.md)
 
 Mesh simplification for [Unity](https://unity3d.com/). The project is deeply based on the [Fast Quadric Mesh Simplification](https://github.com/sp4cerat/Fast-Quadric-Mesh-Simplification) algorithm, but rewritten entirely in C# and released under the MIT license.
@@ -12,12 +13,15 @@ Although some scripts have been tested and confirmed working as far back as Unit
 Unity introduced the package manager in Unity 2017.2, but at a very early state.
 
 ## Installation into Unity project
-1. Read the instructions from the official Unity documentation: https://docs.unity3d.com/Manual/upm-dependencies.html#Git
+1. Read the instructions from the official Unity documentation: [https://docs.unity3d.com/Manual/upm-git.html](https://docs.unity3d.com/Manual/upm-git.html)
+
 2. Open up *manifest.json* inside the *Packages* directory in your Unity project using a text editor.
+
 3. Under the dependencies section of this file, you should add the following line at the top:
 ```"com.whinarn.unitymeshsimplifier": "https://github.com/Whinarn/UnityMeshSimplifier.git",```
+
 4. You should now see something like this:
-```
+```json
 {
   "dependencies": {
     "com.whinarn.unitymeshsimplifier": "https://github.com/Whinarn/UnityMeshSimplifier.git",
@@ -28,11 +32,13 @@ Unity introduced the package manager in Unity 2017.2, but at a very early state.
   }
 }
 ```
+
 5. You can also specify to use a specific version of UnityMeshSimplifier if you wish by appending # to the Git URL followed by the package version. For example:
 ```"com.whinarn.unitymeshsimplifier": "https://github.com/Whinarn/UnityMeshSimplifier.git#v2.1.0",```
+
 6. Success! Start up Unity with your Unity project and you should see UnityMeshSimplifier appear in the Unity Package Manager.
 
-## How do I use this?
+## How to use
 ```c#
 float quality = 0.5f;
 var meshSimplifier = new UnityMeshSimplifier.MeshSimplifier();
@@ -53,29 +59,29 @@ var newVertices = meshSimplifier.Vertices;
 var newIndices = meshSimplifier.GetSubMeshTriangles(0);
 ```
 
-## How do I contribute?
+## How to contribute
 1. Create a new empty Unity project, or use an existing one if you wish.
 2. Fork your own copy of this repository.
-2. Clone your UnityMeshSimplifier fork into the *Packages* directory of your Unity project.
-3. Start up your Unity project and you should see UnityMeshSimplifier appear in the Unity Package Manager.
-4. Open the scripts inside of the Unity package as you would normally do with scripts in your *Assets* directory.
-5. Make your changes inside a branch based on *master*.
-6. Create a pull request to the official repository.
-7. Success!
+3. Clone your UnityMeshSimplifier fork into the *Packages* directory of your Unity project.
+4. Start up your Unity project and you should see UnityMeshSimplifier appear in the Unity Package Manager.
+5. Open the scripts inside of the Unity package as you would normally do with scripts in your *Assets* directory.
+6. Make your changes inside a branch based on *master*.
+7. Create a pull request to the official repository.
+8. Success!
 
 ## The Smart Linking feature
 In order to solve artifacts in the mesh simplification process where holes or other serious issues could arise, a new feature called smart linking has been introduced. This feature is enabled by default but can be disabled through the *EnableSmartLink* property on the *MeshSimplifier* class. Disabling this could give you a minor performance gain in cases where you do not need this.
 
 The *VertexLinkDistanceSqr* property on the *MeshSimplifier* class could be used to change the maximum squared distance between two vertices for the linking. The default value is *double.Epsilon*.
 
-## My decimated meshes have holes, what is wrong?
+## My decimated meshes have holes
 The original algorithm that was ported from C++ did not support situations where multiple vertices shared the same position, instead of being treated as one vertex they were treated individually. This would then end up creating visible holes in the mesh where the vertices were not connected through triangles.
 
 There are several ways to solve this problem. The smart linking feature (mentioned above) is enabled by default and should take care of most of these problems for you. But there are also options to preserve borders, seams and UV foldovers. The properties *PreserveBorders*, *PreserveSeams* and *PreserveFoldovers* will preserve some vertices from being decimated, strongly limiting the decimation algorithm, but should prevent holes in most situations.
 
 The recommendation is to use the smart linking feature that is enabled by default, but the options for preservation exists in those cases where you may want it.
 
-## My animated meshes don't work, why?
+## My animated meshes don't work
 This is most probably because there is currently no code for moving the [bindposes](https://docs.unity3d.com/ScriptReference/Mesh-bindposes.html) over between the original and the simplified mesh. This can be easily resolved by copying over (no need to modify) the bindposes like this:
 
 ```c#
@@ -87,7 +93,7 @@ var destMesh = meshSimplifier.ToMesh();
 destMesh.bindposes = sourceMesh.bindposes; // <-- this line should fix your issue
 ```
 
-## How can I automatically generated LOD Groups?
+## How to automatically generate LOD Groups
 There is a component named *LOD Generator Helper* that you add to the game object that you want to generate LODs for. You can customize, generate and destroy the LOD levels directly through the inspector. Any changes is saved within the component so that you can easily make the changes that you want without having to waste time reconfiguring everything again. Additional steps have been taken in order to protect your game objects from damage and makes sure that they can be restored back to their original state. Backups are always recommended however, to make sure that you do not ever lose any configuration that you have made.
 
 There is also a static API at *UnityMeshSimplifier.LODGenerator* that you can use from code to generate and destroy LODs, both at runtime and in the editor.
