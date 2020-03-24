@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased][unreleased]
 
+## [v2.2.0] - 2020-03-24
+### Added
+- An option for preserving surface curvature.
+
+### Fixed
+- A bug with calculating vertex positions when combining meshes.
+
 ## [v2.1.0] - 2020-03-16
 ### Added
 - A button to copy visibility changes from the LOD Group.
@@ -68,7 +75,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for static and skinned meshes.
 - Support for 2D, 3D and 4D UVs.
 
-[unreleased]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.1.0...HEAD
+[unreleased]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.2.0...HEAD
+[v2.2.0]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.1.0...v2.2.0
 [v2.1.0]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.0.1...v2.1.0
 [v2.0.1]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.0.0...v2.0.1
 [v2.0.0]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v1.0.3-legacy...v2.0.0
