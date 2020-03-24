@@ -71,9 +71,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [unreleased]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.1.0...HEAD
 [v2.1.0]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.0.1...v2.1.0
 [v2.0.1]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.0.0...v2.0.1
-[v2.0.0]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v1.0.3...v2.0.0
-[v1.0.3]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v1.0.2...v1.0.3
-[v1.0.2]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v1.0.1...v1.0.2
-[v1.0.1]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v1.0.0...v1.0.1
-[v1.0.0]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v0.1.0...v1.0.0
-[v0.1.0]: https://github.com/Whinarn/UnityMeshSimplifier/releases/tag/v0.1.0
+[v2.0.0]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v1.0.3-legacy...v2.0.0
+[v1.0.3]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v1.0.2-legacy...v1.0.3-legacy
+[v1.0.2]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v1.0.1-legacy...v1.0.2-legacy
+[v1.0.1]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v1.0.0-legacy...v1.0.1-legacy
+[v1.0.0]: https://github.com/Whinarn/UnityMeshSimplifier/compare/v0.1.0-legacy...v1.0.0-legacy
+[v0.1.0]: https://github.com/Whinarn/UnityMeshSimplifier/releases/tag/v0.1.0-legacy
