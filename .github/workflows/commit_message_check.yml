@@ -1,0 +1,27 @@
+name: 'Commit Message Check'
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+  push:
+    branches:
+      - master
+
+jobs:
+  check-commit-message:
+    name: Check Commit Message
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Commit Type And Scope
+        uses: gsactions/commit-message-checker@v1
+        with:
+          pattern: '[a-z]+(?:\([a-z]+\))?: .+(?:\n(?:\n.+)+)?(?:\n\n.+)?$'
+          error: 'Your message must have the correct format "<type>(<scope>): <subject>" with an optional body and footer separated by blank lines.'
+      - name: Check Line Length
+        uses: gsactions/commit-message-checker@v1
+        with:
+          pattern: '^[^#].{100}'
+          error: 'The maximum line length of 100 characters is exceeded.'
