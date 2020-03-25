@@ -2,8 +2,10 @@
 
 [![openupm](https://img.shields.io/npm/v/com.whinarn.unitymeshsimplifier?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.whinarn.unitymeshsimplifier/)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/3c6b55bddfe64912b56e6759c642939d)](https://www.codacy.com/manual/Whinarn/UnityMeshSimplifier?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Whinarn/UnityMeshSimplifier&amp;utm_campaign=Badge_Grade)
-[![Release](https://github.com/Whinarn/UnityMeshSimplifier/workflows/Release/badge.svg)](https://github.com/Whinarn/UnityMeshSimplifier/actions?query=workflow%3ARelease)
+[![CircleCI](https://img.shields.io/circleci/build/gh/Whinarn/UnityMeshSimplifier?label=circle-ci)](https://circleci.com/gh/Whinarn/UnityMeshSimplifier/tree/master)
+[![GitHub Release Status](https://img.shields.io/github/workflow/status/Whinarn/UnityMeshSimplifier/Release?label=release)](https://github.com/Whinarn/UnityMeshSimplifier/actions?query=workflow%3ARelease)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://github.com/Whinarn/UnityMeshSimplifier/blob/master/LICENSE.md)
+[![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 
 Mesh simplification for [Unity](https://unity3d.com/). The project is deeply based on the [Fast Quadric Mesh Simplification](https://github.com/sp4cerat/Fast-Quadric-Mesh-Simplification) algorithm, but rewritten entirely in C# and released under the MIT license.
 
@@ -49,8 +51,7 @@ You can use [OpenUPM](https://openupm.com/) to install UnityMeshSimplifier.
     "com.whinarn.unitymeshsimplifier": "https://github.com/Whinarn/UnityMeshSimplifier.git",
     "com.unity.burst": "1.0.4",
     "com.unity.mathematics": "1.0.1",
-    "com.unity.package-manager-ui": "2.1.2",
-    ...
+    "com.unity.package-manager-ui": "2.1.2"
   }
 }
 ```

@@ -1,0 +1,39 @@
+version: 2.1
+executors:
+  unity-2019:
+    docker:
+      - image: gableroux/unity3d:2019.3.6f1
+    environment:
+      UNITY_LICENSE_CONTENT_VAR: UNITY_LICENSE_CONTENT_2019_3_6
+
+.test-2019: &test-2019
+  executor: unity-2019
+  steps:
+    - checkout
+    - run:
+        name: Preparing Unity
+        command: chmod +x ./.circleci/scripts/prepare_unity.sh && ./.circleci/scripts/prepare_unity.sh
+    - run:
+        name: Running tests
+        command: chmod +x ./.circleci/scripts/run_unity_tests.sh && ./.circleci/scripts/run_unity_tests.sh
+    - store_test_results:
+        path: test-results
+
+jobs:
+  test-editmode-2019:
+    <<: *test-2019
+    environment:
+      TEST_PLATFORM: editmode
+  test-playmode-2019:
+    <<: *test-2019
+    environment:
+      TEST_PLATFORM: playmode
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test-editmode-2019:
+          context: Unity
+      - test-playmode-2019:
+          context: Unity

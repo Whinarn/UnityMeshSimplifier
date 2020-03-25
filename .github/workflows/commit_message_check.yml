@@ -2,7 +2,7 @@ name: 'Commit Message Check'
 on:
   push:
     branches:
-      - master
+      - '*'
 
 jobs:
   check-commit-message:
@@ -17,5 +17,5 @@ jobs:
       - name: Check Line Length
         uses: gsactions/commit-message-checker@v1
         with:
-          pattern: '^.{1,72}(?:\n.{0,72})*$'
+          pattern: '^.{1,72}(?:\n.{0,100})*$'
           error: 'The maximum line length of 100 characters is exceeded.'
