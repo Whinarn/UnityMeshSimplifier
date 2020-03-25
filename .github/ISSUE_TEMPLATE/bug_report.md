@@ -25,7 +25,7 @@ If applicable, add screenshots to help explain your problem.
 
 **Environment (please complete the following information):**
  - OS: [e.g. Mac OS]
- - Unity Version [e.g. 2019.3.4f1]
+ - Unity Version: [e.g. 2019.3.4f1]
 
 **Additional context**
 Add any other context about the problem here.

@@ -43,7 +43,7 @@ Every commit must specify at least a **type** and a **subject**. While **scope**
 <footer>
 ```
 
-Any line of the commit message cannot be longer than 72 characters, in order for them to be easy to read in varios git tools.
+Any line of the commit message cannot be longer than 100 characters (with the header being maximum 72 characters), in order for them to be easy to read in varios git tools.
 
 **Examples:**
 
@@ -62,7 +62,7 @@ docs(readme): added more detailed examples to the readme
 
 All supported commit types:
 
-* **chore**: Changes made to the CI configuration files and scripts.
+* **chore**: Changes that aren't relevant to a release.
 * **ci**: Changes made to the CI configuration files and scripts.
 * **docs**: Changes to documentation.
 * **feat**: A new feature.
