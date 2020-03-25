@@ -43,7 +43,7 @@ Every commit must specify at least a **type** and a **subject**. While **scope**
 <footer>
 ```
 
-Any line of the commit message cannot be longer than 100 characters, in order for them to be easy to read in varios git tools.
+Any line of the commit message cannot be longer than 72 characters, in order for them to be easy to read in varios git tools.
 
 **Examples:**
 
