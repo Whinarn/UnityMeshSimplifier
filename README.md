@@ -2,6 +2,7 @@
 
 [![openupm](https://img.shields.io/npm/v/com.whinarn.unitymeshsimplifier?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.whinarn.unitymeshsimplifier/)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/3c6b55bddfe64912b56e6759c642939d)](https://www.codacy.com/manual/Whinarn/UnityMeshSimplifier?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Whinarn/UnityMeshSimplifier&amp;utm_campaign=Badge_Grade)
+[![Release](https://github.com/Whinarn/UnityMeshSimplifier/workflows/Release/badge.svg)](https://github.com/Whinarn/UnityMeshSimplifier/actions?query=workflow%3ARelease)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://github.com/Whinarn/UnityMeshSimplifier/blob/master/LICENSE.md)
 
 Mesh simplification for [Unity](https://unity3d.com/). The project is deeply based on the [Fast Quadric Mesh Simplification](https://github.com/sp4cerat/Fast-Quadric-Mesh-Simplification) algorithm, but rewritten entirely in C# and released under the MIT license.
