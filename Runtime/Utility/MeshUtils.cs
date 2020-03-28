@@ -411,6 +411,54 @@ namespace UnityMeshSimplifier
             return result;
         }
 #endif
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// This function can mark change the Read/Write flag of a mesh in editor mode
+        /// </summary>
+        /// <param name="mesh"> The mesh to change the flag for.</param>
+        /// <param name="markReadible"> Should the mesh be marked readible or not</param>
+        /// <param name="makePersistent">Should the Asset Database be updated to make the change consistent</param>
+        public static void ChangeMeshReadibility(Mesh mesh, bool markReadible, bool makePersistent)
+        {
+            if (mesh == null) { return; }
+
+            if (!UnityEditor.AssetDatabase.Contains(mesh))
+            {
+                return;
+            }
+
+            string assetPath = UnityEditor.AssetDatabase.GetAssetPath(mesh);
+
+            UnityEditor.ModelImporter importerForAsset = UnityEditor.AssetImporter.GetAtPath(assetPath) as UnityEditor.ModelImporter;
+
+            if (importerForAsset == null)
+            {
+                return;
+            }
+
+            bool prevReadibilityState = mesh.isReadable;
+
+            importerForAsset.isReadable = markReadible;
+
+            bool newReadibilityState = mesh.isReadable;
+
+
+            if (prevReadibilityState == newReadibilityState)
+            {
+                importerForAsset.SaveAndReimport();
+            }
+
+            if (makePersistent)
+            {
+                UnityEditor.EditorUtility.SetDirty(mesh);
+                UnityEditor.AssetDatabase.SaveAssets();
+                UnityEditor.AssetDatabase.Refresh();
+            }
+
+
+        }
+#endif
         #endregion
 
         #region Private Methods

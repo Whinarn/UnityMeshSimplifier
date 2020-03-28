@@ -152,109 +152,192 @@ namespace UnityMeshSimplifier
 
             var renderersToDisable = new List<Renderer>((allRenderers != null ? allRenderers.Length : 10));
             var lods = new LOD[levels.Length];
-            for (int levelIndex = 0; levelIndex < levels.Length; levelIndex++)
+
+
+
+
+            // No need to get the Renderers again and again we just cache it for once
+
+            var meshRenderers = (from renderer in allRenderers
+                                 let meshFilter = renderer.transform.GetComponent<MeshFilter>()
+                                 where renderer.enabled && renderer as MeshRenderer != null
+                                 && meshFilter != null
+                                 && meshFilter.sharedMesh != null
+                                 select renderer as MeshRenderer).ToArray();
+            var skinnedMeshRenderers = (from renderer in allRenderers
+                                        where renderer.enabled && renderer as SkinnedMeshRenderer != null
+                                        && (renderer as SkinnedMeshRenderer).sharedMesh != null
+                                        select renderer as SkinnedMeshRenderer).ToArray();
+
+
+            List<Mesh> meshesChangedToReadible = new List<Mesh>();
+            bool areAnyCombinedLevels = false;
+
+            foreach (var lodLevel in levels)
             {
-                var level = levels[levelIndex];
-                var levelGameObject = new GameObject(string.Format("Level{0:00}", levelIndex));
-                var levelTransform = levelGameObject.transform;
-                ParentAndResetTransform(levelTransform, lodParent);
-
-                Renderer[] originalLevelRenderers = allRenderers ?? level.Renderers;
-                var levelRenderers = new List<Renderer>((originalLevelRenderers != null ? originalLevelRenderers.Length : 0));
-
-                if (originalLevelRenderers != null && originalLevelRenderers.Length > 0)
-                {
-                    var meshRenderers = (from renderer in originalLevelRenderers
-                                         let meshFilter = renderer.transform.GetComponent<MeshFilter>()
-                                         where renderer.enabled && renderer as MeshRenderer != null
-                                         && meshFilter != null
-                                         && meshFilter.sharedMesh != null
-                                         select renderer as MeshRenderer).ToArray();
-                    var skinnedMeshRenderers = (from renderer in originalLevelRenderers
-                                                where renderer.enabled && renderer as SkinnedMeshRenderer != null
-                                                && (renderer as SkinnedMeshRenderer).sharedMesh != null
-                                                select renderer as SkinnedMeshRenderer).ToArray();
-
-
-
-                    StaticRenderer[] staticRenderers;
-                    SkinnedRenderer[] skinnedRenderers;
-                    if (level.CombineMeshes)
-                    {
-                        staticRenderers = CombineStaticMeshes(transform, levelIndex, meshRenderers);
-                        skinnedRenderers = CombineSkinnedMeshes(transform, levelIndex, skinnedMeshRenderers);
-                    }
-                    else
-                    {
-                        staticRenderers = GetStaticRenderers(meshRenderers);
-                        skinnedRenderers = GetSkinnedRenderers(skinnedMeshRenderers);
-                    }
-
-                    if (staticRenderers != null)
-                    {
-                        for (int rendererIndex = 0; rendererIndex < staticRenderers.Length; rendererIndex++)
-                        {
-                            var renderer = staticRenderers[rendererIndex];
-                            var mesh = renderer.mesh;
-
-                            // Simplify the mesh if necessary
-                            if (level.Quality < 1f)
-                            {
-                                mesh = SimplifyMesh(mesh, level.Quality, simplificationOptions);
-                                SaveLODMeshAsset(mesh, gameObject.name, renderer.name, levelIndex, renderer.mesh.name, saveAssetsPath);
-
-                                if (renderer.isNewMesh)
-                                {
-                                    DestroyObject(renderer.mesh);
-                                    renderer.mesh = null;
-                                }
-                            }
-
-                            string rendererName = string.Format("{0:000}_static_{1}", rendererIndex, renderer.name);
-                            var levelRenderer = CreateLevelRenderer(rendererName, levelTransform, renderer.transform, mesh, renderer.materials, ref level);
-                            levelRenderers.Add(levelRenderer);
-                        }
-                    }
-
-                    if (skinnedRenderers != null)
-                    {
-                        for (int rendererIndex = 0; rendererIndex < skinnedRenderers.Length; rendererIndex++)
-                        {
-                            var renderer = skinnedRenderers[rendererIndex];
-                            var mesh = renderer.mesh;
-
-                            // Simplify the mesh if necessary
-                            if (level.Quality < 1f)
-                            {
-                                mesh = SimplifyMesh(mesh, level.Quality, simplificationOptions);
-                                SaveLODMeshAsset(mesh, gameObject.name, renderer.name, levelIndex, renderer.mesh.name, saveAssetsPath);
-
-                                if (renderer.isNewMesh)
-                                {
-                                    DestroyObject(renderer.mesh);
-                                    renderer.mesh = null;
-                                }
-                            }
-
-                            string rendererName = string.Format("{0:000}_skinned_{1}", rendererIndex, renderer.name);
-                            var levelRenderer = CreateSkinnedLevelRenderer(rendererName, levelTransform, renderer.transform, mesh, renderer.materials, renderer.rootBone, renderer.bones, ref level);
-                            levelRenderers.Add(levelRenderer);
-                        }
-                    }
-                }
-
-                foreach (var renderer in originalLevelRenderers)
-                {
-                    if (!renderersToDisable.Contains(renderer))
-                    {
-                        renderersToDisable.Add(renderer);
-                    }
-                }
-
-                lods[levelIndex] = new LOD(level.ScreenRelativeTransitionHeight, levelRenderers.ToArray());
+                if(lodLevel.CombineMeshes) { areAnyCombinedLevels = true; break; }
             }
 
+            // If there is any Lod level with the Combine meshes option selected then
+            // we enable Read/Write flag on the original meshes
+            if (areAnyCombinedLevels)
+            {
+                foreach (var renderer in meshRenderers)
+                {
+                    var meshFilter = renderer.GetComponent<MeshFilter>();
+
+                    if (meshFilter == null || meshFilter.sharedMesh == null)
+                    {
+                        continue;
+                    }
+
+                    if (!meshFilter.sharedMesh.isReadable)
+                    {
+
+                        MeshUtils.ChangeMeshReadibility(meshFilter.sharedMesh, true, false);
+
+                        if (meshFilter.sharedMesh.isReadable)
+                        {
+                            meshesChangedToReadible.Add(meshFilter.sharedMesh);
+                        }
+                    }
+                }
+
+                foreach (var renderer in skinnedMeshRenderers)
+                {
+                    if (renderer == null || renderer.sharedMesh == null)
+                    {
+                        continue;
+                    }
+
+                    if (!renderer.sharedMesh.isReadable)
+                    {
+                        MeshUtils.ChangeMeshReadibility(renderer.sharedMesh, true, false);
+
+                        if (renderer.sharedMesh.isReadable)
+                        {
+                            meshesChangedToReadible.Add(renderer.sharedMesh);
+                        }
+                    }
+                }
+            }
+
+
+            System.Exception exception = null;
+
+            try
+            {
+                for (int levelIndex = 0; levelIndex < levels.Length; levelIndex++)
+                {
+                    var level = levels[levelIndex];
+                    var levelGameObject = new GameObject(string.Format("Level{0:00}", levelIndex));
+                    var levelTransform = levelGameObject.transform;
+                    ParentAndResetTransform(levelTransform, lodParent);
+
+                    Renderer[] originalLevelRenderers = allRenderers ?? level.Renderers;
+                    var levelRenderers = new List<Renderer>((originalLevelRenderers != null ? originalLevelRenderers.Length : 0));
+
+                    if (originalLevelRenderers != null && originalLevelRenderers.Length > 0)
+                    {
+
+                        StaticRenderer[] staticRenderers;
+                        SkinnedRenderer[] skinnedRenderers;
+                        if (level.CombineMeshes)
+                        {
+                            staticRenderers = CombineStaticMeshes(transform, levelIndex, meshRenderers);
+                            skinnedRenderers = CombineSkinnedMeshes(transform, levelIndex, skinnedMeshRenderers);
+                        }
+                        else
+                        {
+                            staticRenderers = GetStaticRenderers(meshRenderers);
+                            skinnedRenderers = GetSkinnedRenderers(skinnedMeshRenderers);
+                        }
+
+                        if (staticRenderers != null)
+                        {
+                            for (int rendererIndex = 0; rendererIndex < staticRenderers.Length; rendererIndex++)
+                            {
+                                var renderer = staticRenderers[rendererIndex];
+                                var mesh = renderer.mesh;
+
+                                // Simplify the mesh if necessary
+                                if (level.Quality < 1f)
+                                {
+                                    mesh = SimplifyMesh(mesh, level.Quality, simplificationOptions);
+                                    SaveLODMeshAsset(mesh, gameObject.name, renderer.name, levelIndex, renderer.mesh.name, saveAssetsPath);
+
+                                    if (renderer.isNewMesh)
+                                    {
+                                        DestroyObject(renderer.mesh);
+                                        renderer.mesh = null;
+                                    }
+                                }
+
+                                string rendererName = string.Format("{0:000}_static_{1}", rendererIndex, renderer.name);
+                                var levelRenderer = CreateLevelRenderer(rendererName, levelTransform, renderer.transform, mesh, renderer.materials, ref level);
+                                levelRenderers.Add(levelRenderer);
+                            }
+                        }
+
+                        if (skinnedRenderers != null)
+                        {
+                            for (int rendererIndex = 0; rendererIndex < skinnedRenderers.Length; rendererIndex++)
+                            {
+                                var renderer = skinnedRenderers[rendererIndex];
+                                var mesh = renderer.mesh;
+
+                                // Simplify the mesh if necessary
+                                if (level.Quality < 1f)
+                                {
+                                    mesh = SimplifyMesh(mesh, level.Quality, simplificationOptions);
+                                    SaveLODMeshAsset(mesh, gameObject.name, renderer.name, levelIndex, renderer.mesh.name, saveAssetsPath);
+
+                                    if (renderer.isNewMesh)
+                                    {
+                                        DestroyObject(renderer.mesh);
+                                        renderer.mesh = null;
+                                    }
+                                }
+
+                                string rendererName = string.Format("{0:000}_skinned_{1}", rendererIndex, renderer.name);
+                                var levelRenderer = CreateSkinnedLevelRenderer(rendererName, levelTransform, renderer.transform, mesh, renderer.materials, renderer.rootBone, renderer.bones, ref level);
+                                levelRenderers.Add(levelRenderer);
+                            }
+                        }
+                    }
+
+                    foreach (var renderer in originalLevelRenderers)
+                    {
+                        if (!renderersToDisable.Contains(renderer))
+                        {
+                            renderersToDisable.Add(renderer);
+                        }
+                    }
+
+                    lods[levelIndex] = new LOD(level.ScreenRelativeTransitionHeight, levelRenderers.ToArray());
+                }
+            }
+
+            catch (System.Exception ex)
+            {
+                exception = ex;
+            }
+
+
+            //Restore meshes Read/Write flag
+            foreach (var mesh in meshesChangedToReadible)
+            {
+                Debug.LogWarning($"Mesh \"{mesh.name}\" was not readible so we marked it readible for the mesh combining process to complete and changed it back to non-readible after completion. This process can slow down LOD generation. You may want to mark this mesh Read/Write enabled in the model import settings, so that next time LOD generation on this model can be faster.");
+                MeshUtils.ChangeMeshReadibility(mesh, false, false);
+            }
+
+
+            if (exception != null) { throw exception; }
+
+
+
             CreateBackup(gameObject, renderersToDisable.ToArray());
+
             foreach (var renderer in renderersToDisable)
             {
                 renderer.enabled = false;
