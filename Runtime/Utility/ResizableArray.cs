@@ -2,7 +2,7 @@
 /*
 MIT License
 
-Copyright(c) 2017 Mattias Edlund
+Copyright(c) 2017-2020 Mattias Edlund
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -153,7 +153,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         /// <param name="length">The new length.</param>
         /// <param name="trimExess">If exess memory should be trimmed.</param>
-        public void Resize(int length, bool trimExess = false)
+        /// <param name="clearMemory">If memory that is no longer part of the array should be cleared.</param>
+        public void Resize(int length, bool trimExess = false, bool clearMemory = false)
         {
             if (length < 0)
                 throw new ArgumentOutOfRangeException(nameof(length));
@@ -162,9 +163,9 @@ namespace UnityMeshSimplifier
             {
                 IncreaseCapacity(length);
             }
-            else if (length < this.length)
+            else if (length < this.length && clearMemory)
             {
-                //Array.Clear(items, capacity, length - capacity);
+                Array.Clear(items, length, this.length - length);
             }
 
             this.length = length;

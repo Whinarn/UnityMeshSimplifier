@@ -2,7 +2,7 @@
 /*
 MIT License
 
-Copyright(c) 2017 Mattias Edlund
+Copyright(c) 2017-2020 Mattias Edlund
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,6 +26,7 @@ SOFTWARE.
 
 using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 namespace UnityMeshSimplifier
@@ -33,6 +34,7 @@ namespace UnityMeshSimplifier
     /// <summary>
     /// A double precision 3D vector.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct Vector3d : IEquatable<Vector3d>
     {
         #region Static Read-Only
@@ -115,7 +117,7 @@ namespace UnityMeshSimplifier
                     case 2:
                         return z;
                     default:
-                        throw new IndexOutOfRangeException("Invalid Vector3d index!");
+                        throw new ArgumentOutOfRangeException(nameof(index), "Invalid Vector3d index!");
                 }
             }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -133,7 +135,7 @@ namespace UnityMeshSimplifier
                         z = value;
                         break;
                     default:
-                        throw new IndexOutOfRangeException("Invalid Vector3d index!");
+                        throw new ArgumentOutOfRangeException(nameof(index), "Invalid Vector3d index!");
                 }
             }
         }
@@ -375,15 +377,15 @@ namespace UnityMeshSimplifier
         /// <summary>
         /// Returns if this vector is equal to another one.
         /// </summary>
-        /// <param name="other">The other vector to compare to.</param>
+        /// <param name="obj">The other vector to compare to.</param>
         /// <returns>If equals.</returns>
-        public override bool Equals(object other)
+        public override bool Equals(object obj)
         {
-            if (!(other is Vector3d))
+            if (!(obj is Vector3d))
             {
                 return false;
             }
-            Vector3d vector = (Vector3d)other;
+            Vector3d vector = (Vector3d)obj;
             return (x == vector.x && y == vector.y && z == vector.z);
         }
 

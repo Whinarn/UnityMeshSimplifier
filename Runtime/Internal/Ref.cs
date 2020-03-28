@@ -24,20 +24,20 @@ SOFTWARE.
 */
 #endregion
 
-using UnityEngine;
+using System.Runtime.CompilerServices;
 
-namespace UnityMeshSimplifier
+namespace UnityMeshSimplifier.Internal
 {
-    [AddComponentMenu("")]
-    internal class LODBackupComponent : MonoBehaviour
+    internal struct Ref
     {
-        [SerializeField]
-        private Renderer[] originalRenderers = null;
+        public int tid;
+        public int tvertex;
 
-        public Renderer[] OriginalRenderers
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Set(int tid, int tvertex)
         {
-            get { return originalRenderers; }
-            set { originalRenderers = value; }
+            this.tid = tid;
+            this.tvertex = tvertex;
         }
     }
 }

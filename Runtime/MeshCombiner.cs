@@ -2,7 +2,7 @@
 /*
 MIT License
 
-Copyright(c) 2019 Mattias Edlund
+Copyright(c) 2017-2020 Mattias Edlund
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -185,7 +185,9 @@ namespace UnityMeshSimplifier
                 if (meshMaterials == null)
                     throw new System.ArgumentException(string.Format("The materials for mesh at index {0} is null.", meshIndex), nameof(materials));
                 else if (meshMaterials.Length != mesh.subMeshCount)
-                    throw new System.ArgumentException(string.Format("The materials for mesh at index {0} doesn't match the submesh count ({1} != {2}).", meshIndex, meshMaterials.Length, mesh.subMeshCount), nameof(materials));
+                    throw new System.ArgumentException(
+                        string.Format("The materials for mesh at index {0} doesn't match the submesh count ({1} != {2}).",
+                            meshIndex, meshMaterials.Length, mesh.subMeshCount), nameof(materials));
 
                 for (int materialIndex = 0; materialIndex < meshMaterials.Length; materialIndex++)
                 {
@@ -331,7 +333,7 @@ namespace UnityMeshSimplifier
         #endregion
 
         #region Private Methods
-        private static void CopyVertexPositions(List<Vector3> list, Vector3[] arr)
+        private static void CopyVertexPositions(ICollection<Vector3> list, Vector3[] arr)
         {
             if (arr == null || arr.Length == 0)
                 return;
@@ -429,32 +431,6 @@ namespace UnityMeshSimplifier
                     boneWeights[i].boneIndex3 = boneIndices[boneWeights[i].boneIndex3];
                 }
             }
-        }
-
-        private static Matrix4x4 ScaleMatrix(ref Matrix4x4 matrix, float scale)
-        {
-            return new Matrix4x4()
-            {
-                m00 = matrix.m00 * scale,
-                m01 = matrix.m01 * scale,
-                m02 = matrix.m02 * scale,
-                m03 = matrix.m03 * scale,
-
-                m10 = matrix.m10 * scale,
-                m11 = matrix.m11 * scale,
-                m12 = matrix.m12 * scale,
-                m13 = matrix.m13 * scale,
-
-                m20 = matrix.m20 * scale,
-                m21 = matrix.m21 * scale,
-                m22 = matrix.m22 * scale,
-                m23 = matrix.m23 * scale,
-
-                m30 = matrix.m30 * scale,
-                m31 = matrix.m31 * scale,
-                m32 = matrix.m32 * scale,
-                m33 = matrix.m33 * scale
-            };
         }
 
         private static bool CanReadMesh(Mesh mesh)
