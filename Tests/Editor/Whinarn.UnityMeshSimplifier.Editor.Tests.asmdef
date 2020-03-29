@@ -1,0 +1,17 @@
+{
+    "name": "Whinarn.UnityMeshSimplifier.Editor.Tests",
+    "references": [
+        "GUID:77ccaf49895b0d64e87cd4b4faf83c49"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
