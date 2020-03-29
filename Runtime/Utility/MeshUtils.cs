@@ -1,4 +1,4 @@
-﻿#region License
+#region License
 /*
 MIT License
 
@@ -68,7 +68,7 @@ namespace UnityMeshSimplifier
         /// <param name="tangents">The mesh tangents.</param>
         /// <param name="colors">The mesh colors.</param>
         /// <param name="boneWeights">The mesh bone-weights.</param>
-        /// <param name="uvs">The mesh 4D UV sets.</param>
+        /// <param name="uvs">The mesh 2D UV sets.</param>
         /// <param name="bindposes">The mesh bindposes.</param>
         /// <returns>The created mesh.</returns>
         public static Mesh CreateMesh(Vector3[] vertices, int[][] indices, Vector3[] normals, Vector4[] tangents, Color[] colors, BoneWeight[] boneWeights, List<Vector2>[] uvs, Matrix4x4[] bindposes, BlendShape[] blendShapes)
