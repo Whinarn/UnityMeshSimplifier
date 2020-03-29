@@ -328,9 +328,13 @@ namespace UnityMeshSimplifier
             if (uvs == null || uvs.Count == 0)
                 return 0;
 
-            int usedComponents = 1;
+            int usedComponents = 0;
             foreach (var uv in uvs)
             {
+                if (usedComponents < 1 && uv.x != 0f)
+                {
+                    usedComponents = 1;
+                }
                 if (usedComponents < 2 && uv.y != 0f)
                 {
                     usedComponents = 2;
