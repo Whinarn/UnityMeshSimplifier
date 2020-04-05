@@ -2,7 +2,7 @@ name: 'Commit Message Check'
 on:
   push:
     branches:
-      - '*'
+      - '**'
 
 jobs:
   check-commit-message:
