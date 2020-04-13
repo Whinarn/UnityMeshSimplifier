@@ -2,7 +2,7 @@
 /*
 MIT License
 
-Copyright(c) 2017 Mattias Edlund
+Copyright(c) 2017-2020 Mattias Edlund
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -49,6 +49,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityMeshSimplifier.Internal;
 
 namespace UnityMeshSimplifier
 {
@@ -58,358 +59,18 @@ namespace UnityMeshSimplifier
     /// </summary>
     public sealed class MeshSimplifier
     {
-        #region Consts
+        #region Consts & Static Read-Only
+        private const int TriangleEdgeCount = 3;
+        private const int TriangleVertexCount = 3;
         private const double DoubleEpsilon = 1.0E-3;
-        private const int UVChannelCount = MeshUtils.UVChannelCount;
-        #endregion
-
-        #region Classes
-        #region Triangle
-        private struct Triangle
-        {
-            #region Fields
-            public int v0;
-            public int v1;
-            public int v2;
-            public int subMeshIndex;
-
-            public int va0;
-            public int va1;
-            public int va2;
-
-            public double err0;
-            public double err1;
-            public double err2;
-            public double err3;
-
-            public bool deleted;
-            public bool dirty;
-            public Vector3d n;
-            #endregion
-
-            #region Properties
-            public int this[int index]
-            {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get
-                {
-                    return (index == 0 ? v0 : (index == 1 ? v1 : v2));
-                }
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                set
-                {
-                    switch (index)
-                    {
-                        case 0:
-                            v0 = value;
-                            break;
-                        case 1:
-                            v1 = value;
-                            break;
-                        case 2:
-                            v2 = value;
-                            break;
-                        default:
-                            throw new IndexOutOfRangeException();
-                    }
-                }
-            }
-            #endregion
-
-            #region Constructor
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public Triangle(int v0, int v1, int v2, int subMeshIndex)
-            {
-                this.v0 = v0;
-                this.v1 = v1;
-                this.v2 = v2;
-                this.subMeshIndex = subMeshIndex;
-
-                this.va0 = v0;
-                this.va1 = v1;
-                this.va2 = v2;
-
-                err0 = err1 = err2 = err3 = 0;
-                deleted = dirty = false;
-                n = new Vector3d();
-            }
-            #endregion
-
-            #region Public Methods
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void GetAttributeIndices(int[] attributeIndices)
-            {
-                attributeIndices[0] = va0;
-                attributeIndices[1] = va1;
-                attributeIndices[2] = va2;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetAttributeIndex(int index, int value)
-            {
-                switch (index)
-                {
-                    case 0:
-                        va0 = value;
-                        break;
-                    case 1:
-                        va1 = value;
-                        break;
-                    case 2:
-                        va2 = value;
-                        break;
-                    default:
-                        throw new IndexOutOfRangeException();
-                }
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void GetErrors(double[] err)
-            {
-                err[0] = err0;
-                err[1] = err1;
-                err[2] = err2;
-            }
-            #endregion
-        }
-        #endregion
-
-        #region Vertex
-        private struct Vertex
-        {
-            public Vector3d p;
-            public int tstart;
-            public int tcount;
-            public SymmetricMatrix q;
-            public bool borderEdge;
-            public bool uvSeamEdge;
-            public bool uvFoldoverEdge;
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public Vertex(Vector3d p)
-            {
-                this.p = p;
-                this.tstart = 0;
-                this.tcount = 0;
-                this.q = new SymmetricMatrix();
-                this.borderEdge = true;
-                this.uvSeamEdge = false;
-                this.uvFoldoverEdge = false;
-            }
-        }
-        #endregion
-
-        #region Ref
-        private struct Ref
-        {
-            public int tid;
-            public int tvertex;
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Set(int tid, int tvertex)
-            {
-                this.tid = tid;
-                this.tvertex = tvertex;
-            }
-        }
-        #endregion
-
-        #region UV Channels
-        private class UVChannels<TVec>
-        {
-            private ResizableArray<TVec>[] channels = null;
-            private TVec[][] channelsData = null;
-
-            public TVec[][] Data
-            {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get
-                {
-                    for (int i = 0; i < UVChannelCount; i++)
-                    {
-                        if (channels[i] != null)
-                        {
-                            channelsData[i] = channels[i].Data;
-                        }
-                        else
-                        {
-                            channelsData[i] = null;
-                        }
-                    }
-                    return channelsData;
-                }
-            }
-
-            /// <summary>
-            /// Gets or sets a specific channel by index.
-            /// </summary>
-            /// <param name="index">The channel index.</param>
-            public ResizableArray<TVec> this[int index]
-            {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return channels[index]; }
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                set { channels[index] = value; }
-            }
-
-            public UVChannels()
-            {
-                channels = new ResizableArray<TVec>[UVChannelCount];
-                channelsData = new TVec[UVChannelCount][];
-            }
-
-            /// <summary>
-            /// Resizes all channels at once.
-            /// </summary>
-            /// <param name="capacity">The new capacity.</param>
-            /// <param name="trimExess">If exess memory should be trimmed.</param>
-            public void Resize(int capacity, bool trimExess = false)
-            {
-                for (int i = 0; i < UVChannelCount; i++)
-                {
-                    if (channels[i] != null)
-                    {
-                        channels[i].Resize(capacity, trimExess);
-                    }
-                }
-            }
-        }
-        #endregion
-
-        #region Blend Shape
-        private class BlendShapeContainer
-        {
-            private string shapeName;
-            private BlendShapeFrameContainer[] frames;
-
-            public BlendShapeContainer(BlendShape blendShape)
-            {
-                shapeName = blendShape.ShapeName;
-                frames = new BlendShapeFrameContainer[blendShape.Frames.Length];
-                for (int i = 0; i < frames.Length; i++)
-                {
-                    frames[i] = new BlendShapeFrameContainer(blendShape.Frames[i]);
-                }
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void MoveVertexElement(int dst, int src)
-            {
-                for (int i = 0; i < frames.Length; i++)
-                {
-                    frames[i].MoveVertexElement(dst, src);
-                }
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void InterpolateVertexAttributes(int dst, int i0, int i1, int i2, ref Vector3 barycentricCoord)
-            {
-                for (int i = 0; i < frames.Length; i++)
-                {
-                    frames[i].InterpolateVertexAttributes(dst, i0, i1, i2, ref barycentricCoord);
-                }
-            }
-
-            public void Resize(int length, bool trimExess = false)
-            {
-                for (int i = 0; i < frames.Length; i++)
-                {
-                    frames[i].Resize(length, trimExess);
-                }
-            }
-
-            public BlendShape ToBlendShape()
-            {
-                var shapeFrames = new BlendShapeFrame[frames.Length];
-                for (int i = 0; i < shapeFrames.Length; i++)
-                {
-                    shapeFrames[i] = frames[i].ToBlendShapeFrame();
-                }
-                return new BlendShape(shapeName, shapeFrames);
-            }
-        }
-
-        private class BlendShapeFrameContainer
-        {
-            private float frameWeight;
-            private ResizableArray<Vector3> deltaVertices;
-            private ResizableArray<Vector3> deltaNormals;
-            private ResizableArray<Vector3> deltaTangents;
-
-            public BlendShapeFrameContainer(BlendShapeFrame frame)
-            {
-                frameWeight = frame.FrameWeight;
-                deltaVertices = new ResizableArray<Vector3>(frame.DeltaVertices);
-                deltaNormals = new ResizableArray<Vector3>(frame.DeltaNormals);
-                deltaTangents = new ResizableArray<Vector3>(frame.DeltaTangents);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void MoveVertexElement(int dst, int src)
-            {
-                deltaVertices[dst] = deltaVertices[src];
-                deltaNormals[dst] = deltaNormals[src];
-                deltaTangents[dst] = deltaTangents[src];
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void InterpolateVertexAttributes(int dst, int i0, int i1, int i2, ref Vector3 barycentricCoord)
-            {
-                deltaVertices[dst] = (deltaVertices[i0] * barycentricCoord.x) + (deltaVertices[i1] * barycentricCoord.y) + (deltaVertices[i2] * barycentricCoord.z);
-                deltaNormals[dst] = Vector3.Normalize((deltaNormals[i0] * barycentricCoord.x) + (deltaNormals[i1] * barycentricCoord.y) + (deltaNormals[i2] * barycentricCoord.z));
-                deltaTangents[dst] = Vector3.Normalize((deltaTangents[i0] * barycentricCoord.x) + (deltaTangents[i1] * barycentricCoord.y) + (deltaTangents[i2] * barycentricCoord.z));
-            }
-
-            public void Resize(int length, bool trimExess = false)
-            {
-                deltaVertices.Resize(length, trimExess);
-                deltaNormals.Resize(length, trimExess);
-                deltaTangents.Resize(length, trimExess);
-            }
-
-            public BlendShapeFrame ToBlendShapeFrame()
-            {
-                var resultVertices = deltaVertices.ToArray();
-                var resultNormals = deltaNormals.ToArray();
-                var resultTangents = deltaTangents.ToArray();
-                return new BlendShapeFrame(frameWeight, resultVertices, resultNormals, resultTangents);
-            }
-        }
-        #endregion
-
-        #region Border Vertex
-        private struct BorderVertex
-        {
-            public int index;
-            public int hash;
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public BorderVertex(int index, int hash)
-            {
-                this.index = index;
-                this.hash = hash;
-            }
-        }
-        #endregion
-
-        #region Border Vertex Comparer
-        private class BorderVertexComparer : IComparer<BorderVertex>
-        {
-            public static readonly BorderVertexComparer instance = new BorderVertexComparer();
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public int Compare(BorderVertex x, BorderVertex y)
-            {
-                return x.hash.CompareTo(y.hash);
-            }
-        }
-        #endregion
+        private static readonly int UVChannelCount = MeshUtils.UVChannelCount;
         #endregion
 
         #region Fields
         private bool preserveBorderEdges = false;
         private bool preserveUVSeamEdges = false;
         private bool preserveUVFoldoverEdges = false;
+        private bool preserveSurfaceCurvature = false;
         private bool enableSmartLink = true;
         private int maxIterationCount = 100;
         private double agressiveness = 7.0;
@@ -435,8 +96,10 @@ namespace UnityMeshSimplifier
         private Matrix4x4[] bindposes = null;
 
         // Pre-allocated buffers
-        private double[] errArr = new double[3];
-        private int[] attributeIndexArr = new int[3];
+        private readonly double[] errArr = new double[3];
+        private readonly int[] attributeIndexArr = new int[3];
+        private readonly HashSet<Triangle> triangleHashSet1 = new HashSet<Triangle>();
+        private readonly HashSet<Triangle> triangleHashSet2 = new HashSet<Triangle>();
         #endregion
 
         #region Properties
@@ -501,6 +164,16 @@ namespace UnityMeshSimplifier
         {
             get { return preserveUVFoldoverEdges; }
             set { preserveUVFoldoverEdges = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets if the discrete curvature of the mesh surface be taken into account during simplification.
+        /// Default value: false
+        /// </summary>
+        public bool PreserveSurfaceCurvature
+        {
+            get { return preserveSurfaceCurvature; }
+            set { preserveSurfaceCurvature = value; }
         }
 
         /// <summary>
@@ -593,7 +266,7 @@ namespace UnityMeshSimplifier
                 var vertArr = vertices.Data;
                 for (int i = 0; i < value.Length; i++)
                 {
-                    vertArr[i] = new Vertex(value[i]);
+                    vertArr[i] = new Vertex(i, value[i]);
                 }
             }
         }
@@ -793,17 +466,53 @@ namespace UnityMeshSimplifier
 
         #region Calculate Error
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private double VertexError(ref SymmetricMatrix q, double x, double y, double z)
+        private static double VertexError(ref SymmetricMatrix q, double x, double y, double z)
         {
             return q.m0 * x * x + 2 * q.m1 * x * y + 2 * q.m2 * x * z + 2 * q.m3 * x + q.m4 * y * y
                 + 2 * q.m5 * y * z + 2 * q.m6 * y + q.m7 * z * z + 2 * q.m8 * z + q.m9;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private double CurvatureError(ref Vertex vert0, ref Vertex vert1)
+        {
+            double diffVector = (vert0.p - vert1.p).Magnitude;
+
+            var trianglesWithViOrVjOrBoth = triangleHashSet1;
+            trianglesWithViOrVjOrBoth.Clear();
+            GetTrianglesContainingVertex(ref vert0, trianglesWithViOrVjOrBoth);
+            GetTrianglesContainingVertex(ref vert1, trianglesWithViOrVjOrBoth);
+
+            var trianglesWithViAndVjBoth = triangleHashSet2;
+            trianglesWithViAndVjBoth.Clear();
+            GetTrianglesContainingBothVertices(ref vert0, ref vert1, trianglesWithViAndVjBoth);
+
+            double maxDotOuter = 0;
+            foreach (var triangleWithViOrVjOrBoth in trianglesWithViOrVjOrBoth)
+            {
+                double maxDotInner = 0;
+                Vector3d normVecTriangleWithViOrVjOrBoth = triangleWithViOrVjOrBoth.n;
+
+                foreach (var triangleWithViAndVjBoth in trianglesWithViAndVjBoth)
+                {
+                    Vector3d normVecTriangleWithViAndVjBoth = triangleWithViAndVjBoth.n;
+                    double dot = Vector3d.Dot(ref normVecTriangleWithViOrVjOrBoth, ref normVecTriangleWithViAndVjBoth);
+                    
+                    if (dot > maxDotInner)
+                        maxDotInner = dot;
+                }
+
+                if (maxDotInner > maxDotOuter)
+                    maxDotOuter = maxDotInner;
+            }
+
+            return diffVector * maxDotOuter;
         }
 
         private double CalculateError(ref Vertex vert0, ref Vertex vert1, out Vector3d result)
         {
             // compute interpolated vertex
             SymmetricMatrix q = (vert0.q + vert1.q);
-            bool borderEdge = (vert0.borderEdge & vert1.borderEdge);
+            bool borderEdge = (vert0.borderEdge && vert1.borderEdge);
             double error = 0.0;
             double det = q.Determinant1();
             if (det != 0.0 && !borderEdge)
@@ -813,7 +522,14 @@ namespace UnityMeshSimplifier
                     -1.0 / det * q.Determinant2(),  // vx = A41/det(q_delta)
                     1.0 / det * q.Determinant3(),   // vy = A42/det(q_delta)
                     -1.0 / det * q.Determinant4()); // vz = A43/det(q_delta)
-                error = VertexError(ref q, result.x, result.y, result.z);
+
+                double curvatureError = 0;
+                if (preserveSurfaceCurvature)
+                {
+                    curvatureError = CurvatureError(ref vert0, ref vert1);
+                }
+
+                error = VertexError(ref q, result.x, result.y, result.z) + curvatureError;
             }
             else
             {
@@ -824,21 +540,28 @@ namespace UnityMeshSimplifier
                 double error1 = VertexError(ref q, p1.x, p1.y, p1.z);
                 double error2 = VertexError(ref q, p2.x, p2.y, p2.z);
                 double error3 = VertexError(ref q, p3.x, p3.y, p3.z);
-                error = MathHelper.Min(error1, error2, error3);
-                if (error == error3)
+
+                if (error1 < error2)
                 {
-                    result = p3;
+                    if (error1 < error3)
+                    {
+                        error = error1;
+                        result = p1;
+                    }
+                    else
+                    {
+                        error = error3;
+                        result = p3;
+                    }
                 }
-                else if (error == error2)
+                else if (error2 < error3)
                 {
+                    error = error2;
                     result = p2;
-                }
-                else if (error == error1)
-                {
-                    result = p1;
                 }
                 else
                 {
+                    error = error3;
                     result = p3;
                 }
             }
@@ -903,7 +626,7 @@ namespace UnityMeshSimplifier
                 Vector3d d2 = vertices[id2].p - p;
                 d2.Normalize();
                 double dot = Vector3d.Dot(ref d1, ref d2);
-                if (System.Math.Abs(dot) > 0.999)
+                if (Math.Abs(dot) > 0.999)
                     return true;
 
                 Vector3d n;
@@ -1080,12 +803,12 @@ namespace UnityMeshSimplifier
 
                 triangles[tid].GetErrors(errArr);
                 triangles[tid].GetAttributeIndices(attributeIndexArr);
-                for (int edgeIndex = 0; edgeIndex < 3; edgeIndex++)
+                for (int edgeIndex = 0; edgeIndex < TriangleEdgeCount; edgeIndex++)
                 {
                     if (errArr[edgeIndex] > threshold)
                         continue;
 
-                    int nextEdgeIndex = ((edgeIndex + 1) % 3);
+                    int nextEdgeIndex = ((edgeIndex + 1) % TriangleEdgeCount);
                     int i0 = triangles[tid][edgeIndex];
                     int i1 = triangles[tid][nextEdgeIndex];
 
@@ -1192,6 +915,7 @@ namespace UnityMeshSimplifier
                         if (dst != i)
                         {
                             triangles[dst] = triangles[i];
+                            triangles[dst].index = dst;
                         }
                         dst++;
                     }
@@ -1234,7 +958,7 @@ namespace UnityMeshSimplifier
                     for (int j = 0; j < tcount; j++)
                     {
                         int tid = refs[tstart + j].tid;
-                        for (int k = 0; k < 3; k++)
+                        for (int k = 0; k < TriangleVertexCount; k++)
                         {
                             ofs = 0;
                             id = triangles[tid][k];
@@ -1530,6 +1254,7 @@ namespace UnityMeshSimplifier
                     }
                     int newTriangleIndex = dst++;
                     triangles[newTriangleIndex] = triangle;
+                    triangles[newTriangleIndex].index = newTriangleIndex;
 
                     vertices[triangle.v0].tcount = 1;
                     vertices[triangle.v1].tcount = 1;
@@ -1562,11 +1287,11 @@ namespace UnityMeshSimplifier
                 var vert = vertices[i];
                 if (vert.tcount > 0)
                 {
-                    vert.tstart = dst;
-                    vertices[i] = vert;
+                    vertices[i].tstart = dst;
 
                     if (dst != i)
                     {
+                        vertices[dst].index = dst;
                         vertices[dst].p = vert.p;
                         if (vertNormals != null) vertNormals[dst] = vertNormals[i];
                         if (vertTangents != null) vertTangents[dst] = vertTangents[i];
@@ -1675,6 +1400,40 @@ namespace UnityMeshSimplifier
             }
         }
         #endregion
+
+        #region Triangle helper functions
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void GetTrianglesContainingVertex(ref Vertex vert, HashSet<Triangle> tris)
+        {
+            int trianglesCount = vert.tcount;
+            int startIndex = vert.tstart;
+
+            for (int a = startIndex; a < startIndex + trianglesCount; a++)
+            {
+                tris.Add(triangles[refs[a].tid]);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void GetTrianglesContainingBothVertices(ref Vertex vert0, ref Vertex vert1, HashSet<Triangle> tris)
+        {
+            int triangleCount = vert0.tcount;
+            int startIndex = vert0.tstart;
+
+            for (int refIndex = startIndex; refIndex < (startIndex + triangleCount); refIndex++)
+            {
+                int tid = refs[refIndex].tid;
+                Triangle tri = triangles[tid];
+
+                if (vertices[tri.v0].index == vert1.index ||
+                    vertices[tri.v1].index == vert1.index ||
+                    vertices[tri.v2].index == vert1.index)
+                {
+                    tris.Add(tri);
+                }
+            }
+        }
+        #endregion Triangle helper functions
         #endregion
 
         #region Public Methods
@@ -1761,12 +1520,12 @@ namespace UnityMeshSimplifier
         {
             if (triangles == null)
                 throw new ArgumentNullException(nameof(triangles));
-            else if ((triangles.Length % 3) != 0)
+            else if ((triangles.Length % TriangleVertexCount) != 0)
                 throw new ArgumentException("The index array length must be a multiple of 3 in order to represent triangles.", nameof(triangles));
 
             int subMeshIndex = subMeshCount++;
-            int triangleIndex = this.triangles.Length;
-            int subMeshTriangleCount = triangles.Length / 3;
+            int triangleIndexStart = this.triangles.Length;
+            int subMeshTriangleCount = triangles.Length / TriangleVertexCount;
             this.triangles.Resize(this.triangles.Length + subMeshTriangleCount);
             var trisArr = this.triangles.Data;
             for (int i = 0; i < subMeshTriangleCount; i++)
@@ -1775,10 +1534,9 @@ namespace UnityMeshSimplifier
                 int v0 = triangles[offset];
                 int v1 = triangles[offset + 1];
                 int v2 = triangles[offset + 2];
-                trisArr[triangleIndex + i] = new Triangle(v0, v1, v2, subMeshIndex);
+                int triangleIndex = triangleIndexStart + i;
+                trisArr[triangleIndex] = new Triangle(triangleIndex, v0, v1, v2, subMeshIndex);
             }
-
-            triangleIndex += subMeshTriangleCount;
         }
 
         /// <summary>
@@ -1795,13 +1553,13 @@ namespace UnityMeshSimplifier
             {
                 if (triangles[i] == null)
                     throw new ArgumentException(string.Format("The index array at index {0} is null.", i));
-                else if ((triangles[i].Length % 3) != 0)
+                else if ((triangles[i].Length % TriangleVertexCount) != 0)
                     throw new ArgumentException(string.Format("The index array length at index {0} must be a multiple of 3 in order to represent triangles.", i), nameof(triangles));
 
-                totalTriangleCount += triangles[i].Length / 3;
+                totalTriangleCount += triangles[i].Length / TriangleVertexCount;
             }
 
-            int triangleIndex = this.triangles.Length;
+            int triangleIndexStart = this.triangles.Length;
             this.triangles.Resize(this.triangles.Length + totalTriangleCount);
             var trisArr = this.triangles.Data;
 
@@ -1809,17 +1567,18 @@ namespace UnityMeshSimplifier
             {
                 int subMeshIndex = subMeshCount++;
                 var subMeshTriangles = triangles[i];
-                int subMeshTriangleCount = subMeshTriangles.Length / 3;
+                int subMeshTriangleCount = subMeshTriangles.Length / TriangleVertexCount;
                 for (int j = 0; j < subMeshTriangleCount; j++)
                 {
                     int offset = j * 3;
                     int v0 = subMeshTriangles[offset];
                     int v1 = subMeshTriangles[offset + 1];
                     int v2 = subMeshTriangles[offset + 2];
-                    trisArr[triangleIndex + j] = new Triangle(v0, v1, v2, subMeshIndex);
+                    int triangleIndex = triangleIndexStart + j;
+                    trisArr[triangleIndex] = new Triangle(triangleIndex, v0, v1, v2, subMeshIndex);
                 }
 
-                triangleIndex += subMeshTriangleCount;
+                triangleIndexStart += subMeshTriangleCount;
             }
         }
         #endregion

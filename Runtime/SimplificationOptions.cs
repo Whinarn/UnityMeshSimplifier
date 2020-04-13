@@ -2,7 +2,7 @@
 /*
 MIT License
 
-Copyright(c) 2019 Mattias Edlund
+Copyright(c) 2017-2020 Mattias Edlund
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@ SOFTWARE.
 #endregion
 
 using System;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 namespace UnityMeshSimplifier
@@ -33,16 +34,18 @@ namespace UnityMeshSimplifier
     /// Options for mesh simplification.
     /// </summary>
     [Serializable]
+    [StructLayout(LayoutKind.Auto)]
     public struct SimplificationOptions
     {
         /// <summary>
         /// The default simplification options.
         /// </summary>
-        public static readonly SimplificationOptions Default = new SimplificationOptions()
+        public static readonly SimplificationOptions Default = new SimplificationOptions
         {
             PreserveBorderEdges = false,
             PreserveUVSeamEdges = false,
             PreserveUVFoldoverEdges = false,
+            PreserveSurfaceCurvature = false,
             EnableSmartLink = true,
             VertexLinkDistance = double.Epsilon,
             MaxIterationCount = 100,
@@ -68,6 +71,12 @@ namespace UnityMeshSimplifier
         [Tooltip("If the UV foldover edges should be preserved.")]
         public bool PreserveUVFoldoverEdges;
         /// <summary>
+        /// If the discrete curvature of the mesh surface be taken into account during simplification. Taking surface curvature into account can result in good quality mesh simplification, but it can slow the simplification process significantly.
+        /// Default value: false
+        /// </summary>
+        [Tooltip("If the discrete curvature of the mesh surface be taken into account during simplification. Taking surface curvature into account can result in very good quality mesh simplification, but it can slow the simplification process significantly.")]
+        public bool PreserveSurfaceCurvature;
+        /// <summary>
         /// If a feature for smarter vertex linking should be enabled, reducing artifacts in the
         /// decimated result at the cost of a slightly more expensive initialization by treating vertices at
         /// the same position as the same vertex while separating the attributes.
@@ -87,7 +96,7 @@ namespace UnityMeshSimplifier
         /// Sometimes a lower maximum count might be desired in order to lower the performance cost.
         /// Default value: 100
         /// </summary>
-        [Tooltip("The maximum squared distance between two vertices in order to link them.")]
+        [Tooltip("The maximum iteration count. Higher number is more expensive but can bring you closer to your target quality.")]
         public int MaxIterationCount;
         /// <summary>
         /// The agressiveness of the mesh simplification. Higher number equals higher quality, but more expensive to run.

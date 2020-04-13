@@ -2,7 +2,7 @@
 /*
 MIT License
 
-Copyright(c) 2019 Mattias Edlund
+Copyright(c) 2017-2020 Mattias Edlund
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -47,14 +47,14 @@ namespace UnityMeshSimplifier
     /// </summary>
     public static class MeshUtils
     {
-        #region Consts
+        #region Static Read-Only
         /// <summary>
         /// The count of supported UV channels.
         /// </summary>
 #if UNITY_8UV_SUPPORT
-        public const int UVChannelCount = 8;
+        public static readonly int UVChannelCount = 8;
 #else
-        public const int UVChannelCount = 4;
+        public static readonly int UVChannelCount = 4;
 #endif
         #endregion
 
@@ -109,6 +109,11 @@ namespace UnityMeshSimplifier
         /// <returns>The created mesh.</returns>
         public static Mesh CreateMesh(Vector3[] vertices, int[][] indices, Vector3[] normals, Vector4[] tangents, Color[] colors, BoneWeight[] boneWeights, List<Vector2>[] uvs2D, List<Vector3>[] uvs3D, List<Vector4>[] uvs4D, Matrix4x4[] bindposes, BlendShape[] blendShapes)
         {
+            if (vertices == null)
+                throw new ArgumentNullException(nameof(vertices));
+            else if (indices == null)
+                throw new ArgumentNullException(nameof(indices));
+
             var newMesh = new Mesh();
             int subMeshCount = indices.Length;
 

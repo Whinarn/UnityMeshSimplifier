@@ -2,7 +2,7 @@
 /*
 MIT License
 
-Copyright(c) 2019 Mattias Edlund
+Copyright(c) 2017-2020 Mattias Edlund
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -70,7 +70,7 @@ namespace UnityMeshSimplifier
                     throw new System.ArgumentException(string.Format("The renderer at index {0} has no mesh filter.", i), nameof(renderers));
                 else if (meshFilter.sharedMesh == null)
                     throw new System.ArgumentException(string.Format("The mesh filter for renderer at index {0} has no mesh.", i), nameof(renderers));
-                else if (!meshFilter.sharedMesh.isReadable)
+                else if (!CanReadMesh(meshFilter.sharedMesh))
                     throw new System.ArgumentException(string.Format("The mesh in the mesh filter for renderer at index {0} is not readable.", i), nameof(renderers));
 
                 meshes[i] = meshFilter.sharedMesh;
@@ -108,12 +108,12 @@ namespace UnityMeshSimplifier
                     throw new System.ArgumentException(string.Format("The renderer at index {0} is null.", i), nameof(renderers));
                 else if (renderer.sharedMesh == null)
                     throw new System.ArgumentException(string.Format("The renderer at index {0} has no mesh.", i), nameof(renderers));
-                else if (!renderer.sharedMesh.isReadable)
+                else if (!CanReadMesh(renderer.sharedMesh))
                     throw new System.ArgumentException(string.Format("The mesh in the renderer at index {0} is not readable.", i), nameof(renderers));
 
                 var rendererTransform = renderer.transform;
                 meshes[i] = renderer.sharedMesh;
-                transforms[i] = rootTransform.worldToLocalMatrix * rendererTransform.localToWorldMatrix;
+                transforms[i] = rendererTransform.worldToLocalMatrix * rendererTransform.localToWorldMatrix;
                 materials[i] = renderer.sharedMaterials;
                 bones[i] = renderer.bones;
             }
@@ -174,7 +174,7 @@ namespace UnityMeshSimplifier
                 var mesh = meshes[meshIndex];
                 if (mesh == null)
                     throw new System.ArgumentException(string.Format("The mesh at index {0} is null.", meshIndex), nameof(meshes));
-                else if (!mesh.isReadable)
+                else if (!CanReadMesh(mesh))
                     throw new System.ArgumentException(string.Format("The mesh at index {0} is not readable.", meshIndex), nameof(meshes));
 
                 totalVertexCount += mesh.vertexCount;
@@ -185,7 +185,9 @@ namespace UnityMeshSimplifier
                 if (meshMaterials == null)
                     throw new System.ArgumentException(string.Format("The materials for mesh at index {0} is null.", meshIndex), nameof(materials));
                 else if (meshMaterials.Length != mesh.subMeshCount)
-                    throw new System.ArgumentException(string.Format("The materials for mesh at index {0} doesn't match the submesh count ({1} != {2}).", meshIndex, meshMaterials.Length, mesh.subMeshCount), nameof(materials));
+                    throw new System.ArgumentException(
+                        string.Format("The materials for mesh at index {0} doesn't match the submesh count ({1} != {2}).",
+                            meshIndex, meshMaterials.Length, mesh.subMeshCount), nameof(materials));
 
                 for (int materialIndex = 0; materialIndex < meshMaterials.Length; materialIndex++)
                 {
@@ -248,37 +250,17 @@ namespace UnityMeshSimplifier
                         usedBones = new List<Transform>(meshBones);
                     }
 
-                    bool bindPoseMismatch = false;
                     int[] boneIndices = new int[meshBones.Length];
                     for (int i = 0; i < meshBones.Length; i++)
                     {
                         int usedBoneIndex = usedBones.IndexOf(meshBones[i]);
-                        if (usedBoneIndex == -1)
+                        if (usedBoneIndex == -1 || meshBindposes[i] != usedBindposes[usedBoneIndex])
                         {
                             usedBoneIndex = usedBones.Count;
                             usedBones.Add(meshBones[i]);
                             usedBindposes.Add(meshBindposes[i]);
                         }
-                        else
-                        {
-                            if (meshBindposes[i] != usedBindposes[usedBoneIndex])
-                            {
-                                bindPoseMismatch = true;
-                            }
-                        }
                         boneIndices[i] = usedBoneIndex;
-                    }
-
-                    // If any bindpose is mismatching, we correct it first
-                    if (bindPoseMismatch)
-                    {
-                        var correctedBindposes = new Matrix4x4[meshBindposes.Length];
-                        for (int i = 0; i < meshBindposes.Length; i++)
-                        {
-                            int usedBoneIndex = boneIndices[i];
-                            correctedBindposes[i] = usedBindposes[usedBoneIndex];
-                        }
-                        TransformVertices(meshVertices, meshBoneWeights, meshBindposes, correctedBindposes);
                     }
 
                     // Then we remap the bones
@@ -351,7 +333,7 @@ namespace UnityMeshSimplifier
         #endregion
 
         #region Private Methods
-        private static void CopyVertexPositions(List<Vector3> list, Vector3[] arr)
+        private static void CopyVertexPositions(ICollection<Vector3> list, Vector3[] arr)
         {
             if (arr == null || arr.Length == 0)
                 return;
@@ -428,46 +410,6 @@ namespace UnityMeshSimplifier
             }
         }
 
-        private static void TransformVertices(Vector3[] vertices, BoneWeight[] boneWeights, Matrix4x4[] oldBindposes, Matrix4x4[] newBindposes)
-        {
-            // TODO: Is this method doing what it is supposed to?? It has not been properly tested
-
-            // First invert the old bindposes
-            for (int i = 0; i < oldBindposes.Length; i++)
-            {
-                oldBindposes[i] = oldBindposes[i].inverse;
-            }
-
-            // The transform the vertices
-            for (int i = 0; i < vertices.Length; i++)
-            {
-                if (boneWeights[i].weight0 > 0f)
-                {
-                    int boneIndex = boneWeights[i].boneIndex0;
-                    float weight = boneWeights[i].weight0;
-                    vertices[i] = ScaleMatrix(ref newBindposes[boneIndex], weight) * (ScaleMatrix(ref oldBindposes[boneIndex], weight) * vertices[i]);
-                }
-                if (boneWeights[i].weight1 > 0f)
-                {
-                    int boneIndex = boneWeights[i].boneIndex1;
-                    float weight = boneWeights[i].weight1;
-                    vertices[i] = ScaleMatrix(ref newBindposes[boneIndex], weight) * (ScaleMatrix(ref oldBindposes[boneIndex], weight) * vertices[i]);
-                }
-                if (boneWeights[i].weight2 > 0f)
-                {
-                    int boneIndex = boneWeights[i].boneIndex2;
-                    float weight = boneWeights[i].weight2;
-                    vertices[i] = ScaleMatrix(ref newBindposes[boneIndex], weight) * (ScaleMatrix(ref oldBindposes[boneIndex], weight) * vertices[i]);
-                }
-                if (boneWeights[i].weight3 > 0f)
-                {
-                    int boneIndex = boneWeights[i].boneIndex3;
-                    float weight = boneWeights[i].weight3;
-                    vertices[i] = ScaleMatrix(ref newBindposes[boneIndex], weight) * (ScaleMatrix(ref oldBindposes[boneIndex], weight) * vertices[i]);
-                }
-            }
-        }
-
         private static void RemapBones(BoneWeight[] boneWeights, int[] boneIndices)
         {
             for (int i = 0; i < boneWeights.Length; i++)
@@ -491,31 +433,56 @@ namespace UnityMeshSimplifier
             }
         }
 
-        private static Matrix4x4 ScaleMatrix(ref Matrix4x4 matrix, float scale)
+        private static bool CanReadMesh(Mesh mesh)
         {
-            return new Matrix4x4()
-            {
-                m00 = matrix.m00 * scale,
-                m01 = matrix.m01 * scale,
-                m02 = matrix.m02 * scale,
-                m03 = matrix.m03 * scale,
-
-                m10 = matrix.m10 * scale,
-                m11 = matrix.m11 * scale,
-                m12 = matrix.m12 * scale,
-                m13 = matrix.m13 * scale,
-
-                m20 = matrix.m20 * scale,
-                m21 = matrix.m21 * scale,
-                m22 = matrix.m22 * scale,
-                m23 = matrix.m23 * scale,
-
-                m30 = matrix.m30 * scale,
-                m31 = matrix.m31 * scale,
-                m32 = matrix.m32 * scale,
-                m33 = matrix.m33 * scale
-            };
+#if UNITY_EDITOR
+            return CanReadMeshInEditor(mesh);
+#else
+            return mesh.isReadable;
+#endif
         }
+
+#if UNITY_EDITOR
+        private static System.Reflection.MethodInfo meshCanAccessMethodInfo;
+
+        // This is a workaround for a Unity peculiarity - 
+        // non-readable meshes are actually always accessible from the Editor.
+        // We're still logging a warning since this won't work in a build.
+        private static bool CanReadMeshInEditor(Mesh mesh)
+        {
+            if (mesh.isReadable)
+                return true;
+            else if (!Application.isPlaying)
+                return true;
+
+            if (meshCanAccessMethodInfo == null)
+            {
+                var canAccessProperty = typeof(Mesh).GetProperty("canAccess", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (canAccessProperty != null)
+                    meshCanAccessMethodInfo = canAccessProperty.GetMethod;
+            }
+
+            if (meshCanAccessMethodInfo != null)
+            {
+                try
+                {
+                    bool canAccess = (bool)meshCanAccessMethodInfo.Invoke(mesh, null);
+                    if (canAccess)
+                    {
+                        Debug.LogWarning("The mesh you are trying to access is not marked as readable. This will only work in the Editor and fail in a build.", mesh);
+                        return true;
+                    }
+                }
+                catch
+                {
+                    // There has probably been an Unity internal API update causing an error on this call.
+                    return false;
+                }
+            }
+            return false;
+        }
+#endif
+
         #endregion
     }
 }
