@@ -67,16 +67,8 @@ namespace UnityMeshSimplifier
         #endregion
 
         #region Fields
-        private bool preserveBorderEdges = false;
-        private bool preserveUVSeamEdges = false;
-        private bool preserveUVFoldoverEdges = false;
-        private bool preserveSurfaceCurvature = false;
-        private bool enableSmartLink = true;
-        private int maxIterationCount = 100;
-        private double agressiveness = 7.0;
+        SimplificationOptions simplificationOptions = SimplificationOptions.Default;
         private bool verbose = false;
-
-        private double vertexLinkDistanceSqr = double.Epsilon;
 
         private int subMeshCount = 0;
         private int[] subMeshOffsets = null;
@@ -104,6 +96,16 @@ namespace UnityMeshSimplifier
 
         #region Properties
         /// <summary>
+        /// Gets or sets all of the simplification options as a single block.
+        /// Default value: SimplificationOptions.Default
+        /// </summary>
+        public SimplificationOptions SimplificationOptions
+        {
+            get { return this.simplificationOptions; }
+            set { this.simplificationOptions = value; }
+        }
+
+        /// <summary>
         /// Gets or sets if the border edges should be preserved.
         /// Default value: false
         /// </summary>
@@ -120,8 +122,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         public bool PreserveBorderEdges
         {
-            get { return preserveBorderEdges; }
-            set { preserveBorderEdges = value; }
+            get { return simplificationOptions.PreserveBorderEdges; }
+            set { simplificationOptions.PreserveBorderEdges = value; }
         }
 
         /// <summary>
@@ -141,8 +143,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         public bool PreserveUVSeamEdges
         {
-            get { return preserveUVSeamEdges; }
-            set { preserveUVSeamEdges = value; }
+            get { return simplificationOptions.PreserveUVSeamEdges; }
+            set { simplificationOptions.PreserveUVSeamEdges = value; }
         }
 
         /// <summary>
@@ -162,8 +164,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         public bool PreserveUVFoldoverEdges
         {
-            get { return preserveUVFoldoverEdges; }
-            set { preserveUVFoldoverEdges = value; }
+            get { return simplificationOptions.PreserveUVFoldoverEdges; }
+            set { simplificationOptions.PreserveUVFoldoverEdges = value; }
         }
 
         /// <summary>
@@ -172,8 +174,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         public bool PreserveSurfaceCurvature
         {
-            get { return preserveSurfaceCurvature; }
-            set { preserveSurfaceCurvature = value; }
+            get { return simplificationOptions.PreserveSurfaceCurvature; }
+            set { simplificationOptions.PreserveSurfaceCurvature = value; }
         }
 
         /// <summary>
@@ -184,8 +186,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         public bool EnableSmartLink
         {
-            get { return enableSmartLink; }
-            set { enableSmartLink = value; }
+            get { return simplificationOptions.EnableSmartLink; }
+            set { simplificationOptions.EnableSmartLink = value; }
         }
 
         /// <summary>
@@ -195,8 +197,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         public int MaxIterationCount
         {
-            get { return maxIterationCount; }
-            set { maxIterationCount = value; }
+            get { return simplificationOptions.MaxIterationCount; }
+            set { simplificationOptions.MaxIterationCount = value; }
         }
 
         /// <summary>
@@ -205,8 +207,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         public double Agressiveness
         {
-            get { return agressiveness; }
-            set { agressiveness = value; }
+            get { return simplificationOptions.Agressiveness; }
+            set { simplificationOptions.Agressiveness = value; }
         }
 
         /// <summary>
@@ -225,8 +227,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         public double VertexLinkDistance
         {
-            get { return Math.Sqrt(vertexLinkDistanceSqr); }
-            set { vertexLinkDistanceSqr = (value > double.Epsilon ? value * value : double.Epsilon); }
+            get { return simplificationOptions.VertexLinkDistance; }
+            set { simplificationOptions.VertexLinkDistance = value > double.Epsilon ? value : double.Epsilon; }
         }
 
         /// <summary>
@@ -236,8 +238,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         public double VertexLinkDistanceSqr
         {
-            get { return vertexLinkDistanceSqr; }
-            set { vertexLinkDistanceSqr = value; }
+            get { return simplificationOptions.VertexLinkDistance * simplificationOptions.VertexLinkDistance; }
+            set { simplificationOptions.VertexLinkDistance = Math.Sqrt(value); }
         }
 
         /// <summary>
@@ -496,7 +498,7 @@ namespace UnityMeshSimplifier
                 {
                     Vector3d normVecTriangleWithViAndVjBoth = triangleWithViAndVjBoth.n;
                     double dot = Vector3d.Dot(ref normVecTriangleWithViOrVjOrBoth, ref normVecTriangleWithViAndVjBoth);
-                    
+
                     if (dot > maxDotInner)
                         maxDotInner = dot;
                 }
@@ -524,7 +526,7 @@ namespace UnityMeshSimplifier
                     -1.0 / det * q.Determinant4()); // vz = A43/det(q_delta)
 
                 double curvatureError = 0;
-                if (preserveSurfaceCurvature)
+                if (simplificationOptions.PreserveSurfaceCurvature)
                 {
                     curvatureError = CurvatureError(ref vert0, ref vert1);
                 }
@@ -796,6 +798,9 @@ namespace UnityMeshSimplifier
 
             Vector3d p;
             Vector3 barycentricCoord;
+            var preserveBorderEdges = PreserveBorderEdges;
+            var preserveUVSeamEdges = PreserveUVSeamEdges;
+            var preserveUVFoldoverEdges = PreserveUVFoldoverEdges;
             for (int tid = 0; tid < triangleCount; tid++)
             {
                 if (triangles[tid].dirty || triangles[tid].deleted || triangles[tid].err3 > threshold)
@@ -947,6 +952,8 @@ namespace UnityMeshSimplifier
                 int borderVertexCount = 0;
                 double borderMinX = double.MaxValue;
                 double borderMaxX = double.MinValue;
+                var enableSmartLink = EnableSmartLink;
+                var vertexLinkDistanceSqr = VertexLinkDistanceSqr;
                 for (int i = 0; i < vertexCount; i++)
                 {
                     int tstart = vertices[i].tstart;
@@ -2199,6 +2206,8 @@ namespace UnityMeshSimplifier
             var vertices = this.vertices.Data;
             int targetTrisCount = Mathf.RoundToInt(triangleCount * quality);
 
+            var maxIterationCount = MaxIterationCount;
+            var agressiveness = Agressiveness;
             for (int iteration = 0; iteration < maxIterationCount; iteration++)
             {
                 if ((startTrisCount - deletedTris) <= targetTrisCount)
