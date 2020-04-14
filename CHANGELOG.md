@@ -5,7 +5,11 @@
 
 * temporarily allow refactor commits to trigger a release ([fd8d697](https://github.com/Whinarn/UnityMeshSimplifier/commit/fd8d69751038f0d8a6fc9880c3159d3718d6a2ee))
 
-# [2.3.0](https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.2.0...v2.3.0) (2020-04-14)
+## [2.3.0](https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.2.0...v2.3.0) (2020-04-14)
+
+### Added
+
+* mesh simplifier uses the simplification options struct ([87d3fa8](https://github.com/Whinarn/UnityMeshSimplifier/commit/87d3fa81419c4fce2d360572290bfecee7a3fbf9))
 
 ## [v2.2.0](https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.1.0...v2.2.0) (2020-03-24)
 
