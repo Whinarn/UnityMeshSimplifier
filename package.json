@@ -1,7 +1,7 @@
 {
   "name": "com.whinarn.unitymeshsimplifier",
   "displayName": "Unity Mesh Simplifier",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "unity": "2017.1",
   "description": "Simplifies 3D meshes with ease. Works both in the editor and during runtime in builds.",
   "type": "library",
