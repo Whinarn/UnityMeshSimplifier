@@ -1,3 +1,10 @@
+## [2.3.1](https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.3.0...v2.3.1) (2020-04-14)
+
+
+### Reverts
+
+* temporarily allow refactor commits to trigger a release ([fd8d697](https://github.com/Whinarn/UnityMeshSimplifier/commit/fd8d69751038f0d8a6fc9880c3159d3718d6a2ee))
+
 # [2.3.0](https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.2.0...v2.3.0) (2020-04-14)
 
 ## [v2.2.0](https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.1.0...v2.2.0) (2020-03-24)
