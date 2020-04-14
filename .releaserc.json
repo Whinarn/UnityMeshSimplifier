@@ -1,12 +1,7 @@
 {
     "tagFormat": "v${version}",
     "plugins": [
-        ["@semantic-release/commit-analyzer", {
-            "preset": "angular",
-            "releaseRules": [
-                {"type": "refactor", "release": "minor"}
-            ]
-        }],
+        ["@semantic-release/commit-analyzer", { "preset": "angular" }],
         ["@semantic-release/release-notes-generator", { "preset": "angular" }],
         ["@semantic-release/changelog", { "preset": "angular" }],
         ["@semantic-release/npm", { "npmPublish": false }],
