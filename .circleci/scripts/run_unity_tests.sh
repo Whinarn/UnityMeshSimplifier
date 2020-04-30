@@ -11,7 +11,7 @@ TEST_RESULT_FILE_PATH="$TEST_RESULT_DIR/$TEST_RESULT_FILE_NAME"
 ${UNITY_EXECUTABLE:-xvfb-run --auto-servernum --server-args='-screen 0 640x480x24' /opt/Unity/Editor/Unity} \
   -projectPath "$PROJECT_ROOT" \
   -runTests \
-  -testPlatform $TEST_PLATFORM \
+  -testPlatform "$TEST_PLATFORM" \
   -testResults "$TEST_RESULT_FILE_PATH" \
   -logFile - \
   -batchmode
@@ -28,5 +28,5 @@ else
   echo "Unexpected exit code $UNITY_EXIT_CODE";
 fi
 
-cat "$TEST_RESULT_FILE_PATH" | grep test-run | grep Passed
+grep test-run < "$TEST_RESULT_FILE_PATH" | grep Passed
 exit $UNITY_TEST_EXIT_CODE
