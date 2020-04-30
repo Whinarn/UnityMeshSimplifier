@@ -1,3 +1,10 @@
+## [2.3.2](https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.3.1...v2.3.2) (2020-04-30)
+
+
+### Bug Fixes
+
+* **meshutils:** GetUsedUVComponents should now be able to return zero ([af60914](https://github.com/Whinarn/UnityMeshSimplifier/commit/af6091481d212f5c98bf1f8f16cf922367f0a08d))
+
 ## [2.3.1](https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.3.0...v2.3.1) (2020-04-14)
 
 
