@@ -24,10 +24,10 @@ jobs:
     <<: *test-2019
     environment:
       TEST_PLATFORM: editmode
-  test-playmode-2019:
-    <<: *test-2019
-    environment:
-      TEST_PLATFORM: playmode
+#  test-playmode-2019:
+#    <<: *test-2019
+#    environment:
+#      TEST_PLATFORM: playmode
 
 workflows:
   version: 2
@@ -35,5 +35,5 @@ workflows:
     jobs:
       - test-editmode-2019:
           context: Unity
-      - test-playmode-2019:
-          context: Unity
+#      - test-playmode-2019:
+#          context: Unity
