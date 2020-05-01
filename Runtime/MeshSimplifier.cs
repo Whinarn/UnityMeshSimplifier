@@ -1176,14 +1176,11 @@ namespace UnityMeshSimplifier
                 int v1 = triangles[i].v1;
                 int v2 = triangles[i].v2;
                 int start0 = vertices[v0].tstart;
-                int count0 = vertices[v0].tcount;
-                ++vertices[v0].tcount;
+                int count0 = vertices[v0].tcount++;
                 int start1 = vertices[v1].tstart;
-                int count1 = vertices[v1].tcount;
-                ++vertices[v1].tcount;
+                int count1 = vertices[v1].tcount++;
                 int start2 = vertices[v2].tstart;
-                int count2 = vertices[v2].tcount;
-                ++vertices[v2].tcount;
+                int count2 = vertices[v2].tcount++;
 
                 refs[start0 + count0].Set(i, 0);
                 refs[start1 + count1].Set(i, 1);
