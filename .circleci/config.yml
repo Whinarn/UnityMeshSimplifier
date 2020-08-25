@@ -1,10 +1,33 @@
 version: 2.1
 executors:
+  unity-2018:
+    docker:
+      - image: gableroux/unity3d:2018.4.26f1
+    environment:
+      UNITY_LICENSE_CONTENT_VAR: UNITY_LICENCE_CONTENT_2018_4_26
   unity-2019:
     docker:
-      - image: gableroux/unity3d:2019.3.6f1
+      - image: gableroux/unity3d:2019.4.8f1
     environment:
-      UNITY_LICENSE_CONTENT_VAR: UNITY_LICENSE_CONTENT_2019_3_6
+      UNITY_LICENSE_CONTENT_VAR: UNITY_LICENSE_CONTENT_2019_4_8
+  unity-2020:
+    docker:
+      - image: gableroux/unity3d:2020.1.2f1
+    environment:
+      UNITY_LICENSE_CONTENT_VAR: UNITY_LICENCE_CONTENT_2020_1_2
+
+.test-2018: &test-2018
+  executor: unity-2018
+  steps:
+    - checkout
+    - run:
+        name: Preparing Unity
+        command: chmod +x ./.circleci/scripts/prepare_unity.sh && ./.circleci/scripts/prepare_unity.sh
+    - run:
+        name: Running tests
+        command: chmod +x ./.circleci/scripts/run_unity_tests.sh && ./.circleci/scripts/run_unity_tests.sh
+    - store_test_results:
+        path: test-results
 
 .test-2019: &test-2019
   executor: unity-2019
@@ -19,9 +42,30 @@ executors:
     - store_test_results:
         path: test-results
 
+.test-2020: &test-2020
+  executor: unity-2020
+  steps:
+    - checkout
+    - run:
+        name: Preparing Unity
+        command: chmod +x ./.circleci/scripts/prepare_unity.sh && ./.circleci/scripts/prepare_unity.sh
+    - run:
+        name: Running tests
+        command: chmod +x ./.circleci/scripts/run_unity_tests.sh && ./.circleci/scripts/run_unity_tests.sh
+    - store_test_results:
+        path: test-results
+
 jobs:
+  test-editmode-2018:
+    <<: *test-2018
+    environment:
+      TEST_PLATFORM: editmode
   test-editmode-2019:
     <<: *test-2019
+    environment:
+      TEST_PLATFORM: editmode
+  test-editmode-2020:
+    <<: *test-2020
     environment:
       TEST_PLATFORM: editmode
 #  test-playmode-2019:
@@ -33,7 +77,11 @@ workflows:
   version: 2
   test:
     jobs:
+      - test-editmode-2018:
+          context: Unity
       - test-editmode-2019:
+          context: Unity
+      - test-editmode-2020:
           context: Unity
 #      - test-playmode-2019:
 #          context: Unity
