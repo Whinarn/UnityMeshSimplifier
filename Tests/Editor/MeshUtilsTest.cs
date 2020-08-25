@@ -412,7 +412,11 @@ namespace UnityMeshSimplifier.Editor.Tests
             mesh.vertices = new Vector3[4];
             for (int i = 0; i < uvs.Length; i++)
             {
+#if UNITY_2018
+                mesh.SetUVs(i, uvs[i].ToList());
+#else
                 mesh.SetUVs(i, uvs[i]);
+#endif
             }
 
             var allUVs = MeshUtils.GetMeshUVs(mesh);
