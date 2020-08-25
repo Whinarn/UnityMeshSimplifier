@@ -10,6 +10,10 @@ set +x
 
 echo "Extracting Unity license file..."
 UNITY_LICENSE_CONTENT="${!UNITY_LICENSE_CONTENT_VAR}"
+if [ -z "$UNITY_LICENSE_CONTENT" ]; then
+    echo "The $UNITY_LICENSE_CONTENT_VAR environment variable is not set. Code is not trusted. Aborting."
+    exit 1
+fi
 echo "$UNITY_LICENSE_CONTENT" | base64 --decode | tr -d '\r' > /root/.local/share/unity3d/Unity/Unity_lic.ulf
 
 echo "Building Unity project..."
