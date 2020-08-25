@@ -1,3 +1,10 @@
+## [2.3.4](https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.3.3...v2.3.4) (2020-08-25)
+
+
+### Bug Fixes
+
+* **tests:** compile errors on 2018.4.26f1 ([#38](https://github.com/Whinarn/UnityMeshSimplifier/issues/38)) ([91b5ad7](https://github.com/Whinarn/UnityMeshSimplifier/commit/91b5ad7de7d6f77d29275fc69d3e7506df6a586f))
+
 ## [2.3.3](https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.3.2...v2.3.3) (2020-05-01)
 
 
