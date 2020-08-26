@@ -15,6 +15,7 @@ executors:
       - image: gableroux/unity3d:2020.1.2f1
     environment:
       UNITY_LICENSE_CONTENT_VAR: UNITY_LICENCE_CONTENT_2020_1_2
+      RUN_UNITY_WITH_NOGRAPHICS: "true"
 
 .test-2018: &test-2018
   executor: unity-2018
