@@ -27,6 +27,9 @@ executors:
     - run:
         name: Running tests
         command: chmod +x ./.circleci/scripts/run_unity_tests.sh && ./.circleci/scripts/run_unity_tests.sh
+    - store_artifacts:
+        path: test-results
+        destination: test-results
     - store_test_results:
         path: test-results
 
@@ -40,6 +43,9 @@ executors:
     - run:
         name: Running tests
         command: chmod +x ./.circleci/scripts/run_unity_tests.sh && ./.circleci/scripts/run_unity_tests.sh
+    - store_artifacts:
+        path: test-results
+        destination: test-results
     - store_test_results:
         path: test-results
 
@@ -53,6 +59,9 @@ executors:
     - run:
         name: Running tests
         command: chmod +x ./.circleci/scripts/run_unity_tests.sh && ./.circleci/scripts/run_unity_tests.sh
+    - store_artifacts:
+        path: test-results
+        destination: test-results
     - store_test_results:
         path: test-results
 
