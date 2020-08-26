@@ -20,8 +20,10 @@ echo "Building Unity project..."
 PROJECT_ROOT=$(pwd)
 PACKAGE_DEST="$PROJECT_ROOT/Packages/UnityMeshSimplifier"
 mkdir -p "$PACKAGE_DEST"
-mv Editor "$PACKAGE_DEST/Editor"
-mv Runtime "$PACKAGE_DEST/Runtime"
+mv Editor "$PACKAGE_DEST/"
+mv Runtime "$PACKAGE_DEST/"
+mv Tests "$PACKAGE_DEST/"
+mv package.json "$PACKAGE_DEST/"
 
 mkdir "$PROJECT_ROOT/Assets"
 mkdir "$PROJECT_ROOT/Library"
