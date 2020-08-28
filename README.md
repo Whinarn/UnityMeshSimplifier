@@ -17,7 +17,7 @@ Because this project is now using Unity packages, you should use a Unity version
 Although some scripts have been tested and confirmed working as far back as Unity 5.6, it will no longer be officially supported.
 Unity introduced the package manager in Unity 2017.2, but at a very early state.
 
-The code will only compile with the .NET 4.X scripting runtime version. The legacy scripting runtime is no longer supported.
+The code will only (at the time of writing) compile with the *.NET Standard 2.0* or *.NET 4.X* scripting runtime versions. The legacy scripting runtime is no longer supported.
 Read more about this [here](https://docs.unity3d.com/2019.1/Documentation/Manual/dotnetProfileSupport.html).
 
 ## Installation into Unity project
