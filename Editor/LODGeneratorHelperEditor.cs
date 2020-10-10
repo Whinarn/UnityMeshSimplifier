@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 
 namespace UnityMeshSimplifier.Editor
 {
@@ -522,6 +523,7 @@ namespace UnityMeshSimplifier.Editor
             }
             finally
             {
+                MarkSceneAsDirty();
                 EditorUtility.ClearProgressBar();
             }
         }
@@ -548,6 +550,7 @@ namespace UnityMeshSimplifier.Editor
             }
             finally
             {
+                MarkSceneAsDirty();
                 EditorUtility.ClearProgressBar();
             }
         }
@@ -669,6 +672,11 @@ namespace UnityMeshSimplifier.Editor
             }
 
             return rendererList.ToArray();
+        }
+
+        private void MarkSceneAsDirty()
+        {
+            EditorSceneManager.MarkSceneDirty(lodGeneratorHelper.gameObject.scene);
         }
 
         private static void DisplayError(string title, string message, string ok, Object context)
