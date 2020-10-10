@@ -610,12 +610,12 @@ namespace UnityMeshSimplifier.Editor
 
             var notChildGameObjects = from go in gameObjects
                                       where !go.transform.IsChildOf(ourTransform)
-#if UNITY_2018_3 || UNITY_2018_4 || UNITY_2019
+#if UNITY_2018_3 || UNITY_2018_4 || UNITY_2019 || UNITY_2020
                                          && !PrefabUtility.IsPartOfAnyPrefab(go)
 #endif
                                       select go;
 
-#if UNITY_2018_3 || UNITY_2018_4 || UNITY_2019
+#if UNITY_2018_3 || UNITY_2018_4 || UNITY_2019 || UNITY_2020
             var prefabGameObjects = from go in gameObjects
                                     where !go.transform.IsChildOf(ourTransform) &&
                                         PrefabUtility.IsPartOfAnyPrefab(go)
