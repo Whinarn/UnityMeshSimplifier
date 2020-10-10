@@ -12,7 +12,7 @@ jobs:
       - name: Check Commit Type And Scope
         uses: gsactions/commit-message-checker@v1
         with:
-          pattern: '^[a-z]+(?:\([a-z]+\))?: .+(?:\n(?:\n.+)+)?(?:\n\n.+)?$'
+          pattern: '^[a-z]+(?:\([a-z\-]+\))?: .+(?:\n(?:\n.+)+)?(?:\n\n.+)?$'
           error: 'Your message must have the correct format "<type>(<scope>): <subject>" with an optional body and footer separated by blank lines.'
       - name: Check Line Length
         uses: gsactions/commit-message-checker@v1
