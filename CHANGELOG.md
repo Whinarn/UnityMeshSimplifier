@@ -1,3 +1,11 @@
+## [2.3.5](https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.3.4...v2.3.5) (2020-10-10)
+
+
+### Bug Fixes
+
+* **lod-generator-helper:** mark scene as dirty ([7554f8e](https://github.com/Whinarn/UnityMeshSimplifier/commit/7554f8ecb7cd105aacdad4a07d32eaf081cf7ae3))
+* **unity:** increase support for unity 2020 ([7a28614](https://github.com/Whinarn/UnityMeshSimplifier/commit/7a286148aecef6f7918abce34f3e7000f2856f4a))
+
 ## [2.3.4](https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.3.3...v2.3.4) (2020-08-25)
 
 
