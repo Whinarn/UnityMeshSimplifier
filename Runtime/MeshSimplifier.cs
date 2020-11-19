@@ -63,6 +63,7 @@ namespace UnityMeshSimplifier
         private const int TriangleEdgeCount = 3;
         private const int TriangleVertexCount = 3;
         private const double DoubleEpsilon = 1.0E-3;
+        private const double DenomEpilson = 0.00000001;
         private static readonly int UVChannelCount = MeshUtils.UVChannelCount;
         #endregion
 
@@ -574,17 +575,24 @@ namespace UnityMeshSimplifier
         #region Calculate Barycentric Coordinates
         private static void CalculateBarycentricCoords(ref Vector3d point, ref Vector3d a, ref Vector3d b, ref Vector3d c, out Vector3 result)
         {
-            Vector3 v0 = (Vector3)(b - a), v1 = (Vector3)(c - a), v2 = (Vector3)(point - a);
-            float d00 = Vector3.Dot(v0, v0);
-            float d01 = Vector3.Dot(v0, v1);
-            float d11 = Vector3.Dot(v1, v1);
-            float d20 = Vector3.Dot(v2, v0);
-            float d21 = Vector3.Dot(v2, v1);
-            float denom = d00 * d11 - d01 * d01;
-            float v = (d11 * d20 - d01 * d21) / denom;
-            float w = (d00 * d21 - d01 * d20) / denom;
-            float u = 1f - v - w;
-            result = new Vector3(u, v, w);
+            Vector3d v0 = (b - a), v1 = (c - a), v2 = (point - a);
+            double d00 = Vector3d.Dot(ref v0, ref v0);
+            double d01 = Vector3d.Dot(ref v0, ref v1);
+            double d11 = Vector3d.Dot(ref v1, ref v1);
+            double d20 = Vector3d.Dot(ref v2, ref v0);
+            double d21 = Vector3d.Dot(ref v2, ref v1);
+            double denom = d00 * d11 - d01 * d01;
+
+            // Make sure the denominator is not too small to cause math problems
+            if (Math.Abs(denom) < DenomEpilson)
+            {
+                denom = DenomEpilson;
+            }
+
+            double v = (d11 * d20 - d01 * d21) / denom;
+            double w = (d00 * d21 - d01 * d20) / denom;
+            double u = 1.0 - v - w;
+            result = new Vector3((float)u, (float)v, (float)w);
         }
         #endregion
 
