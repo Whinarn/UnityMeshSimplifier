@@ -1,3 +1,10 @@
+## [2.3.6](https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.3.5...v2.3.6) (2020-11-20)
+
+
+### Bug Fixes
+
+* **simplifier:** prevent near zero denominator ([469272a](https://github.com/Whinarn/UnityMeshSimplifier/commit/469272ae031774383eb13253e7e2d5abbaafe79c))
+
 ## [2.3.5](https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.3.4...v2.3.5) (2020-10-10)
 
 
