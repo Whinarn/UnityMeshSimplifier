@@ -68,7 +68,7 @@ namespace UnityMeshSimplifier
         #endregion
 
         #region Fields
-        SimplificationOptions simplificationOptions = SimplificationOptions.Default;
+        private SimplificationOptions simplificationOptions = SimplificationOptions.Default;
         private bool verbose = false;
 
         private int subMeshCount = 0;
