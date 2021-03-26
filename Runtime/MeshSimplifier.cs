@@ -1992,27 +1992,19 @@ namespace UnityMeshSimplifier
         #region Initialize
         /// <summary>
         /// Initializes the algorithm with the original mesh.
-        /// Will automatically detect the count of UV components used on the mesh.
         /// </summary>
         /// <param name="mesh">The mesh.</param>
         public void Initialize(Mesh mesh)
         {
-            Initialize(mesh, -1);
-        }
-
-        /// <summary>
-        /// Initializes the algorithm with the original mesh.
-        /// </summary>
-        /// <param name="mesh">The mesh.</param>
-        /// <param name="uvComponentCount">The count of UV components that are used on the mesh.
-        /// -1 means that it will be automatically detected.
-        /// Note that all UV channels would use the same UV component count.</param>
-        public void Initialize(Mesh mesh, int uvComponentCount)
-        {
             if (mesh == null)
                 throw new ArgumentNullException(nameof(mesh));
-            if (uvComponentCount < -1 || uvComponentCount > 4)
-                throw new ArgumentOutOfRangeException(nameof(uvComponentCount));
+
+            int uvComponentCount = simplificationOptions.UVComponentCount;
+            if (simplificationOptions.ManualUVComponentCount)
+            {
+                if (uvComponentCount < 0 || uvComponentCount > 4)
+                    throw new InvalidOperationException("The UV component count cannot be below 0 or above 4.");
+            }
 
             this.Vertices = mesh.vertices;
             this.Normals = mesh.normals;
@@ -2024,33 +2016,35 @@ namespace UnityMeshSimplifier
 
             for (int channel = 0; channel < UVChannelCount; channel++)
             {
-                switch (uvComponentCount)
+                if (simplificationOptions.ManualUVComponentCount)
                 {
-                    case -1:
-                        {
-                            var uvs = MeshUtils.GetMeshUVs(mesh, channel);
-                            SetUVsAuto(channel, uvs);
-                            break;
-                        }
-                    case 1:
-                    case 2:
-                        {
-                            var uvs = MeshUtils.GetMeshUVs2D(mesh, channel);
-                            SetUVs(channel, uvs);
-                            break;
-                        }
-                    case 3:
-                        {
-                            var uvs = MeshUtils.GetMeshUVs3D(mesh, channel);
-                            SetUVs(channel, uvs);
-                            break;
-                        }
-                    case 4:
-                        {
-                            var uvs = MeshUtils.GetMeshUVs(mesh, channel);
-                            SetUVs(channel, uvs);
-                            break;
-                        }
+                    switch (uvComponentCount)
+                    {
+                        case 1:
+                        case 2:
+                            {
+                                var uvs = MeshUtils.GetMeshUVs2D(mesh, channel);
+                                SetUVs(channel, uvs);
+                                break;
+                            }
+                        case 3:
+                            {
+                                var uvs = MeshUtils.GetMeshUVs3D(mesh, channel);
+                                SetUVs(channel, uvs);
+                                break;
+                            }
+                        case 4:
+                            {
+                                var uvs = MeshUtils.GetMeshUVs(mesh, channel);
+                                SetUVs(channel, uvs);
+                                break;
+                            }
+                    }
+                }
+                else
+                {
+                    var uvs = MeshUtils.GetMeshUVs(mesh, channel);
+                    SetUVsAuto(channel, uvs);
                 }
             }
 
