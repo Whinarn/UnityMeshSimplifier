@@ -2037,7 +2037,9 @@ namespace UnityMeshSimplifier
         /// Initializes the algorithm with the original mesh.
         /// </summary>
         /// <param name="mesh">The mesh.</param>
-        /// <param name="uvComponentCount">The count of UV components that are used on the mesh. -1 means that it will be automatically detected. Note that all UV channels would use the same UV component count.</param>
+        /// <param name="uvComponentCount">The count of UV components that are used on the mesh.
+        /// -1 means that it will be automatically detected.
+        /// Note that all UV channels would use the same UV component count.</param>
         public void Initialize(Mesh mesh, int uvComponentCount)
         {
             if (mesh == null)
