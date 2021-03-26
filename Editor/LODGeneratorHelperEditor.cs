@@ -1,4 +1,4 @@
-﻿#region License
+#region License
 /*
 MIT License
 
@@ -140,10 +140,10 @@ namespace UnityMeshSimplifier.Editor
             EditorGUILayout.PropertyField(autoCollectRenderersProperty);
             DrawSimplificationOptions();
 
-            bool newHasSaveAssetsPath = EditorGUILayout.Toggle(overrideSaveAssetsPathContent, overrideSaveAssetsPath);
-            if (newHasSaveAssetsPath != overrideSaveAssetsPath)
+            bool newOverrideSaveAssetsPath = EditorGUILayout.Toggle(overrideSaveAssetsPathContent, overrideSaveAssetsPath);
+            if (newOverrideSaveAssetsPath != overrideSaveAssetsPath)
             {
-                overrideSaveAssetsPath = newHasSaveAssetsPath;
+                overrideSaveAssetsPath = newOverrideSaveAssetsPath;
                 saveAssetsPathProperty.stringValue = string.Empty;
                 serializedObject.ApplyModifiedProperties();
                 GUIUtility.ExitGUI();
@@ -151,7 +151,12 @@ namespace UnityMeshSimplifier.Editor
 
             if (overrideSaveAssetsPath)
             {
+                EditorGUI.BeginChangeCheck();
                 EditorGUILayout.PropertyField(saveAssetsPathProperty);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    saveAssetsPathProperty.stringValue = IOUtils.MakeSafeRelativePath(saveAssetsPathProperty.stringValue);
+                }
             }
 
             if (settingsExpanded == null || settingsExpanded.Length != levelsProperty.arraySize)

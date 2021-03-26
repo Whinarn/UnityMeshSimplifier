@@ -1,5 +1,6 @@
 {
     "name": "Whinarn.UnityMeshSimplifier.Editor",
+    "rootNamespace": "UnityMeshSimplifier.Editor",
     "references": [
         "Whinarn.UnityMeshSimplifier.Runtime"
     ],
