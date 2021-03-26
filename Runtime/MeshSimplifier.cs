@@ -1732,151 +1732,7 @@ namespace UnityMeshSimplifier
         /// </summary>
         /// <param name="channel">The channel index.</param>
         /// <param name="uvs">The UVs.</param>
-        public void SetUVs(int channel, Vector2[] uvs)
-        {
-            if (channel < 0 || channel >= UVChannelCount)
-                throw new ArgumentOutOfRangeException(nameof(channel));
-
-            if (uvs != null && uvs.Length > 0)
-            {
-                if (vertUV2D == null)
-                    vertUV2D = new UVChannels<Vector2>();
-
-                int uvCount = uvs.Length;
-                var uvSet = vertUV2D[channel];
-                if (uvSet != null)
-                {
-                    uvSet.Resize(uvCount);
-                }
-                else
-                {
-                    uvSet = new ResizableArray<Vector2>(uvCount, uvCount);
-                    vertUV2D[channel] = uvSet;
-                }
-
-                var uvData = uvSet.Data;
-                uvs.CopyTo(uvData, 0);
-            }
-            else
-            {
-                if (vertUV2D != null)
-                {
-                    vertUV2D[channel] = null;
-                }
-            }
-
-            if (vertUV3D != null)
-            {
-                vertUV3D[channel] = null;
-            }
-            if (vertUV4D != null)
-            {
-                vertUV4D[channel] = null;
-            }
-        }
-
-        /// <summary>
-        /// Sets the UVs (3D) for a specific channel.
-        /// </summary>
-        /// <param name="channel">The channel index.</param>
-        /// <param name="uvs">The UVs.</param>
-        public void SetUVs(int channel, Vector3[] uvs)
-        {
-            if (channel < 0 || channel >= UVChannelCount)
-                throw new ArgumentOutOfRangeException(nameof(channel));
-
-            if (uvs != null && uvs.Length > 0)
-            {
-                if (vertUV3D == null)
-                    vertUV3D = new UVChannels<Vector3>();
-
-                int uvCount = uvs.Length;
-                var uvSet = vertUV3D[channel];
-                if (uvSet != null)
-                {
-                    uvSet.Resize(uvCount);
-                }
-                else
-                {
-                    uvSet = new ResizableArray<Vector3>(uvCount, uvCount);
-                    vertUV3D[channel] = uvSet;
-                }
-
-                var uvData = uvSet.Data;
-                uvs.CopyTo(uvData, 0);
-            }
-            else
-            {
-                if (vertUV3D != null)
-                {
-                    vertUV3D[channel] = null;
-                }
-            }
-
-            if (vertUV2D != null)
-            {
-                vertUV2D[channel] = null;
-            }
-            if (vertUV4D != null)
-            {
-                vertUV4D[channel] = null;
-            }
-        }
-
-        /// <summary>
-        /// Sets the UVs (4D) for a specific channel.
-        /// </summary>
-        /// <param name="channel">The channel index.</param>
-        /// <param name="uvs">The UVs.</param>
-        public void SetUVs(int channel, Vector4[] uvs)
-        {
-            if (channel < 0 || channel >= UVChannelCount)
-                throw new ArgumentOutOfRangeException(nameof(channel));
-
-            if (uvs != null && uvs.Length > 0)
-            {
-                if (vertUV4D == null)
-                    vertUV4D = new UVChannels<Vector4>();
-
-                int uvCount = uvs.Length;
-                var uvSet = vertUV4D[channel];
-                if (uvSet != null)
-                {
-                    uvSet.Resize(uvCount);
-                }
-                else
-                {
-                    uvSet = new ResizableArray<Vector4>(uvCount, uvCount);
-                    vertUV4D[channel] = uvSet;
-                }
-
-                var uvData = uvSet.Data;
-                uvs.CopyTo(uvData, 0);
-            }
-            else
-            {
-                if (vertUV4D != null)
-                {
-                    vertUV4D[channel] = null;
-                }
-            }
-
-            if (vertUV2D != null)
-            {
-                vertUV2D[channel] = null;
-            }
-            if (vertUV3D != null)
-            {
-                vertUV3D[channel] = null;
-            }
-        }
-
-        /// <summary>
-        /// Sets the UVs (2D) for a specific channel.
-        /// </summary>
-        /// <param name="channel">The channel index.</param>
-        /// <param name="uvs">The UVs.</param>
-        public void SetUVs(int channel, List<Vector2> uvs)
+        public void SetUVs(int channel, IList<Vector2> uvs)
         {
             if (channel < 0 || channel >= UVChannelCount)
                 throw new ArgumentOutOfRangeException(nameof(channel));
@@ -1924,7 +1780,7 @@ namespace UnityMeshSimplifier
         /// </summary>
         /// <param name="channel">The channel index.</param>
         /// <param name="uvs">The UVs.</param>
-        public void SetUVs(int channel, List<Vector3> uvs)
+        public void SetUVs(int channel, IList<Vector3> uvs)
         {
             if (channel < 0 || channel >= UVChannelCount)
                 throw new ArgumentOutOfRangeException(nameof(channel));
@@ -1972,7 +1828,7 @@ namespace UnityMeshSimplifier
         /// </summary>
         /// <param name="channel">The channel index.</param>
         /// <param name="uvs">The UVs.</param>
-        public void SetUVs(int channel, List<Vector4> uvs)
+        public void SetUVs(int channel, IList<Vector4> uvs)
         {
             if (channel < 0 || channel >= UVChannelCount)
                 throw new ArgumentOutOfRangeException(nameof(channel));
@@ -2016,24 +1872,26 @@ namespace UnityMeshSimplifier
         }
 
         /// <summary>
-        /// Sets the UVs for a specific channel and automatically detects the used components.
+        /// Sets the UVs for a specific channel with a specific count of UV components.
         /// </summary>
         /// <param name="channel">The channel index.</param>
         /// <param name="uvs">The UVs.</param>
-        public void SetUVsAuto(int channel, List<Vector4> uvs)
+        /// <param name="uvComponentCount">The count of UV components.</param>
+        public void SetUVs(int channel, IList<Vector4> uvs, int uvComponentCount)
         {
             if (channel < 0 || channel >= UVChannelCount)
                 throw new ArgumentOutOfRangeException(nameof(channel));
+            else if (uvComponentCount < 0 || uvComponentCount > 4)
+                throw new ArgumentOutOfRangeException(nameof(uvComponentCount));
 
-            if (uvs != null && uvs.Count > 0)
+            if (uvs != null && uvs.Count > 0 && uvComponentCount > 0)
             {
-                int usedComponents = MeshUtils.GetUsedUVComponents(uvs);
-                if (usedComponents <= 2)
+                if (uvComponentCount <= 2)
                 {
                     var uv2D = MeshUtils.ConvertUVsTo2D(uvs);
                     SetUVs(channel, uv2D);
                 }
-                else if (usedComponents == 3)
+                else if (uvComponentCount == 3)
                 {
                     var uv3D = MeshUtils.ConvertUVsTo3D(uvs);
                     SetUVs(channel, uv3D);
@@ -2058,6 +1916,20 @@ namespace UnityMeshSimplifier
                     vertUV4D[channel] = null;
                 }
             }
+        }
+
+        /// <summary>
+        /// Sets the UVs for a specific channel and automatically detects the used components.
+        /// </summary>
+        /// <param name="channel">The channel index.</param>
+        /// <param name="uvs">The UVs.</param>
+        public void SetUVsAuto(int channel, IList<Vector4> uvs)
+        {
+            if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException(nameof(channel));
+
+            int uvComponentCount = MeshUtils.GetUsedUVComponents(uvs);
+            SetUVs(channel, uvs, uvComponentCount);
         }
         #endregion
         #endregion
@@ -2153,12 +2025,25 @@ namespace UnityMeshSimplifier
         #region Initialize
         /// <summary>
         /// Initializes the algorithm with the original mesh.
+        /// Will automatically detect the count of UV components used on the mesh.
         /// </summary>
         /// <param name="mesh">The mesh.</param>
         public void Initialize(Mesh mesh)
         {
+            Initialize(mesh, -1);
+        }
+
+        /// <summary>
+        /// Initializes the algorithm with the original mesh.
+        /// </summary>
+        /// <param name="mesh">The mesh.</param>
+        /// <param name="uvComponentCount">The count of UV components that are used on the mesh. -1 means that it will be automatically detected. Note that all UV channels would use the same UV component count.</param>
+        public void Initialize(Mesh mesh, int uvComponentCount)
+        {
             if (mesh == null)
                 throw new ArgumentNullException(nameof(mesh));
+            if (uvComponentCount < -1 || uvComponentCount > 4)
+                throw new ArgumentOutOfRangeException(nameof(uvComponentCount));
 
             this.Vertices = mesh.vertices;
             this.Normals = mesh.normals;
@@ -2170,8 +2055,34 @@ namespace UnityMeshSimplifier
 
             for (int channel = 0; channel < UVChannelCount; channel++)
             {
-                var uvs = MeshUtils.GetMeshUVs(mesh, channel);
-                SetUVsAuto(channel, uvs);
+                switch (uvComponentCount)
+                {
+                    case -1:
+                        {
+                            var uvs = MeshUtils.GetMeshUVs(mesh, channel);
+                            SetUVsAuto(channel, uvs);
+                            break;
+                        }
+                    case 1:
+                    case 2:
+                        {
+                            var uvs = MeshUtils.GetMeshUVs2D(mesh, channel);
+                            SetUVs(channel, uvs);
+                            break;
+                        }
+                    case 3:
+                        {
+                            var uvs = MeshUtils.GetMeshUVs3D(mesh, channel);
+                            SetUVs(channel, uvs);
+                            break;
+                        }
+                    case 4:
+                        {
+                            var uvs = MeshUtils.GetMeshUVs(mesh, channel);
+                            SetUVs(channel, uvs);
+                            break;
+                        }
+                }
             }
 
             var blendShapes = MeshUtils.GetMeshBlendShapes(mesh);
@@ -2329,6 +2240,7 @@ namespace UnityMeshSimplifier
             List<Vector2>[] uvs2D = null;
             List<Vector3>[] uvs3D = null;
             List<Vector4>[] uvs4D = null;
+
             if (vertUV2D != null)
             {
                 uvs2D = new List<Vector2>[UVChannelCount];

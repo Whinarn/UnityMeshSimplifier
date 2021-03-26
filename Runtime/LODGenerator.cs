@@ -597,6 +597,12 @@ namespace UnityMeshSimplifier
 
         private static Mesh SimplifyMesh(Mesh mesh, float quality, SimplificationOptions options)
         {
+            int uvComponentCount = -1;
+            if (options.ManualUVComponentCount)
+            {
+                uvComponentCount = options.UVComponentCount;
+            }
+
             var meshSimplifier = new MeshSimplifier();
             meshSimplifier.PreserveBorderEdges = options.PreserveBorderEdges;
             meshSimplifier.PreserveUVSeamEdges = options.PreserveUVSeamEdges;
@@ -606,7 +612,7 @@ namespace UnityMeshSimplifier
             meshSimplifier.VertexLinkDistance = options.VertexLinkDistance;
             meshSimplifier.MaxIterationCount = options.MaxIterationCount;
             meshSimplifier.Agressiveness = options.Agressiveness;
-            meshSimplifier.Initialize(mesh);
+            meshSimplifier.Initialize(mesh, uvComponentCount);
             meshSimplifier.SimplifyMesh(quality);
 
             var simplifiedMesh = meshSimplifier.ToMesh();

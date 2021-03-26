@@ -287,12 +287,12 @@ namespace UnityMeshSimplifier
         /// </summary>
         /// <param name="mesh">The mesh.</param>
         /// <returns>The UV sets.</returns>
-        public static List<Vector4>[] GetMeshUVs(Mesh mesh)
+        public static IList<Vector4>[] GetMeshUVs(Mesh mesh)
         {
             if (mesh == null)
                 throw new ArgumentNullException(nameof(mesh));
 
-            var uvs = new List<Vector4>[UVChannelCount];
+            var uvs = new IList<Vector4>[UVChannelCount];
             for (int channel = 0; channel < UVChannelCount; channel++)
             {
                 uvs[channel] = GetMeshUVs(mesh, channel);
@@ -301,12 +301,48 @@ namespace UnityMeshSimplifier
         }
 
         /// <summary>
-        /// Returns the UV list for a specific mesh and UV channel.
+        /// Returns the 2D UV list for a specific mesh and UV channel.
         /// </summary>
         /// <param name="mesh">The mesh.</param>
         /// <param name="channel">The UV channel.</param>
         /// <returns>The UV list.</returns>
-        public static List<Vector4> GetMeshUVs(Mesh mesh, int channel)
+        public static IList<Vector2> GetMeshUVs2D(Mesh mesh, int channel)
+        {
+            if (mesh == null)
+                throw new ArgumentNullException(nameof(mesh));
+            else if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException(nameof(channel));
+
+            var uvList = new List<Vector2>(mesh.vertexCount);
+            mesh.GetUVs(channel, uvList);
+            return uvList;
+        }
+
+        /// <summary>
+        /// Returns the 3D UV list for a specific mesh and UV channel.
+        /// </summary>
+        /// <param name="mesh">The mesh.</param>
+        /// <param name="channel">The UV channel.</param>
+        /// <returns>The UV list.</returns>
+        public static IList<Vector3> GetMeshUVs3D(Mesh mesh, int channel)
+        {
+            if (mesh == null)
+                throw new ArgumentNullException(nameof(mesh));
+            else if (channel < 0 || channel >= UVChannelCount)
+                throw new ArgumentOutOfRangeException(nameof(channel));
+
+            var uvList = new List<Vector3>(mesh.vertexCount);
+            mesh.GetUVs(channel, uvList);
+            return uvList;
+        }
+
+        /// <summary>
+        /// Returns the 4D UV list for a specific mesh and UV channel.
+        /// </summary>
+        /// <param name="mesh">The mesh.</param>
+        /// <param name="channel">The UV channel.</param>
+        /// <returns>The UV list.</returns>
+        public static IList<Vector4> GetMeshUVs(Mesh mesh, int channel)
         {
             if (mesh == null)
                 throw new ArgumentNullException(nameof(mesh));
@@ -323,7 +359,7 @@ namespace UnityMeshSimplifier
         /// </summary>
         /// <param name="uvs">The UV set.</param>
         /// <returns>The number of used UV components.</returns>
-        public static int GetUsedUVComponents(List<Vector4> uvs)
+        public static int GetUsedUVComponents(IList<Vector4> uvs)
         {
             if (uvs == null || uvs.Count == 0)
                 return 0;
@@ -358,7 +394,7 @@ namespace UnityMeshSimplifier
         /// </summary>
         /// <param name="uvs">The list of UVs.</param>
         /// <returns>The array of 2D UVs.</returns>
-        public static Vector2[] ConvertUVsTo2D(List<Vector4> uvs)
+        public static Vector2[] ConvertUVsTo2D(IList<Vector4> uvs)
         {
             if (uvs == null)
                 return null;
@@ -377,7 +413,7 @@ namespace UnityMeshSimplifier
         /// </summary>
         /// <param name="uvs">The list of UVs.</param>
         /// <returns>The array of 3D UVs.</returns>
-        public static Vector3[] ConvertUVsTo3D(List<Vector4> uvs)
+        public static Vector3[] ConvertUVsTo3D(IList<Vector4> uvs)
         {
             if (uvs == null)
                 return null;
