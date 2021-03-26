@@ -700,6 +700,9 @@ namespace UnityMeshSimplifier
 
         private static void SaveLODMeshAsset(Object asset, string gameObjectName, string rendererName, int levelIndex, string meshName, string saveAssetsPath)
         {
+            if (string.IsNullOrEmpty(meshName))
+                meshName = "unnamed";
+
             gameObjectName = IOUtils.MakeSafeFileName(gameObjectName);
             rendererName = IOUtils.MakeSafeFileName(rendererName);
             meshName = IOUtils.MakeSafeFileName(meshName);
