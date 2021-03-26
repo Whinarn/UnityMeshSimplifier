@@ -130,7 +130,3 @@ The most probable cause for this is that you have objects that are parented unde
 ## The Unity-generated Visual Studio solution file appears broken
 
 This can be a problem because of an assembly definition provided with this repository, if you are using Unity 2017.3 or above. Make sure that you have the latest version of [Visual Studio Tools for Unity](https://www.visualstudio.com/vs/unity-tools/). If you are using Visual Studio 2017, make sure that Visual Studio is up to date and that you have installed the *Game development with Unity* component. For other versions of Visual Studio you would have to download a separate installer. Please go to the [Microsoft Documentation](https://docs.microsoft.com/en-us/visualstudio/cross-platform/getting-started-with-visual-studio-tools-for-unity) for more information.
-
-## Other projects
-
-If you are interested in mesh simplification in .NET outside of Unity you can visit my other project [MeshDecimator](https://github.com/Whinarn/MeshDecimator).
