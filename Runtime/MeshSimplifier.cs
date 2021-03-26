@@ -110,6 +110,7 @@ namespace UnityMeshSimplifier
         /// Gets or sets if the border edges should be preserved.
         /// Default value: false
         /// </summary>
+        [Obsolete("Use MeshSimplifier.SimplificationOptions instead.", false)]
         public bool PreserveBorderEdges
         {
             get { return simplificationOptions.PreserveBorderEdges; }
@@ -120,6 +121,7 @@ namespace UnityMeshSimplifier
         /// Gets or sets if the UV seam edges should be preserved.
         /// Default value: false
         /// </summary>
+        [Obsolete("Use MeshSimplifier.SimplificationOptions instead.", false)]
         public bool PreserveUVSeamEdges
         {
             get { return simplificationOptions.PreserveUVSeamEdges; }
@@ -130,6 +132,7 @@ namespace UnityMeshSimplifier
         /// Gets or sets if the UV foldover edges should be preserved.
         /// Default value: false
         /// </summary>
+        [Obsolete("Use MeshSimplifier.SimplificationOptions instead.", false)]
         public bool PreserveUVFoldoverEdges
         {
             get { return simplificationOptions.PreserveUVFoldoverEdges; }
@@ -140,6 +143,7 @@ namespace UnityMeshSimplifier
         /// Gets or sets if the discrete curvature of the mesh surface be taken into account during simplification.
         /// Default value: false
         /// </summary>
+        [Obsolete("Use MeshSimplifier.SimplificationOptions instead.", false)]
         public bool PreserveSurfaceCurvature
         {
             get { return simplificationOptions.PreserveSurfaceCurvature; }
@@ -152,6 +156,7 @@ namespace UnityMeshSimplifier
         /// the same position as the same vertex while separating the attributes.
         /// Default value: true
         /// </summary>
+        [Obsolete("Use MeshSimplifier.SimplificationOptions instead.", false)]
         public bool EnableSmartLink
         {
             get { return simplificationOptions.EnableSmartLink; }
@@ -163,6 +168,7 @@ namespace UnityMeshSimplifier
         /// Sometimes a lower maximum count might be desired in order to lower the performance cost.
         /// Default value: 100
         /// </summary>
+        [Obsolete("Use MeshSimplifier.SimplificationOptions instead.", false)]
         public int MaxIterationCount
         {
             get { return simplificationOptions.MaxIterationCount; }
@@ -173,6 +179,7 @@ namespace UnityMeshSimplifier
         /// Gets or sets the agressiveness of the mesh simplification. Higher number equals higher quality, but more expensive to run.
         /// Default value: 7.0
         /// </summary>
+        [Obsolete("Use MeshSimplifier.SimplificationOptions instead.", false)]
         public double Agressiveness
         {
             get { return simplificationOptions.Agressiveness; }
@@ -193,6 +200,7 @@ namespace UnityMeshSimplifier
         /// Gets or sets the maximum distance between two vertices in order to link them.
         /// Note that this value is only used if EnableSmartLink is true.
         /// </summary>
+        [Obsolete("Use MeshSimplifier.SimplificationOptions instead.", false)]
         public double VertexLinkDistance
         {
             get { return simplificationOptions.VertexLinkDistance; }
@@ -204,6 +212,7 @@ namespace UnityMeshSimplifier
         /// Note that this value is only used if EnableSmartLink is true.
         /// Default value: double.Epsilon
         /// </summary>
+        [Obsolete("Use MeshSimplifier.SimplificationOptions instead.", false)]
         public double VertexLinkDistanceSqr
         {
             get { return simplificationOptions.VertexLinkDistance * simplificationOptions.VertexLinkDistance; }
@@ -773,9 +782,6 @@ namespace UnityMeshSimplifier
 
             Vector3d p;
             Vector3 barycentricCoord;
-            var preserveBorderEdges = PreserveBorderEdges;
-            var preserveUVSeamEdges = PreserveUVSeamEdges;
-            var preserveUVFoldoverEdges = PreserveUVFoldoverEdges;
             for (int tid = 0; tid < triangleCount; tid++)
             {
                 if (triangles[tid].dirty || triangles[tid].deleted || triangles[tid].err3 > threshold)
@@ -802,13 +808,13 @@ namespace UnityMeshSimplifier
                     else if (vertices[i0].uvFoldoverEdge != vertices[i1].uvFoldoverEdge)
                         continue;
                     // If borders should be preserved
-                    else if (preserveBorderEdges && vertices[i0].borderEdge)
+                    else if (simplificationOptions.PreserveBorderEdges && vertices[i0].borderEdge)
                         continue;
                     // If seams should be preserved
-                    else if (preserveUVSeamEdges && vertices[i0].uvSeamEdge)
+                    else if (simplificationOptions.PreserveUVSeamEdges && vertices[i0].uvSeamEdge)
                         continue;
                     // If foldovers should be preserved
-                    else if (preserveUVFoldoverEdges && vertices[i0].uvFoldoverEdge)
+                    else if (simplificationOptions.PreserveUVFoldoverEdges && vertices[i0].uvFoldoverEdge)
                         continue;
 
                     // Compute vertex to collapse to
@@ -927,8 +933,7 @@ namespace UnityMeshSimplifier
                 int borderVertexCount = 0;
                 double borderMinX = double.MaxValue;
                 double borderMaxX = double.MinValue;
-                var enableSmartLink = EnableSmartLink;
-                var vertexLinkDistanceSqr = VertexLinkDistanceSqr;
+                var vertexLinkDistanceSqr = simplificationOptions.VertexLinkDistance * simplificationOptions.VertexLinkDistance;
                 for (int i = 0; i < vertexCount; i++)
                 {
                     int tstart = vertices[i].tstart;
@@ -973,7 +978,7 @@ namespace UnityMeshSimplifier
                             vertices[id].borderEdge = true;
                             ++borderVertexCount;
 
-                            if (enableSmartLink)
+                            if (simplificationOptions.EnableSmartLink)
                             {
                                 if (vertices[id].p.x < borderMinX)
                                 {
@@ -988,7 +993,7 @@ namespace UnityMeshSimplifier
                     }
                 }
 
-                if (enableSmartLink)
+                if (simplificationOptions.EnableSmartLink)
                 {
                     // First find all border vertices
                     var borderVertices = new BorderVertex[borderVertexCount];
@@ -2084,9 +2089,7 @@ namespace UnityMeshSimplifier
             var vertices = this.vertices.Data;
             int targetTrisCount = Mathf.RoundToInt(triangleCount * quality);
 
-            var maxIterationCount = MaxIterationCount;
-            var agressiveness = Agressiveness;
-            for (int iteration = 0; iteration < maxIterationCount; iteration++)
+            for (int iteration = 0; iteration < simplificationOptions.MaxIterationCount; iteration++)
             {
                 if ((startTrisCount - deletedTris) <= targetTrisCount)
                     break;
@@ -2110,7 +2113,7 @@ namespace UnityMeshSimplifier
                 //
                 // The following numbers works well for most models.
                 // If it does not, try to adjust the 3 parameters
-                double threshold = 0.000000001 * Math.Pow(iteration + 3, agressiveness);
+                double threshold = 0.000000001 * Math.Pow(iteration + 3, simplificationOptions.Agressiveness);
 
                 if (verbose)
                 {
