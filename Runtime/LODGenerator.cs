@@ -35,26 +35,26 @@ namespace UnityMeshSimplifier
     /// </summary>
     public static class LODGenerator
     {
-        #region Consts
+        #region Static Read-Only
         /// <summary>
         /// The name of the game object where generated LODs are parented under.
         /// </summary>
-        public const string LODParentGameObjectName = "_UMS_LODs_";
+        public static readonly string LODParentGameObjectName = "_UMS_LODs_";
 
         /// <summary>
         /// The default parent path for generated LOD assets.
         /// </summary>
-        public const string LODAssetDefaultParentPath = AssetsRootPath + "UMS_LODs/";
+        public static readonly string LODAssetDefaultParentPath = AssetsRootPath + "UMS_LODs/";
 
         /// <summary>
         /// The root assets path.
         /// </summary>
-        public const string AssetsRootPath = "Assets/";
+        public static readonly string AssetsRootPath = "Assets/";
 
         /// <summary>
         /// The user data applied to created LOD assets.
         /// </summary>
-        public const string LODAssetUserData = "UnityMeshSimplifierLODAsset";
+        public static readonly string LODAssetUserData = "UnityMeshSimplifierLODAsset";
         #endregion
 
         #region Nested Types

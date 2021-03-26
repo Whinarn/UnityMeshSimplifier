@@ -12,14 +12,13 @@ namespace UnityMeshSimplifier
             if (string.IsNullOrEmpty(path))
                 return null;
 
-            path = path.Replace('\\', '/');
-            path = path.Trim('/');
+            path = path.Replace('\\', '/').Trim('/');
 
             if (Path.IsPathRooted(path))
                 throw new ArgumentException("The path cannot be rooted.", "path");
 
             // Make the path safe
-            var pathParts = path.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            var pathParts = path.Split(new [] { '/' }, StringSplitOptions.RemoveEmptyEntries);
             for (int i = 0; i < pathParts.Length; i++)
             {
                 pathParts[i] = MakeSafeFileName(pathParts[i]);
