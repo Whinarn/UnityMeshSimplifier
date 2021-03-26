@@ -1,4 +1,4 @@
-﻿#region License
+#region License
 /*
 MIT License
 
@@ -49,7 +49,9 @@ namespace UnityMeshSimplifier
             EnableSmartLink = true,
             VertexLinkDistance = double.Epsilon,
             MaxIterationCount = 100,
-            Agressiveness = 7.0
+            Agressiveness = 7.0,
+            ManualUVComponentCount = false,
+            UVComponentCount = 2
         };
 
         /// <summary>
@@ -104,5 +106,17 @@ namespace UnityMeshSimplifier
         /// </summary>
         [Tooltip("The agressiveness of the mesh simplification. Higher number equals higher quality, but more expensive to run.")]
         public double Agressiveness;
+        /// <summary>
+        /// If a manual UV component count should be used (set by UVComponentCount), instead of the automatic detection.
+        /// Default value: false
+        /// </summary>
+        [Tooltip("If a manual UV component count should be used (set by UV Component Count below), instead of the automatic detection.")]
+        public bool ManualUVComponentCount;
+        /// <summary>
+        /// The UV component count. The same UV component count will be used on all UV channels.
+        /// Default value: 2
+        /// </summary>
+        [Range(0, 4), Tooltip("The UV component count. The same UV component count will be used on all UV channels.")]
+        public int UVComponentCount;
     }
 }
