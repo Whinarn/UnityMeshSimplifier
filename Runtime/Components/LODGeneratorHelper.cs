@@ -1,4 +1,4 @@
-﻿#region License
+#region License
 /*
 MIT License
 
@@ -46,7 +46,7 @@ namespace UnityMeshSimplifier
         [SerializeField, Tooltip("The simplification options.")]
         private SimplificationOptions simplificationOptions = SimplificationOptions.Default;
 
-        [SerializeField, Tooltip("The path within the project to save the generated assets. Leave this empty to use the default path.")]
+        [SerializeField, Tooltip("The path within the assets directory to save the generated assets. Leave this empty to use the default path.")]
         private string saveAssetsPath = string.Empty;
 
         [SerializeField, Tooltip("The LOD levels.")]

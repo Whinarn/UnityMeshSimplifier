@@ -1,4 +1,4 @@
-﻿#region License
+#region License
 /*
 MIT License
 
@@ -35,16 +35,26 @@ namespace UnityMeshSimplifier
     /// </summary>
     public static class LODGenerator
     {
-        #region Static Read-Only
+        #region Consts
         /// <summary>
         /// The name of the game object where generated LODs are parented under.
         /// </summary>
-        public static readonly string LODParentGameObjectName = "_UMS_LODs_";
+        public const string LODParentGameObjectName = "_UMS_LODs_";
 
         /// <summary>
-        /// The parent path for generated LOD assets.
+        /// The default parent path for generated LOD assets.
         /// </summary>
-        public static readonly string LODAssetParentPath = "Assets/UMS_LODs/";
+        public const string LODAssetDefaultParentPath = AssetsRootPath + "UMS_LODs/";
+
+        /// <summary>
+        /// The root assets path.
+        /// </summary>
+        public const string AssetsRootPath = "Assets/";
+
+        /// <summary>
+        /// The user data applied to created LOD assets.
+        /// </summary>
+        public const string LODAssetUserData = "UnityMeshSimplifierLODAsset";
         #endregion
 
         #region Nested Types
@@ -558,7 +568,7 @@ namespace UnityMeshSimplifier
                 skinnedMeshRenderer.skinnedMotionVectors = level.SkinnedMotionVectors;
             }
         }
-        
+
         private static Renderer[] GetChildRenderersForLOD(GameObject gameObject)
         {
             var resultRenderers = new List<Renderer>();
@@ -666,23 +676,7 @@ namespace UnityMeshSimplifier
                 return null;
 
 #if UNITY_EDITOR
-            saveAssetsPath = saveAssetsPath.Replace('\\', '/');
-            saveAssetsPath = saveAssetsPath.Trim('/');
-
-            if (System.IO.Path.IsPathRooted(saveAssetsPath))
-                throw new System.InvalidOperationException("The save assets path cannot be rooted.");
-            else if (saveAssetsPath.Length > 100)
-                throw new System.InvalidOperationException("The save assets path cannot be more than 100 characters long to avoid I/O issues.");
-
-            // Make the path safe
-            var pathParts = saveAssetsPath.Split('/');
-            for (int i = 0; i < pathParts.Length; i++)
-            {
-                pathParts[i] = MakePathSafe(pathParts[i]);
-            }
-            saveAssetsPath = string.Join("/", pathParts);
-
-            return saveAssetsPath;
+            return IOUtils.MakeSafeRelativePath(saveAssetsPath);
 #else
             Debug.LogWarning("Unable to save assets when not running in the Unity Editor.");
             return null;
@@ -691,57 +685,49 @@ namespace UnityMeshSimplifier
 
         #region Editor Functions
 #if UNITY_EDITOR
-        private static void SaveLODMeshAsset(Object asset, string gameObjectName, string rendererName, int levelIndex, string meshName, string saveAssetsPath)
+        internal static string GetFinalSaveAssetsPath(string gameObjectName, string rendererName, string saveAssetsPath)
         {
-            gameObjectName = MakePathSafe(gameObjectName);
-            rendererName = MakePathSafe(rendererName);
-            meshName = MakePathSafe(meshName);
-            meshName = string.Format("{0:00}_{1}", levelIndex, meshName);
-
-            string path;
             if (!string.IsNullOrEmpty(saveAssetsPath))
             {
-                path = string.Format("{0}{1}/{2}.mesh", LODAssetParentPath, saveAssetsPath, meshName);
+                return string.Format("{0}{1}", AssetsRootPath, saveAssetsPath);
             }
             else
             {
-                path = string.Format("{0}{1}/{2}/{3}.mesh", LODAssetParentPath, gameObjectName, rendererName, meshName);
+                // If there is no save assets path, we create a default one
+                return string.Format("{0}{1}/{2}", LODAssetDefaultParentPath, gameObjectName, rendererName);
             }
+        }
 
-            SaveAsset(asset, path);
+        private static void SaveLODMeshAsset(Object asset, string gameObjectName, string rendererName, int levelIndex, string meshName, string saveAssetsPath)
+        {
+            gameObjectName = IOUtils.MakeSafeFileName(gameObjectName);
+            rendererName = IOUtils.MakeSafeFileName(rendererName);
+            meshName = IOUtils.MakeSafeFileName(meshName);
+            meshName = string.Format("{0:00}_{1}", levelIndex, meshName);
+
+            string finalSaveAssetsPath = GetFinalSaveAssetsPath(gameObjectName, rendererName, saveAssetsPath);
+            string saveAssetPath = string.Format("{0}/{1}.mesh", finalSaveAssetsPath, meshName);
+            SaveAsset(asset, saveAssetPath);
         }
 
         private static void SaveAsset(Object asset, string path)
         {
-            CreateParentDirectory(path);
+            IOUtils.CreateParentDirectory(path);
 
             // Make sure that there is no asset with the same path already
             path = UnityEditor.AssetDatabase.GenerateUniqueAssetPath(path);
 
             UnityEditor.AssetDatabase.CreateAsset(asset, path);
-        }
 
-        private static void CreateParentDirectory(string path)
-        {
-            int lastSlashIndex = path.LastIndexOf('/');
-            if (lastSlashIndex != -1)
+            var assetImporter = UnityEditor.AssetImporter.GetAtPath(path);
+            if (assetImporter != null)
             {
-                string parentPath = path.Substring(0, lastSlashIndex);
-                if (!UnityEditor.AssetDatabase.IsValidFolder(parentPath))
-                {
-                    lastSlashIndex = parentPath.LastIndexOf('/');
-                    if (lastSlashIndex != -1)
-                    {
-                        string folderName = parentPath.Substring(lastSlashIndex + 1);
-                        string folderParentPath = parentPath.Substring(0, lastSlashIndex);
-                        CreateParentDirectory(parentPath);
-                        UnityEditor.AssetDatabase.CreateFolder(folderParentPath, folderName);
-                    }
-                    else
-                    {
-                        UnityEditor.AssetDatabase.CreateFolder(string.Empty, parentPath);
-                    }
-                }
+                assetImporter.userData = LODAssetUserData;
+                assetImporter.SaveAndReimport();
+            }
+            else
+            {
+                Debug.LogWarningFormat(asset, "Could not find asset importer for recently created asset, so could not mark it properly: {0}", path);
             }
         }
 
@@ -773,7 +759,7 @@ namespace UnityMeshSimplifier
             }
 
             // Delete any empty LOD asset directories
-            DeleteEmptyDirectory(LODAssetParentPath.TrimEnd('/'));
+            IOUtils.DeleteEmptyDirectory(LODAssetDefaultParentPath.TrimEnd('/'));
         }
 
         private static void DestroyLODMaterialAsset(Material material)
@@ -806,68 +792,19 @@ namespace UnityMeshSimplifier
             if (asset == null)
                 return;
 
-            // We only delete assets that we have automatically generated
             string assetPath = UnityEditor.AssetDatabase.GetAssetPath(asset);
-            if (assetPath.StartsWith(LODAssetParentPath))
+            if (string.IsNullOrEmpty(assetPath))
+                return;
+
+            var assetImporter = UnityEditor.AssetImporter.GetAtPath(assetPath);
+            if (assetImporter == null)
+                return;
+
+            // We only delete assets that we have automatically generated
+            if (string.Equals(assetImporter.userData, LODAssetUserData))
             {
                 UnityEditor.AssetDatabase.DeleteAsset(assetPath);
             }
-        }
-
-        private static bool DeleteEmptyDirectory(string path)
-        {
-            bool deletedAllSubFolders = true;
-            var subFolders = UnityEditor.AssetDatabase.GetSubFolders(path);
-            for (int i = 0; i < subFolders.Length; i++)
-            {
-                if (!DeleteEmptyDirectory(subFolders[i]))
-                {
-                    deletedAllSubFolders = false;
-                }
-            }
-
-            if (!deletedAllSubFolders)
-                return false;
-            else if (!UnityEditor.AssetDatabase.IsValidFolder(path))
-                return true;
-
-            string[] assetGuids = UnityEditor.AssetDatabase.FindAssets(string.Empty, new string[] { path });
-            if (assetGuids.Length > 0)
-                return false;
-
-            return UnityEditor.AssetDatabase.DeleteAsset(path);
-        }
-
-        private static string MakePathSafe(string name)
-        {
-            var sb = new System.Text.StringBuilder(name.Length);
-            bool lastWasSeparator = false;
-            for (int i = 0; i < name.Length; i++)
-            {
-                char c = name[i];
-                if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'))
-                {
-                    lastWasSeparator = false;
-                    sb.Append(c);
-                }
-                else if (c == '_' || c == '-')
-                {
-                    if (!lastWasSeparator)
-                    {
-                        lastWasSeparator = true;
-                        sb.Append(c);
-                    }
-                }
-                else
-                {
-                    if (!lastWasSeparator)
-                    {
-                        lastWasSeparator = true;
-                        sb.Append('_');
-                    }
-                }
-            }
-            return sb.ToString();
         }
 #endif
         #endregion
