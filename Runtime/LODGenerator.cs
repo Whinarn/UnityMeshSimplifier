@@ -44,7 +44,7 @@ namespace UnityMeshSimplifier
         /// <summary>
         /// The default parent path for generated LOD assets.
         /// </summary>
-        public static readonly string LODAssetDefaultParentPath = AssetsRootPath + "UMS_LODs/";
+        public static readonly string LODAssetDefaultParentPath = "Assets/UMS_LODs/";
 
         /// <summary>
         /// The root assets path.
