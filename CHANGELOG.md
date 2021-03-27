@@ -1,3 +1,27 @@
+# [3.0.0](https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.3.6...v3.0.0) (2021-03-27)
+
+
+### Bug Fixes
+
+* **lods:** prevent empty mesh names ([ec6cf87](https://github.com/Whinarn/UnityMeshSimplifier/commit/ec6cf87c4c652aca953cb782d8796749037322a6))
+* **simplifier:** obsolete properties that moved to options struct ([84664d1](https://github.com/Whinarn/UnityMeshSimplifier/commit/84664d1852da93e5206f335d17db7025c7be5281))
+* **simplifier:** options for uv component count ([7f7b773](https://github.com/Whinarn/UnityMeshSimplifier/commit/7f7b77370442f5e49dd74b2e8c39a427b21980ab))
+* **simplifier:** removed obsolete properties ([24ccc56](https://github.com/Whinarn/UnityMeshSimplifier/commit/24ccc5663c1281e2feadf6c03e947481a68844c2))
+
+
+### Features
+
+* **lods:** save assets path is now less restricted ([380bda9](https://github.com/Whinarn/UnityMeshSimplifier/commit/380bda999c8b95baed6a6533b0b66bfb4eb8d2c9))
+* **package:** bump minimum required version of Unity to 2018.1 ([8f37f81](https://github.com/Whinarn/UnityMeshSimplifier/commit/8f37f81a7688c2ff3a895c9616e4b171cd54a633))
+* **simplifier:** set manual uv component count ([9795860](https://github.com/Whinarn/UnityMeshSimplifier/commit/9795860c6354b87924b97b354688e2b59098eda7))
+
+
+### BREAKING CHANGES
+
+* **simplifier:** removed obsolete properties
+* **lods:** save assets paths are now related to Assets/ rather
+than Assets/UMS_LODS/
+
 ## [2.3.6](https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.3.5...v2.3.6) (2020-11-20)
 
 
