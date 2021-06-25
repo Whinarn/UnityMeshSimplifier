@@ -1,3 +1,10 @@
+## [3.0.1](https://github.com/Whinarn/UnityMeshSimplifier/compare/v3.0.0...v3.0.1) (2021-06-25)
+
+
+### Bug Fixes
+
+* support Unity 2021 ([2f2eb3b](https://github.com/Whinarn/UnityMeshSimplifier/commit/2f2eb3bee2ac1d1691373200983ac64ae507dfc8))
+
 # [3.0.0](https://github.com/Whinarn/UnityMeshSimplifier/compare/v2.3.6...v3.0.0) (2021-03-27)
 
 
