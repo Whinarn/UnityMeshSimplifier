@@ -24,18 +24,11 @@ SOFTWARE.
 */
 #endregion
 
-#if UNITY_2017_3 || UNITY_2017_4 || UNITY_2018 || UNITY_2019 || UNITY_2020
-#define UNITY_MESH_INDEXFORMAT_SUPPORT
-#endif
-
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using NUnit.Framework;
-
-#if UNITY_MESH_INDEXFORMAT_SUPPORT
 using UnityEngine.Rendering;
-#endif
+using NUnit.Framework;
 
 namespace UnityMeshSimplifier.Editor.Tests
 {
@@ -412,10 +405,11 @@ namespace UnityMeshSimplifier.Editor.Tests
             mesh.vertices = new Vector3[4];
             for (int i = 0; i < uvs.Length; i++)
             {
-#if UNITY_2018
-                mesh.SetUVs(i, uvs[i].ToList());
-#else
+#if UNITY_2019_3_OR_NEWER
                 mesh.SetUVs(i, uvs[i]);
+
+#else
+                mesh.SetUVs(i, uvs[i].ToList());
 #endif
             }
 
@@ -429,7 +423,6 @@ namespace UnityMeshSimplifier.Editor.Tests
             }
         }
 
-#if UNITY_MESH_INDEXFORMAT_SUPPORT
         [Test]
         public void ShouldGetSubMeshIndexMinMax()
         {
@@ -491,7 +484,6 @@ namespace UnityMeshSimplifier.Editor.Tests
             Assert.AreEqual(expectedMinMaxIndices, minMaxIndices);
             Assert.AreEqual(IndexFormat.UInt32, indexFormat);
         }
-#endif
 
         [Test]
         public void ShouldGetUsedUVComponents()

@@ -24,21 +24,14 @@ SOFTWARE.
 */
 #endregion
 
-#if UNITY_2018_2 || UNITY_2018_3 || UNITY_2018_4 || UNITY_2019 || UNITY_2020
+#if UNITY_2018_2_OR_NEWER
 #define UNITY_8UV_SUPPORT
-#endif
-
-#if UNITY_2017_3 || UNITY_2017_4 || UNITY_2018 || UNITY_2019 || UNITY_2020
-#define UNITY_MESH_INDEXFORMAT_SUPPORT
 #endif
 
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-
-#if UNITY_MESH_INDEXFORMAT_SUPPORT
 using UnityEngine.Rendering;
-#endif
 
 namespace UnityMeshSimplifier
 {
@@ -117,11 +110,9 @@ namespace UnityMeshSimplifier
             var newMesh = new Mesh();
             int subMeshCount = indices.Length;
 
-#if UNITY_MESH_INDEXFORMAT_SUPPORT
             IndexFormat indexFormat;
             var indexMinMax = MeshUtils.GetSubMeshIndexMinMax(indices, out indexFormat);
             newMesh.indexFormat = indexFormat;
-#endif
 
             if (bindposes != null && bindposes.Length > 0)
             {
@@ -188,9 +179,8 @@ namespace UnityMeshSimplifier
             for (int subMeshIndex = 0; subMeshIndex < subMeshCount; subMeshIndex++)
             {
                 var subMeshTriangles = indices[subMeshIndex];
-#if UNITY_MESH_INDEXFORMAT_SUPPORT
                 var minMax = indexMinMax[subMeshIndex];
-                if (indexFormat == UnityEngine.Rendering.IndexFormat.UInt16 && minMax.y > ushort.MaxValue)
+                if (indexFormat == IndexFormat.UInt16 && minMax.y > ushort.MaxValue)
                 {
                     int baseVertex = minMax.x;
                     for (int index = 0; index < subMeshTriangles.Length; index++)
@@ -203,9 +193,6 @@ namespace UnityMeshSimplifier
                 {
                     newMesh.SetTriangles(subMeshTriangles, subMeshIndex, false, 0);
                 }
-#else
-                newMesh.SetTriangles(subMeshTriangles, subMeshIndex, false);
-#endif
             }
 
             newMesh.RecalculateBounds();
@@ -427,7 +414,6 @@ namespace UnityMeshSimplifier
             return uv3D;
         }
 
-#if UNITY_MESH_INDEXFORMAT_SUPPORT
         /// <summary>
         /// Returns the minimum and maximum indices for each submesh along with the needed index format.
         /// </summary>
@@ -455,7 +441,6 @@ namespace UnityMeshSimplifier
             }
             return result;
         }
-#endif
         #endregion
 
         #region Private Methods

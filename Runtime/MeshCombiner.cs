@@ -1,4 +1,4 @@
-﻿#region License
+#region License
 /*
 MIT License
 
@@ -23,10 +23,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 #endregion
-
-#if UNITY_2017_3 || UNITY_2017_4 || UNITY_2018 || UNITY_2019 || UNITY_2020
-#define UNITY_MESH_INDEXFORMAT_SUPPORT
-#endif
 
 using System.Collections.Generic;
 using System.Linq;
@@ -287,11 +283,7 @@ namespace UnityMeshSimplifier
                 for (int subMeshIndex = 0; subMeshIndex < subMeshCount; subMeshIndex++)
                 {
                     var subMeshMaterial = meshMaterials[subMeshIndex];
-#if UNITY_MESH_INDEXFORMAT_SUPPORT
                     var subMeshIndices = mesh.GetTriangles(subMeshIndex, true);
-#else
-                    var subMeshIndices = mesh.GetTriangles(subMeshIndex);
-#endif
 
                     if (currentVertexCount > 0)
                     {

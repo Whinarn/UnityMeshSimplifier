@@ -37,12 +37,8 @@ SOFTWARE.
 //https://github.com/sp4cerat/Fast-Quadric-Mesh-Simplification
 #endregion
 
-#if UNITY_2018_2 || UNITY_2018_3 || UNITY_2018_4 || UNITY_2019 || UNITY_2020
+#if UNITY_2018_2_OR_NEWER
 #define UNITY_8UV_SUPPORT
-#endif
-
-#if UNITY_2017_3 || UNITY_2017_4 || UNITY_2018 || UNITY_2019 || UNITY_2020
-#define UNITY_MESH_INDEXFORMAT_SUPPORT
 #endif
 
 using System;
