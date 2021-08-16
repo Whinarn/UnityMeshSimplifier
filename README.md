@@ -22,68 +22,32 @@ Read more about this [here](https://docs.unity3d.com/2019.1/Documentation/Manual
 
 ## Installation into Unity project
 
-### Through the UI
-
-Follow the steps provided by Unity [here](https://docs.unity3d.com/Manual/upm-ui-giturl.html).
-
-The Git URL to use is `https://github.com/Whinarn/UnityMeshSimplifier.git`
-
-### Through OpenUPM
-
-You can use [OpenUPM](https://openupm.com/) to install UnityMeshSimplifier.
-
-1. Follow [these](https://openupm.com/docs/getting-started.html) steps for getting the OpenUPM CLI installed.
-
-2. Go to the project directory in your favorite terminal.
-
-3. Type `openupm add com.whinarn.unitymeshsimplifier` in your terminal to install UnityMeshSimplifier.
-
-### Manually through editing manifest.json
-
-1. Read the instructions from the official Unity documentation [here](https://docs.unity3d.com/Manual/upm-git.html).
-
-2. Open up *manifest.json* inside the *Packages* directory in your Unity project using a text editor.
-
-3. Under the dependencies section of this file, you should add the following line at the top:
-```"com.whinarn.unitymeshsimplifier": "https://github.com/Whinarn/UnityMeshSimplifier.git",```
-
-4. You should now see something like this:
-```json
-{
-  "dependencies": {
-    "com.whinarn.unitymeshsimplifier": "https://github.com/Whinarn/UnityMeshSimplifier.git",
-    "com.unity.burst": "1.0.4",
-    "com.unity.mathematics": "1.0.1",
-    "com.unity.package-manager-ui": "2.1.2"
-  }
-}
-```
-
-5. You can also specify to use a specific version of UnityMeshSimplifier if you wish by appending # to the Git URL followed by the package version. For example:
-```"com.whinarn.unitymeshsimplifier": "https://github.com/Whinarn/UnityMeshSimplifier.git#v2.2.0",```
-
-6. Success! Start up Unity with your Unity project and you should see UnityMeshSimplifier appear in the Unity Package Manager.
+You will find different methods of installing this library into your Unity project [here](https://github.com/Whinarn/UnityMeshSimplifier/wiki#installing).
 
 ## How to use
 
+If you are not a programmer look into the [LOD Generator Helper component](https://github.com/Whinarn/UnityMeshSimplifier/wiki/LOD-Generator-Helper-component).
+
+### Code examples
+
+You can initialize a Unity [Mesh](https://docs.unity3d.com/ScriptReference/Mesh.html) and output one when doing mesh simplification like this;
 ```c#
 float quality = 0.5f;
 var meshSimplifier = new UnityMeshSimplifier.MeshSimplifier();
 meshSimplifier.Initialize(sourceMesh);
 meshSimplifier.SimplifyMesh(quality);
-var destMesh = meshSimplifier.ToMesh();
+Mesh destMesh = meshSimplifier.ToMesh();
 ```
 
-or
-
+Or you can set all the individual properties of the mesh like this:
 ```c#
 float quality = 0.5f;
 var meshSimplifier = new UnityMeshSimplifier.MeshSimplifier();
 meshSimplifier.Vertices = vertices;
 meshSimplifier.AddSubMeshTriangles(indices);
 meshSimplifier.SimplifyMesh(quality);
-var newVertices = meshSimplifier.Vertices;
-var newIndices = meshSimplifier.GetSubMeshTriangles(0);
+Vector3[] newVertices = meshSimplifier.Vertices;
+int[] newIndices = meshSimplifier.GetSubMeshTriangles(0);
 ```
 
 ## How to contribute
@@ -119,9 +83,11 @@ destMesh.bindposes = sourceMesh.bindposes; // <-- this line should fix your issu
 
 ## How to automatically generate LOD Groups
 
-There is a component named *LOD Generator Helper* that you add to the game object that you want to generate LODs for. You can customize, generate and destroy the LOD levels directly through the inspector. Any changes is saved within the component so that you can easily make the changes that you want without having to waste time reconfiguring everything again. Additional steps have been taken in order to protect your game objects from damage and makes sure that they can be restored back to their original state. Backups are always recommended however, to make sure that you do not ever lose any configuration that you have made.
+There is a component named **LOD Generator Helper** that you add to the game object that you want to generate LODs for. You can customize, generate and destroy the LOD levels directly through the inspector. Any changes is saved within the component so that you can easily make the changes that you want without having to waste time reconfiguring everything again. Additional steps have been taken in order to protect your game objects from damage and makes sure that they can be restored back to their original state. Backups are always recommended however, to make sure that you do not ever lose any configuration that you have made.
 
-There is also a static API at *UnityMeshSimplifier.LODGenerator* that you can use from code to generate and destroy LODs, both at runtime and in the editor.
+You can read more about this in details [here](https://github.com/Whinarn/UnityMeshSimplifier/wiki/LOD-Generator-Helper-component).
+
+There is also a static API at `UnityMeshSimplifier.LODGenerator` that you can use from code to generate and destroy LODs, both at runtime and in the editor.
 
 ## Some objects are not animated correctly after I have generated LOD Groups
 
