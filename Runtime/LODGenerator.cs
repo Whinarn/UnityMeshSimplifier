@@ -234,7 +234,7 @@ namespace UnityMeshSimplifier
         }
 
         /// <summary>
-        /// Destroys the generated LODs and LOD Group for the specified game object.
+        /// Destroys the generated LODs and LOD Group for the LOD generator helper component.
         /// </summary>
         /// <param name="generatorHelper">The LOD generator helper.</param>
         /// <returns>If the LODs were successfully destroyed.</returns>
