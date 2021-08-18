@@ -50,17 +50,20 @@ Vector3[] newVertices = meshSimplifier.Vertices;
 int[] newIndices = meshSimplifier.GetSubMeshTriangles(0);
 ```
 
-## How to contribute
-
-Please read [CONTRIBUTING](https://github.com/Whinarn/UnityMeshSimplifier/blob/master/CONTRIBUTING.md) regarding how to contribute.
-
 ## The Smart Linking feature
 
 In order to solve artifacts in the mesh simplification process where holes or other serious issues could arise, a new feature called smart linking has been introduced. This feature is enabled by default but can be disabled through the *EnableSmartLink* property on the *MeshSimplifier* class. Disabling this could give you a minor performance gain in cases where you do not need this.
 
 The *VertexLinkDistanceSqr* property on the *MeshSimplifier* class could be used to change the maximum squared distance between two vertices for the linking. The default value is *double.Epsilon*.
 
-## My decimated meshes have holes
+## Potential problems and solutions
+
+### I'm missing XML documentation in my project
+
+If you have installed this library through the Git URL in the Unity package manager, then you will likely see this problem.
+The solution is quite simple however. Open up your Unity Editor, go to `Edit` > `Preferences` and then under `External Tools` you will have multiple options under `Generate .csproj files for:`. Now simply make sure that Git packages and whatever other kind of package is selected here. You should now see the XML documentation for the API show up in your code editor after having also clicked `Regenerate project files`.
+
+### My decimated meshes have holes
 
 The original algorithm that was ported from C++ did not support situations where multiple vertices shared the same position, instead of being treated as one vertex they were treated individually. This would then end up creating visible holes in the mesh where the vertices were not connected through triangles.
 
@@ -68,7 +71,7 @@ There are several ways to solve this problem. The smart linking feature (mention
 
 The recommendation is to use the smart linking feature that is enabled by default, but the options for preservation exists in those cases where you may want it.
 
-## My animated meshes don't work
+### My animated meshes don't work
 
 This is most probably because there is currently no code for moving the [bindposes](https://docs.unity3d.com/ScriptReference/Mesh-bindposes.html) over between the original and the simplified mesh. This can be easily resolved by copying over (no need to modify) the bindposes like this:
 
@@ -81,18 +84,14 @@ var destMesh = meshSimplifier.ToMesh();
 destMesh.bindposes = sourceMesh.bindposes; // <-- this line should fix your issue
 ```
 
-## How to automatically generate LOD Groups
-
-There is a component named **LOD Generator Helper** that you add to the game object that you want to generate LODs for. You can customize, generate and destroy the LOD levels directly through the inspector. Any changes is saved within the component so that you can easily make the changes that you want without having to waste time reconfiguring everything again. Additional steps have been taken in order to protect your game objects from damage and makes sure that they can be restored back to their original state. Backups are always recommended however, to make sure that you do not ever lose any configuration that you have made.
-
-You can read more about this in details [here](https://github.com/Whinarn/UnityMeshSimplifier/wiki/LOD-Generator-Helper-component).
-
-There is also a static API at `UnityMeshSimplifier.LODGenerator` that you can use from code to generate and destroy LODs, both at runtime and in the editor.
-
-## Some objects are not animated correctly after I have generated LOD Groups
+### Some objects are not animated correctly after I have generated LOD Groups
 
 The most probable cause for this is that you have objects that are parented under bones that will move with the animations. Currently there is no code to deal with this, and the best way to do this is to use nested LOD Groups. Any such object that you know is parented under a bone should have its own LOD Group.
 
-## The Unity-generated Visual Studio solution file appears broken
+### The Unity-generated Visual Studio solution file appears broken
 
 This can be a problem because of an assembly definition provided with this repository, if you are using Unity 2017.3 or above. Make sure that you have the latest version of [Visual Studio Tools for Unity](https://www.visualstudio.com/vs/unity-tools/). If you are using Visual Studio 2017, make sure that Visual Studio is up to date and that you have installed the *Game development with Unity* component. For other versions of Visual Studio you would have to download a separate installer. Please go to the [Microsoft Documentation](https://docs.microsoft.com/en-us/visualstudio/cross-platform/getting-started-with-visual-studio-tools-for-unity) for more information.
+
+## How to contribute
+
+Please read [CONTRIBUTING](https://github.com/Whinarn/UnityMeshSimplifier/blob/master/CONTRIBUTING.md) regarding how to contribute.
