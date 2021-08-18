@@ -28,27 +28,7 @@ You will find different methods of installing this library into your Unity proje
 
 If you are not a programmer look into the [LOD Generator Helper component](https://github.com/Whinarn/UnityMeshSimplifier/wiki/LOD-Generator-Helper-component).
 
-### Code examples
-
-You can initialize a Unity [Mesh](https://docs.unity3d.com/ScriptReference/Mesh.html) and output one when doing mesh simplification like this;
-```c#
-float quality = 0.5f;
-var meshSimplifier = new UnityMeshSimplifier.MeshSimplifier();
-meshSimplifier.Initialize(sourceMesh);
-meshSimplifier.SimplifyMesh(quality);
-Mesh destMesh = meshSimplifier.ToMesh();
-```
-
-Or you can set all the individual properties of the mesh like this:
-```c#
-float quality = 0.5f;
-var meshSimplifier = new UnityMeshSimplifier.MeshSimplifier();
-meshSimplifier.Vertices = vertices;
-meshSimplifier.AddSubMeshTriangles(indices);
-meshSimplifier.SimplifyMesh(quality);
-Vector3[] newVertices = meshSimplifier.Vertices;
-int[] newIndices = meshSimplifier.GetSubMeshTriangles(0);
-```
+For programmers you will find documentation for the [Mesh Simplifier API](https://github.com/Whinarn/UnityMeshSimplifier/wiki/Mesh-Simplifier-API) and the [LOD Generator API](https://github.com/Whinarn/UnityMeshSimplifier/wiki/LOD-Generator-API) useful.
 
 ## The Smart Linking feature
 
