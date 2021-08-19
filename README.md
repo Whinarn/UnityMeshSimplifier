@@ -32,9 +32,9 @@ For programmers you will find documentation for the [Mesh Simplifier API](https:
 
 ## The Smart Linking feature
 
-In order to solve artifacts in the mesh simplification process where holes or other serious issues could arise, a new feature called smart linking has been introduced. This feature is enabled by default but can be disabled through the *EnableSmartLink* property on the *MeshSimplifier* class. Disabling this could give you a minor performance gain in cases where you do not need this.
+In order to solve artifacts in the mesh simplification process where holes or other serious issues could arise, a new feature called smart linking has been introduced. This feature is enabled by default but can be disabled through the `EnableSmartLink` field on the `SimplificationOptions` struct appled to the `MeshSimplifier` class through the `SimplificationOptions` property. Disabling this could give you a minor performance gain in cases where you do not need this.
 
-The *VertexLinkDistanceSqr* property on the *MeshSimplifier* class could be used to change the maximum squared distance between two vertices for the linking. The default value is *double.Epsilon*.
+The `VertexLinkDistance` field on the `SimplificationOptions` struct could be also be used to change the maximum distance between two vertices for the linking. The default value is `double.Epsilon`. This value maximum distance is intended to be very small, but you might need to increase it for large scale meshes.
 
 ## Potential problems and solutions
 
