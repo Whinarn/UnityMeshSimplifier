@@ -51,19 +51,6 @@ There are several ways to solve this problem. The smart linking feature (mention
 
 The recommendation is to use the smart linking feature that is enabled by default, but the options for preservation exists in those cases where you may want it.
 
-### My animated meshes don't work
-
-This is most probably because there is currently no code for moving the [bindposes](https://docs.unity3d.com/ScriptReference/Mesh-bindposes.html) over between the original and the simplified mesh. This can be easily resolved by copying over (no need to modify) the bindposes like this:
-
-```c#
-float quality = 0.5f;
-var meshSimplifier = new UnityMeshSimplifier.MeshSimplifier();
-meshSimplifier.Initialize(sourceMesh);
-meshSimplifier.SimplifyMesh(quality);
-var destMesh = meshSimplifier.ToMesh();
-destMesh.bindposes = sourceMesh.bindposes; // <-- this line should fix your issue
-```
-
 ### Some objects are not animated correctly after I have generated LOD Groups
 
 The most probable cause for this is that you have objects that are parented under bones that will move with the animations. Currently there is no code to deal with this, and the best way to do this is to use nested LOD Groups. Any such object that you know is parented under a bone should have its own LOD Group.
