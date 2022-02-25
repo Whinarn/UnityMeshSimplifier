@@ -99,7 +99,11 @@ namespace UnityMeshSimplifier
         public SimplificationOptions SimplificationOptions
         {
             get { return this.simplificationOptions; }
-            set { this.simplificationOptions = value; }
+            set
+            {
+                ValidateOptions(value);
+                this.simplificationOptions = value;
+            }
         }
 
         /// <summary>
@@ -110,7 +114,12 @@ namespace UnityMeshSimplifier
         public bool PreserveBorderEdges
         {
             get { return simplificationOptions.PreserveBorderEdges; }
-            set { simplificationOptions.PreserveBorderEdges = value; }
+            set
+            {
+                var simplificationOptions = this.simplificationOptions;
+                simplificationOptions.PreserveBorderEdges = value;
+                SimplificationOptions = simplificationOptions;
+            }
         }
 
         /// <summary>
@@ -121,7 +130,12 @@ namespace UnityMeshSimplifier
         public bool PreserveUVSeamEdges
         {
             get { return simplificationOptions.PreserveUVSeamEdges; }
-            set { simplificationOptions.PreserveUVSeamEdges = value; }
+            set
+            {
+                var simplificationOptions = this.simplificationOptions;
+                simplificationOptions.PreserveUVSeamEdges = value;
+                SimplificationOptions = simplificationOptions;
+            }
         }
 
         /// <summary>
@@ -132,7 +146,12 @@ namespace UnityMeshSimplifier
         public bool PreserveUVFoldoverEdges
         {
             get { return simplificationOptions.PreserveUVFoldoverEdges; }
-            set { simplificationOptions.PreserveUVFoldoverEdges = value; }
+            set
+            {
+                var simplificationOptions = this.simplificationOptions;
+                simplificationOptions.PreserveUVFoldoverEdges = value;
+                SimplificationOptions = simplificationOptions;
+            }
         }
 
         /// <summary>
@@ -143,7 +162,12 @@ namespace UnityMeshSimplifier
         public bool PreserveSurfaceCurvature
         {
             get { return simplificationOptions.PreserveSurfaceCurvature; }
-            set { simplificationOptions.PreserveSurfaceCurvature = value; }
+            set
+            {
+                var simplificationOptions = this.simplificationOptions;
+                simplificationOptions.PreserveSurfaceCurvature = value;
+                SimplificationOptions = simplificationOptions;
+            }
         }
 
         /// <summary>
@@ -156,7 +180,12 @@ namespace UnityMeshSimplifier
         public bool EnableSmartLink
         {
             get { return simplificationOptions.EnableSmartLink; }
-            set { simplificationOptions.EnableSmartLink = value; }
+            set
+            {
+                var simplificationOptions = this.simplificationOptions;
+                simplificationOptions.EnableSmartLink = value;
+                SimplificationOptions = simplificationOptions;
+            }
         }
 
         /// <summary>
@@ -168,7 +197,12 @@ namespace UnityMeshSimplifier
         public int MaxIterationCount
         {
             get { return simplificationOptions.MaxIterationCount; }
-            set { simplificationOptions.MaxIterationCount = value; }
+            set
+            {
+                var simplificationOptions = this.simplificationOptions;
+                simplificationOptions.MaxIterationCount = value;
+                SimplificationOptions = simplificationOptions;
+            }
         }
 
         /// <summary>
@@ -179,7 +213,12 @@ namespace UnityMeshSimplifier
         public double Agressiveness
         {
             get { return simplificationOptions.Agressiveness; }
-            set { simplificationOptions.Agressiveness = value; }
+            set
+            {
+                var simplificationOptions = this.simplificationOptions;
+                simplificationOptions.Agressiveness = value;
+                SimplificationOptions = simplificationOptions;
+            }
         }
 
         /// <summary>
@@ -200,7 +239,12 @@ namespace UnityMeshSimplifier
         public double VertexLinkDistance
         {
             get { return simplificationOptions.VertexLinkDistance; }
-            set { simplificationOptions.VertexLinkDistance = value > double.Epsilon ? value : double.Epsilon; }
+            set
+            {
+                var simplificationOptions = this.simplificationOptions;
+                simplificationOptions.VertexLinkDistance = value > double.Epsilon ? value : double.Epsilon;
+                SimplificationOptions = simplificationOptions;
+            }
         }
 
         /// <summary>
@@ -212,7 +256,12 @@ namespace UnityMeshSimplifier
         public double VertexLinkDistanceSqr
         {
             get { return simplificationOptions.VertexLinkDistance * simplificationOptions.VertexLinkDistance; }
-            set { simplificationOptions.VertexLinkDistance = Math.Sqrt(value); }
+            set
+            {
+                var simplificationOptions = this.simplificationOptions;
+                simplificationOptions.VertexLinkDistance = Math.Sqrt(value);
+                SimplificationOptions = simplificationOptions;
+            }
         }
 
         /// <summary>
@@ -2000,13 +2049,6 @@ namespace UnityMeshSimplifier
             if (mesh == null)
                 throw new ArgumentNullException(nameof(mesh));
 
-            int uvComponentCount = simplificationOptions.UVComponentCount;
-            if (simplificationOptions.ManualUVComponentCount)
-            {
-                if (uvComponentCount < 0 || uvComponentCount > 4)
-                    throw new InvalidOperationException("The UV component count cannot be below 0 or above 4.");
-            }
-
             this.Vertices = mesh.vertices;
             this.Normals = mesh.normals;
             this.Tangents = mesh.tangents;
@@ -2019,7 +2061,7 @@ namespace UnityMeshSimplifier
             {
                 if (simplificationOptions.ManualUVComponentCount)
                 {
-                    switch (uvComponentCount)
+                    switch (simplificationOptions.UVComponentCount)
                     {
                         case 1:
                         case 2:
@@ -2246,6 +2288,32 @@ namespace UnityMeshSimplifier
             }
 
             return MeshUtils.CreateMesh(vertices, indices, normals, tangents, colors, boneWeights, uvs2D, uvs3D, uvs4D, bindposes, blendShapes);
+        }
+        #endregion
+
+        #region Validate Options
+        /// <summary>
+        /// Validates simplification options.
+        /// Will throw an exception if the options are invalid.
+        /// </summary>
+        /// <param name="options">The simplification options to validate.</param>
+        /// <exception cref="ValidateSimplificationOptionsException">The exception thrown in case of invalid options.</exception>
+        public static void ValidateOptions(SimplificationOptions options)
+        {
+            if (options.EnableSmartLink && options.VertexLinkDistance < 0.0)
+                throw new ValidateSimplificationOptionsException(nameof(options.VertexLinkDistance), "The vertex link distance cannot be negative when smart linking is enabled.");
+
+            if (options.MaxIterationCount <= 0)
+                throw new ValidateSimplificationOptionsException(nameof(options.MaxIterationCount), "The max iteration count cannot be zero or negative, since there would be nothing for the algorithm to do.");
+
+            if (options.Agressiveness <= 0.0)
+                throw new ValidateSimplificationOptionsException(nameof(options.Agressiveness), "The aggressiveness has to be above zero to make sense. Recommended is around 7.");
+
+            if (options.ManualUVComponentCount)
+            {
+                if (options.UVComponentCount < 0 || options.UVComponentCount > 4)
+                    throw new ValidateSimplificationOptionsException(nameof(options.UVComponentCount), "The UV component count cannot be below 0 or above 4 when manual UV component count is enabled.");
+            }
         }
         #endregion
         #endregion

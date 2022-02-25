@@ -523,7 +523,7 @@ namespace UnityMeshSimplifier.Editor
             }
             catch (System.Exception ex)
             {
-                Debug.LogException(ex);
+                Debug.LogException(ex, lodGeneratorHelper);
                 DisplayError("Failed to generate LODs!", ex.Message, "OK", lodGeneratorHelper);
             }
             finally

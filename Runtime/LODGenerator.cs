@@ -137,6 +137,8 @@ namespace UnityMeshSimplifier
             if (existingLodGroup != null)
                 throw new System.InvalidOperationException("The game object already appears to have a LOD Group. Please remove it first.");
 
+            MeshSimplifier.ValidateOptions(simplificationOptions);
+
             saveAssetsPath = ValidateSaveAssetsPath(saveAssetsPath);
 
             var lodParentGameObject = new GameObject(LODParentGameObjectName);
@@ -195,7 +197,7 @@ namespace UnityMeshSimplifier
                         for (int rendererIndex = 0; rendererIndex < staticRenderers.Length; rendererIndex++)
                         {
                             var renderer = staticRenderers[rendererIndex];
-                            var levelRenderer = CreateLevelRenderer(gameObject, levelIndex, ref level, levelTransform, rendererIndex, renderer, ref simplificationOptions, saveAssetsPath);
+                            var levelRenderer = CreateLevelRenderer(gameObject, levelIndex, level, levelTransform, rendererIndex, renderer, simplificationOptions, saveAssetsPath);
                             levelRenderers.Add(levelRenderer);
                         }
                     }
@@ -205,7 +207,7 @@ namespace UnityMeshSimplifier
                         for (int rendererIndex = 0; rendererIndex < skinnedRenderers.Length; rendererIndex++)
                         {
                             var renderer = skinnedRenderers[rendererIndex];
-                            var levelRenderer = CreateLevelRenderer(gameObject, levelIndex, ref level, levelTransform, rendererIndex, renderer, ref simplificationOptions, saveAssetsPath);
+                            var levelRenderer = CreateLevelRenderer(gameObject, levelIndex, level, levelTransform, rendererIndex, renderer, simplificationOptions, saveAssetsPath);
                             levelRenderers.Add(levelRenderer);
                         }
                     }
@@ -454,7 +456,7 @@ namespace UnityMeshSimplifier
             transform.SetParent(parentTransform, true);
         }
 
-        private static Renderer CreateLevelRenderer(GameObject gameObject, int levelIndex, ref LODLevel level, Transform levelTransform, int rendererIndex, RendererInfo renderer, ref SimplificationOptions simplificationOptions, string saveAssetsPath)
+        private static Renderer CreateLevelRenderer(GameObject gameObject, int levelIndex, in LODLevel level, Transform levelTransform, int rendererIndex, in RendererInfo renderer, in SimplificationOptions simplificationOptions, string saveAssetsPath)
         {
             var mesh = renderer.mesh;
 
@@ -476,16 +478,16 @@ namespace UnityMeshSimplifier
             if (renderer.isStatic)
             {
                 string rendererName = string.Format("{0:000}_static_{1}", rendererIndex, renderer.name);
-                return CreateStaticLevelRenderer(rendererName, levelTransform, renderer.transform, mesh, renderer.materials, ref level);
+                return CreateStaticLevelRenderer(rendererName, levelTransform, renderer.transform, mesh, renderer.materials, level);
             }
             else
             {
                 string rendererName = string.Format("{0:000}_skinned_{1}", rendererIndex, renderer.name);
-                return CreateSkinnedLevelRenderer(rendererName, levelTransform, renderer.transform, mesh, renderer.materials, renderer.rootBone, renderer.bones, ref level);
+                return CreateSkinnedLevelRenderer(rendererName, levelTransform, renderer.transform, mesh, renderer.materials, renderer.rootBone, renderer.bones, level);
             }
         }
 
-        private static MeshRenderer CreateStaticLevelRenderer(string name, Transform parentTransform, Transform originalTransform, Mesh mesh, Material[] materials, ref LODLevel level)
+        private static MeshRenderer CreateStaticLevelRenderer(string name, Transform parentTransform, Transform originalTransform, Mesh mesh, Material[] materials, in LODLevel level)
         {
             var levelGameObject = new GameObject(name, typeof(MeshFilter), typeof(MeshRenderer));
             var levelTransform = levelGameObject.transform;
@@ -503,11 +505,11 @@ namespace UnityMeshSimplifier
 
             var meshRenderer = levelGameObject.GetComponent<MeshRenderer>();
             meshRenderer.sharedMaterials = materials;
-            SetupLevelRenderer(meshRenderer, ref level);
+            SetupLevelRenderer(meshRenderer, level);
             return meshRenderer;
         }
 
-        private static SkinnedMeshRenderer CreateSkinnedLevelRenderer(string name, Transform parentTransform, Transform originalTransform, Mesh mesh, Material[] materials, Transform rootBone, Transform[] bones, ref LODLevel level)
+        private static SkinnedMeshRenderer CreateSkinnedLevelRenderer(string name, Transform parentTransform, Transform originalTransform, Mesh mesh, Material[] materials, Transform rootBone, Transform[] bones, in LODLevel level)
         {
             var levelGameObject = new GameObject(name, typeof(SkinnedMeshRenderer));
             var levelTransform = levelGameObject.transform;
@@ -525,7 +527,7 @@ namespace UnityMeshSimplifier
             skinnedMeshRenderer.sharedMaterials = materials;
             skinnedMeshRenderer.rootBone = rootBone;
             skinnedMeshRenderer.bones = bones;
-            SetupLevelRenderer(skinnedMeshRenderer, ref level);
+            SetupLevelRenderer(skinnedMeshRenderer, level);
             return skinnedMeshRenderer;
         }
 
@@ -553,7 +555,7 @@ namespace UnityMeshSimplifier
             return bestBone;
         }
 
-        private static void SetupLevelRenderer(Renderer renderer, ref LODLevel level)
+        private static void SetupLevelRenderer(Renderer renderer, in LODLevel level)
         {
             renderer.shadowCastingMode = level.ShadowCastingMode;
             renderer.receiveShadows = level.ReceiveShadows;
@@ -605,7 +607,7 @@ namespace UnityMeshSimplifier
             }
         }
 
-        private static Mesh SimplifyMesh(Mesh mesh, float quality, SimplificationOptions options)
+        private static Mesh SimplifyMesh(Mesh mesh, float quality, in SimplificationOptions options)
         {
             var meshSimplifier = new MeshSimplifier();
             meshSimplifier.SimplificationOptions = options;
