@@ -498,13 +498,12 @@ namespace UnityMeshSimplifier
                     1.0 / det * q.Determinant3(),   // vy = A42/det(q_delta)
                     -1.0 / det * q.Determinant4()); // vz = A43/det(q_delta)
 
-                double curvatureError = 0;
+                error = VertexError(ref q, result.x, result.y, result.z);
+
                 if (simplificationOptions.PreserveSurfaceCurvature)
                 {
-                    curvatureError = CurvatureError(ref vert0, ref vert1);
+                    error += CurvatureError(ref vert0, ref vert1);
                 }
-
-                error = VertexError(ref q, result.x, result.y, result.z) + curvatureError;
             }
             else
             {
@@ -540,6 +539,12 @@ namespace UnityMeshSimplifier
                     result = p3;
                 }
             }
+
+            if (simplificationOptions.PreserveSilhouetteEdges && vert0.silhouetteEdge && vert1.silhouetteEdge)
+            {
+                error += 1000000000.0;
+            }
+
             return error;
         }
         #endregion
@@ -797,21 +802,18 @@ namespace UnityMeshSimplifier
                     // Border check
                     if (vertices[i0].borderEdge != vertices[i1].borderEdge)
                         continue;
-                    // Seam check
-                    else if (vertices[i0].uvSeamEdge != vertices[i1].uvSeamEdge)
-                        continue;
-                    // Foldover check
-                    else if (vertices[i0].uvFoldoverEdge != vertices[i1].uvFoldoverEdge)
-                        continue;
                     // If borders should be preserved
                     else if (simplificationOptions.PreserveBorderEdges && vertices[i0].borderEdge)
                         continue;
                     // If seams should be preserved
-                    else if (simplificationOptions.PreserveUVSeamEdges && vertices[i0].uvSeamEdge)
+                    else if (simplificationOptions.PreserveUVSeamEdges && vertices[i0].uvSeamEdge && vertices[i1].uvSeamEdge)
                         continue;
                     // If foldovers should be preserved
-                    else if (simplificationOptions.PreserveUVFoldoverEdges && vertices[i0].uvFoldoverEdge)
+                    else if (simplificationOptions.PreserveUVFoldoverEdges && vertices[i0].uvFoldoverEdge && vertices[i0].uvFoldoverEdge)
                         continue;
+                    // If Silhouette edges should be preserved
+                    //else if (simplificationOptions.PreserveSilhouetteEdges && vertices[i0].silhouetteEdge && vertices[i1].silhouetteEdge)
+                    //    continue;
 
                     // Compute vertex to collapse to
                     CalculateError(ref vertices[i0], ref vertices[i1], out p);
@@ -909,208 +911,312 @@ namespace UnityMeshSimplifier
 
             UpdateReferences();
 
-            // Identify boundary : vertices[].border=0,1
+            // First iteration initialization
             if (iteration == 0)
             {
-                var refs = this.refs.Data;
+                InitializeBorders(vertices, vertexCount, triangles);
+                InitializeQuadricsByPlane(vertices, vertexCount, triangles, triangleCount);
 
-                var vcount = new List<int>(8);
-                var vids = new List<int>(8);
-                int vsize = 0;
-                for (int i = 0; i < vertexCount; i++)
+                if (simplificationOptions.PreserveSilhouetteEdges)
                 {
-                    vertices[i].borderEdge = false;
-                    vertices[i].uvSeamEdge = false;
-                    vertices[i].uvFoldoverEdge = false;
+                    InitializeSilhouetteEdges(triangles, triangleCount, vertices);
                 }
 
-                int ofs;
-                int id;
-                int borderVertexCount = 0;
-                double borderMinX = double.MaxValue;
-                double borderMaxX = double.MinValue;
-                var vertexLinkDistanceSqr = simplificationOptions.VertexLinkDistance * simplificationOptions.VertexLinkDistance;
-                for (int i = 0; i < vertexCount; i++)
+                InitializeTriangleErrors(triangles, triangleCount, vertices);
+            }
+        }
+
+        #region Initialization
+        private void InitializeBorders(Vertex[] vertices, int vertexCount, Triangle[] triangles)
+        {
+            var refs = this.refs.Data;
+
+            var vcount = new List<int>(8);
+            var vids = new List<int>(8);
+            int vsize;
+            for (int i = 0; i < vertexCount; i++)
+            {
+                vertices[i].borderEdge = false;
+                vertices[i].uvSeamEdge = false;
+                vertices[i].uvFoldoverEdge = false;
+                vertices[i].silhouetteEdge = false;
+            }
+
+            int ofs;
+            int id;
+            int borderVertexCount = 0;
+            double borderMinX = double.MaxValue;
+            double borderMaxX = double.MinValue;
+            for (int i = 0; i < vertexCount; i++)
+            {
+                int tstart = vertices[i].tstart;
+                int tcount = vertices[i].tcount;
+                vcount.Clear();
+                vids.Clear();
+                vsize = 0;
+
+                for (int j = 0; j < tcount; j++)
                 {
-                    int tstart = vertices[i].tstart;
-                    int tcount = vertices[i].tcount;
-                    vcount.Clear();
-                    vids.Clear();
-                    vsize = 0;
-
-                    for (int j = 0; j < tcount; j++)
+                    int tid = refs[tstart + j].tid;
+                    for (int k = 0; k < TriangleVertexCount; k++)
                     {
-                        int tid = refs[tstart + j].tid;
-                        for (int k = 0; k < TriangleVertexCount; k++)
+                        ofs = 0;
+                        id = triangles[tid][k];
+                        while (ofs < vsize)
                         {
-                            ofs = 0;
-                            id = triangles[tid][k];
-                            while (ofs < vsize)
-                            {
-                                if (vids[ofs] == id)
-                                    break;
-
-                                ++ofs;
-                            }
-
-                            if (ofs == vsize)
-                            {
-                                vcount.Add(1);
-                                vids.Add(id);
-                                ++vsize;
-                            }
-                            else
-                            {
-                                ++vcount[ofs];
-                            }
-                        }
-                    }
-
-                    for (int j = 0; j < vsize; j++)
-                    {
-                        if (vcount[j] == 1)
-                        {
-                            id = vids[j];
-                            vertices[id].borderEdge = true;
-                            ++borderVertexCount;
-
-                            if (simplificationOptions.EnableSmartLink)
-                            {
-                                if (vertices[id].p.x < borderMinX)
-                                {
-                                    borderMinX = vertices[id].p.x;
-                                }
-                                if (vertices[id].p.x > borderMaxX)
-                                {
-                                    borderMaxX = vertices[id].p.x;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (simplificationOptions.EnableSmartLink)
-                {
-                    // First find all border vertices
-                    var borderVertices = new BorderVertex[borderVertexCount];
-                    int borderIndexCount = 0;
-                    double borderAreaWidth = borderMaxX - borderMinX;
-                    for (int i = 0; i < vertexCount; i++)
-                    {
-                        if (vertices[i].borderEdge)
-                        {
-                            int vertexHash = (int)(((((vertices[i].p.x - borderMinX) / borderAreaWidth) * 2.0) - 1.0) * int.MaxValue);
-                            borderVertices[borderIndexCount] = new BorderVertex(i, vertexHash);
-                            ++borderIndexCount;
-                        }
-                    }
-
-                    // Sort the border vertices by hash
-                    Array.Sort(borderVertices, 0, borderIndexCount, BorderVertexComparer.instance);
-
-                    // Calculate the maximum hash distance based on the maximum vertex link distance
-                    double vertexLinkDistance = Math.Sqrt(vertexLinkDistanceSqr);
-                    int hashMaxDistance = Math.Max((int)((vertexLinkDistance / borderAreaWidth) * int.MaxValue), 1);
-
-                    // Then find identical border vertices and bind them together as one
-                    for (int i = 0; i < borderIndexCount; i++)
-                    {
-                        int myIndex = borderVertices[i].index;
-                        if (myIndex == -1)
-                            continue;
-
-                        var myPoint = vertices[myIndex].p;
-                        for (int j = i + 1; j < borderIndexCount; j++)
-                        {
-                            int otherIndex = borderVertices[j].index;
-                            if (otherIndex == -1)
-                                continue;
-                            else if ((borderVertices[j].hash - borderVertices[i].hash) > hashMaxDistance) // There is no point to continue beyond this point
+                            if (vids[ofs] == id)
                                 break;
 
-                            var otherPoint = vertices[otherIndex].p;
-                            var sqrX = ((myPoint.x - otherPoint.x) * (myPoint.x - otherPoint.x));
-                            var sqrY = ((myPoint.y - otherPoint.y) * (myPoint.y - otherPoint.y));
-                            var sqrZ = ((myPoint.z - otherPoint.z) * (myPoint.z - otherPoint.z));
-                            var sqrMagnitude = sqrX + sqrY + sqrZ;
+                            ++ofs;
+                        }
 
-                            if (sqrMagnitude <= vertexLinkDistanceSqr)
+                        if (ofs == vsize)
+                        {
+                            vcount.Add(1);
+                            vids.Add(id);
+                            ++vsize;
+                        }
+                        else
+                        {
+                            ++vcount[ofs];
+                        }
+                    }
+                }
+
+                for (int j = 0; j < vsize; j++)
+                {
+                    if (vcount[j] == 1)
+                    {
+                        id = vids[j];
+                        vertices[id].borderEdge = true;
+                        ++borderVertexCount;
+
+                        if (simplificationOptions.EnableSmartLink)
+                        {
+                            if (vertices[id].p.x < borderMinX)
                             {
-                                borderVertices[j].index = -1; // NOTE: This makes sure that the "other" vertex is not processed again
-                                vertices[myIndex].borderEdge = false;
-                                vertices[otherIndex].borderEdge = false;
+                                borderMinX = vertices[id].p.x;
+                            }
+                            if (vertices[id].p.x > borderMaxX)
+                            {
+                                borderMaxX = vertices[id].p.x;
+                            }
+                        }
+                    }
+                }
+            }
 
-                                if (AreUVsTheSame(0, myIndex, otherIndex))
-                                {
-                                    vertices[myIndex].uvFoldoverEdge = true;
-                                    vertices[otherIndex].uvFoldoverEdge = true;
-                                }
-                                else
-                                {
-                                    vertices[myIndex].uvSeamEdge = true;
-                                    vertices[otherIndex].uvSeamEdge = true;
-                                }
+            if (simplificationOptions.EnableSmartLink)
+            {
+                InitializeSmartLink(vertices, vertexCount, triangles, borderVertexCount, borderMinX, borderMaxX);
+            }
+        }
 
-                                int otherTriangleCount = vertices[otherIndex].tcount;
-                                int otherTriangleStart = vertices[otherIndex].tstart;
-                                for (int k = 0; k < otherTriangleCount; k++)
-                                {
-                                    var r = refs[otherTriangleStart + k];
-                                    triangles[r.tid][r.tvertex] = myIndex;
-                                }
+        private void InitializeSmartLink(Vertex[] vertices, int vertexCount, Triangle[] triangles, int borderVertexCount, double borderMinX, double borderMaxX)
+        {
+            double vertexLinkDistanceSqr = simplificationOptions.VertexLinkDistance * simplificationOptions.VertexLinkDistance;
+
+            // First find all border vertices
+            var borderVertices = new BorderVertex[borderVertexCount];
+            int borderIndexCount = 0;
+            double borderAreaWidth = borderMaxX - borderMinX;
+            for (int i = 0; i < vertexCount; i++)
+            {
+                if (vertices[i].borderEdge)
+                {
+                    int vertexHash = (int)(((((vertices[i].p.x - borderMinX) / borderAreaWidth) * 2.0) - 1.0) * int.MaxValue);
+                    borderVertices[borderIndexCount] = new BorderVertex(i, vertexHash);
+                    ++borderIndexCount;
+                }
+            }
+
+            // Sort the border vertices by hash
+            Array.Sort(borderVertices, 0, borderIndexCount, BorderVertexComparer.instance);
+
+            // Calculate the maximum hash distance based on the maximum vertex link distance
+            double vertexLinkDistance = Math.Sqrt(vertexLinkDistanceSqr);
+            int hashMaxDistance = Math.Max((int)((vertexLinkDistance / borderAreaWidth) * int.MaxValue), 1);
+
+            // Then find identical border vertices and bind them together as one
+            for (int i = 0; i < borderIndexCount; i++)
+            {
+                int myIndex = borderVertices[i].index;
+                if (myIndex == -1)
+                    continue;
+
+                var myPoint = vertices[myIndex].p;
+                for (int j = i + 1; j < borderIndexCount; j++)
+                {
+                    int otherIndex = borderVertices[j].index;
+                    if (otherIndex == -1)
+                        continue;
+                    else if ((borderVertices[j].hash - borderVertices[i].hash) > hashMaxDistance) // There is no point to continue beyond this point
+                        break;
+
+                    var otherPoint = vertices[otherIndex].p;
+                    var sqrX = ((myPoint.x - otherPoint.x) * (myPoint.x - otherPoint.x));
+                    var sqrY = ((myPoint.y - otherPoint.y) * (myPoint.y - otherPoint.y));
+                    var sqrZ = ((myPoint.z - otherPoint.z) * (myPoint.z - otherPoint.z));
+                    var sqrMagnitude = sqrX + sqrY + sqrZ;
+
+                    if (sqrMagnitude <= vertexLinkDistanceSqr)
+                    {
+                        borderVertices[j].index = -1; // NOTE: This makes sure that the "other" vertex is not processed again
+                        vertices[myIndex].borderEdge = false;
+                        vertices[otherIndex].borderEdge = false;
+
+                        if (AreUVsTheSame(0, myIndex, otherIndex))
+                        {
+                            vertices[myIndex].uvFoldoverEdge = true;
+                            vertices[otherIndex].uvFoldoverEdge = true;
+                        }
+                        else
+                        {
+                            vertices[myIndex].uvSeamEdge = true;
+                            vertices[otherIndex].uvSeamEdge = true;
+                        }
+
+                        int otherTriangleCount = vertices[otherIndex].tcount;
+                        int otherTriangleStart = vertices[otherIndex].tstart;
+                        for (int k = 0; k < otherTriangleCount; k++)
+                        {
+                            var r = refs[otherTriangleStart + k];
+                            triangles[r.tid][r.tvertex] = myIndex;
+                        }
+                    }
+                }
+            }
+
+            // Update the references again
+            UpdateReferences();
+        }
+
+        private void InitializeQuadricsByPlane(Vertex[] vertices, int vertexCount, Triangle[] triangles, int triangleCount)
+        {
+            for (int i = 0; i < vertexCount; i++)
+            {
+                vertices[i].q = new SymmetricMatrix();
+            }
+
+            int v0, v1, v2;
+            Vector3d n, p0, p1, p2, p10, p20;
+            SymmetricMatrix sm;
+            for (int i = 0; i < triangleCount; i++)
+            {
+                v0 = triangles[i].v0;
+                v1 = triangles[i].v1;
+                v2 = triangles[i].v2;
+
+                p0 = vertices[v0].p;
+                p1 = vertices[v1].p;
+                p2 = vertices[v2].p;
+                p10 = p1 - p0;
+                p20 = p2 - p0;
+                Vector3d.Cross(ref p10, ref p20, out n);
+                n.Normalize();
+                triangles[i].n = n;
+
+                sm = new SymmetricMatrix(n.x, n.y, n.z, -Vector3d.Dot(ref n, ref p0));
+                vertices[v0].q += sm;
+                vertices[v1].q += sm;
+                vertices[v2].q += sm;
+            }
+        }
+
+        private void InitializeSilhouetteEdges(Triangle[] triangles, int triangleCount, Vertex[] vertices)
+        {
+            var refs = this.refs.Data;
+            int viewDirectionCount = simplificationOptions.SilhouetteEdgeViewDirections?.Length ?? 0;
+            var viewDirections = new Vector3d[viewDirectionCount];
+            for (int i = 0; i < viewDirectionCount; i++)
+            {
+                viewDirections[i] = new Vector3d(simplificationOptions.SilhouetteEdgeViewDirections[i]);
+                viewDirections[i].Normalize();
+            }
+
+            for (int tid = 0; tid < triangleCount; tid++)
+            {
+                for (int edgeIndex = 0; edgeIndex < TriangleEdgeCount; edgeIndex++)
+                {
+                    int nextEdgeIndex = ((edgeIndex + 1) % TriangleEdgeCount);
+                    int i0 = triangles[tid][edgeIndex];
+                    int i1 = triangles[tid][nextEdgeIndex];
+
+                    // Skip if we have already detected this edge
+                    if (vertices[i0].silhouetteEdge && vertices[i1].silhouetteEdge)
+                        continue;
+
+                    // Border edges always counts as silhouette edges
+                    if (vertices[i0].borderEdge && vertices[i1].borderEdge)
+                    {
+                        vertices[i0].silhouetteEdge = true;
+                        vertices[i1].silhouetteEdge = true;
+                        continue;
+                    }
+
+                    // Find the other triangle sharing the same edge
+                    int otherTid = -1;
+                    int trianglesCount0 = vertices[i0].tcount;
+                    int triangleStartIndex0 = vertices[i0].tstart;
+                    int trianglesCount1 = vertices[i1].tcount;
+                    int triangleStartIndex1 = vertices[i1].tstart;
+                    for (int i = triangleStartIndex0; i < (triangleStartIndex0 + trianglesCount0) && otherTid == -1; i++)
+                    {
+                        if (refs[i].tid == tid) // skip current triangle
+                            continue;
+
+                        for (int j = triangleStartIndex1; j < (triangleStartIndex1 + trianglesCount1); j++)
+                        {
+                            if (refs[i].tid == refs[j].tid)
+                            {
+                                otherTid = refs[i].tid;
+                                break;
                             }
                         }
                     }
 
-                    // Update the references again
-                    UpdateReferences();
-                }
+                    // If there is no other triangle sharing the same edge, then we consider this as a silhouette edges
+                    // Although this should never happen since this is expected to be a border edge, detected above
+                    if (otherTid == -1)
+                    {
+                        vertices[i0].silhouetteEdge = true;
+                        vertices[i1].silhouetteEdge = true;
+                        continue;
+                    }
 
-                // Init Quadrics by Plane & Edge Errors
-                //
-                // required at the beginning ( iteration == 0 )
-                // recomputing during the simplification is not required,
-                // but mostly improves the result for closed meshes
-                for (int i = 0; i < vertexCount; i++)
-                {
-                    vertices[i].q = new SymmetricMatrix();
-                }
-
-                int v0, v1, v2;
-                Vector3d n, p0, p1, p2, p10, p20, dummy;
-                SymmetricMatrix sm;
-                for (int i = 0; i < triangleCount; i++)
-                {
-                    v0 = triangles[i].v0;
-                    v1 = triangles[i].v1;
-                    v2 = triangles[i].v2;
-
-                    p0 = vertices[v0].p;
-                    p1 = vertices[v1].p;
-                    p2 = vertices[v2].p;
-                    p10 = p1 - p0;
-                    p20 = p2 - p0;
-                    Vector3d.Cross(ref p10, ref p20, out n);
-                    n.Normalize();
-                    triangles[i].n = n;
-
-                    sm = new SymmetricMatrix(n.x, n.y, n.z, -Vector3d.Dot(ref n, ref p0));
-                    vertices[v0].q += sm;
-                    vertices[v1].q += sm;
-                    vertices[v2].q += sm;
-                }
-
-                for (int i = 0; i < triangleCount; i++)
-                {
-                    // Calc Edge Error
-                    var triangle = triangles[i];
-                    triangles[i].err0 = CalculateError(ref vertices[triangle.v0], ref vertices[triangle.v1], out dummy);
-                    triangles[i].err1 = CalculateError(ref vertices[triangle.v1], ref vertices[triangle.v2], out dummy);
-                    triangles[i].err2 = CalculateError(ref vertices[triangle.v2], ref vertices[triangle.v0], out dummy);
-                    triangles[i].err3 = MathHelper.Min(triangles[i].err0, triangles[i].err1, triangles[i].err2);
+                    for (int viewIndex = 0; viewIndex < viewDirections.Length; viewIndex++)
+                    {
+                        double triangleDot = Vector3d.Dot(ref triangles[tid].n, ref viewDirections[viewIndex]);
+                        double otherTriangleDot = Vector3d.Dot(ref triangles[otherTid].n, ref viewDirections[viewIndex]);
+                        bool triangleDotPositive = (triangleDot > 0);
+                        bool otherTriangleDotPositive = (otherTriangleDot > 0);
+                        if (triangleDotPositive != otherTriangleDotPositive)
+                        {
+                            // If the dot-product of the triangle normals and view direction are pointing in opposite directions,
+                            // then we consider this a silhouette edge
+                            vertices[i0].silhouetteEdge = true;
+                            vertices[i1].silhouetteEdge = true;
+                            break;
+                        }
+                    }
                 }
             }
         }
+
+        private void InitializeTriangleErrors(Triangle[] triangles, int triangleCount, Vertex[] vertices)
+        {
+            Vector3d dummy;
+            for (int i = 0; i < triangleCount; i++)
+            {
+                // Calc Edge Error
+                var triangle = triangles[i];
+                triangles[i].err0 = CalculateError(ref vertices[triangle.v0], ref vertices[triangle.v1], out dummy);
+                triangles[i].err1 = CalculateError(ref vertices[triangle.v1], ref vertices[triangle.v2], out dummy);
+                triangles[i].err2 = CalculateError(ref vertices[triangle.v2], ref vertices[triangle.v0], out dummy);
+                triangles[i].err3 = MathHelper.Min(triangles[i].err0, triangles[i].err1, triangles[i].err2);
+            }
+        }
+        #endregion
         #endregion
 
         #region Update References

@@ -46,6 +46,12 @@ namespace UnityMeshSimplifier
             PreserveUVSeamEdges = false,
             PreserveUVFoldoverEdges = false,
             PreserveSurfaceCurvature = false,
+            PreserveSilhouetteEdges = false,
+            SilhouetteEdgeViewDirections = new Vector3[] {
+                Vector3.back,
+                Vector3.left,
+                Vector3.down
+            },
             EnableSmartLink = true,
             VertexLinkDistance = double.Epsilon,
             MaxIterationCount = 100,
@@ -78,6 +84,18 @@ namespace UnityMeshSimplifier
         /// </summary>
         [Tooltip("If the discrete curvature of the mesh surface be taken into account during simplification. Taking surface curvature into account can result in very good quality mesh simplification, but it can slow the simplification process significantly.")]
         public bool PreserveSurfaceCurvature;
+        /// <summary>
+        /// If the silhouette edges should be preserved. You also need to provide a list of view directions in SilhouetteEdgeViewDirections used by the edge detection algorithm.
+        /// Default value: false
+        /// </summary>
+        [Tooltip("If the silhouette edges should be preserved. You also need to provide a list of view directions in \"Silhouette Edge View Directions\" used by the edge detection algorithm.")]
+        public bool PreserveSilhouetteEdges;
+        /// <summary>
+        /// The view directions to consider when detecting silhouette edges, if it's enabled (PreserveSilhouetteEdges being true).
+        /// Default value: [Vector3.back, Vector3.left, Vector3.down]
+        /// </summary>
+        [Tooltip("The view directions to consider when detecting silhouette edges, if it's enabled (\"Preserve Silhouette Edges\" being true).")]
+        public Vector3[] SilhouetteEdgeViewDirections;
         /// <summary>
         /// If a feature for smarter vertex linking should be enabled, reducing artifacts in the
         /// decimated result at the cost of a slightly more expensive initialization by treating vertices at

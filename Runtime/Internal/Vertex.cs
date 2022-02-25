@@ -1,4 +1,4 @@
-﻿#region License
+#region License
 /*
 MIT License
 
@@ -39,6 +39,7 @@ namespace UnityMeshSimplifier.Internal
         public bool borderEdge;
         public bool uvSeamEdge;
         public bool uvFoldoverEdge;
+        public bool silhouetteEdge;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vertex(int index, Vector3d p)
@@ -51,6 +52,7 @@ namespace UnityMeshSimplifier.Internal
             this.borderEdge = true;
             this.uvSeamEdge = false;
             this.uvFoldoverEdge = false;
+            this.silhouetteEdge = false;
         }
 
         public override int GetHashCode()
