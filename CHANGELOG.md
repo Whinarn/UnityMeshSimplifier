@@ -1,3 +1,10 @@
+# [3.1.0](https://github.com/Whinarn/UnityMeshSimplifier/compare/v3.0.1...v3.1.0) (2022-02-25)
+
+
+### Features
+
+* **simplifier:** added options validation ([55264ce](https://github.com/Whinarn/UnityMeshSimplifier/commit/55264ce8a28f6755a2a920f25aa2312f2d185e72))
+
 ## [3.0.1](https://github.com/Whinarn/UnityMeshSimplifier/compare/v3.0.0...v3.0.1) (2021-06-25)
 
 
