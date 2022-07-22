@@ -134,20 +134,31 @@ namespace UnityMeshSimplifier.Editor
 
         private void DrawNotGeneratedView()
         {
+            EditorGUI.BeginDisabledGroup(customizeSettingsProperty.boolValue == true);
             EditorGUILayout.ObjectField(lodGeneratorPresetProperty, typeof(LODGeneratorPreset));
+            EditorGUI.EndDisabledGroup();
+
             EditorGUILayout.PropertyField(customizeSettingsProperty);
 
+            EditorGUI.BeginDisabledGroup(customizeSettingsProperty.boolValue == false);
             EditorGUILayout.PropertyField(fadeModeProperty);
+            EditorGUI.EndDisabledGroup();
             var fadeMode = (LODFadeMode)fadeModeProperty.intValue;
 
             bool hasCrossFade = (fadeMode == LODFadeMode.CrossFade || fadeMode == LODFadeMode.SpeedTree);
+
+            EditorGUI.BeginDisabledGroup(customizeSettingsProperty.boolValue == false);
             if (hasCrossFade)
             {
                 EditorGUILayout.PropertyField(animateCrossFadingProperty);
             }
+            EditorGUI.EndDisabledGroup();
 
             EditorGUILayout.PropertyField(autoCollectRenderersProperty);
+
+            EditorGUI.BeginDisabledGroup(customizeSettingsProperty.boolValue == false);
             DrawSimplificationOptions();
+            EditorGUI.EndDisabledGroup();
 
             bool newOverrideSaveAssetsPath = EditorGUILayout.Toggle(overrideSaveAssetsPathContent, overrideSaveAssetsPath);
             if (newOverrideSaveAssetsPath != overrideSaveAssetsPath)
@@ -184,10 +195,12 @@ namespace UnityMeshSimplifier.Editor
                 DrawLevel(levelIndex, levelProperty, hasCrossFade);
             }
 
+            EditorGUI.BeginDisabledGroup(customizeSettingsProperty.boolValue == false);
             if (GUILayout.Button(createLevelButtonContent))
             {
                 CreateLevel();
             }
+            EditorGUI.EndDisabledGroup();
 
             if (GUILayout.Button(generateLODButtonContent))
             {
@@ -218,6 +231,7 @@ namespace UnityMeshSimplifier.Editor
 
         private void DrawLevel(int index, SerializedProperty levelProperty, bool hasCrossFade)
         {
+            EditorGUI.BeginDisabledGroup(customizeSettingsProperty.boolValue == false);
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
             GUILayout.Label(string.Format("Level {0}", index + 1), EditorStyles.boldLabel);
@@ -285,6 +299,7 @@ namespace UnityMeshSimplifier.Editor
                     renderersProperty.DeleteArrayElementAtIndex(rendererIndex);
                 }
             }
+            EditorGUI.EndDisabledGroup();
 
             bool autoCollectRenderers = autoCollectRenderersProperty.boolValue;
             if (!autoCollectRenderers)
