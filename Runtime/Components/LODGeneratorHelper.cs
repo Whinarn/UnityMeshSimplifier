@@ -130,42 +130,7 @@ namespace UnityMeshSimplifier
             autoCollectRenderers = true;
             simplificationOptions = SimplificationOptions.Default;
 
-            levels = new LODLevel[]
-            {
-                new LODLevel(0.5f, 1f)
-                {
-                    CombineMeshes = false,
-                    CombineSubMeshes = false,
-                    SkinQuality = SkinQuality.Auto,
-                    ShadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On,
-                    ReceiveShadows = true,
-                    SkinnedMotionVectors = true,
-                    LightProbeUsage = UnityEngine.Rendering.LightProbeUsage.BlendProbes,
-                    ReflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.BlendProbes,
-                },
-                new LODLevel(0.17f, 0.65f)
-                {
-                    CombineMeshes = true,
-                    CombineSubMeshes = false,
-                    SkinQuality = SkinQuality.Auto,
-                    ShadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On,
-                    ReceiveShadows = true,
-                    SkinnedMotionVectors = true,
-                    LightProbeUsage = UnityEngine.Rendering.LightProbeUsage.BlendProbes,
-                    ReflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Simple
-                },
-                new LODLevel(0.02f, 0.4225f)
-                {
-                    CombineMeshes = true,
-                    CombineSubMeshes = true,
-                    SkinQuality = SkinQuality.Bone2,
-                    ShadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off,
-                    ReceiveShadows = false,
-                    SkinnedMotionVectors = false,
-                    LightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off,
-                    ReflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Off
-                }
-            };
+            levels = LODLevel.GetDefaultLevels();
         }
         #endregion
     }
