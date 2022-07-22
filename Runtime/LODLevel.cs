@@ -34,7 +34,7 @@ namespace UnityMeshSimplifier
     /// A LOD (level of detail) level.
     /// </summary>
     [Serializable]
-    public struct LODLevel
+    public struct LODLevel : IEquatable<LODLevel>
     {
         #region Fields
         [SerializeField, Range(0f, 1f), Tooltip("The screen relative height to use for the transition.")]
@@ -240,6 +240,40 @@ namespace UnityMeshSimplifier
             this.skinnedMotionVectors = true;
             this.lightProbeUsage = LightProbeUsage.BlendProbes;
             this.reflectionProbeUsage = ReflectionProbeUsage.BlendProbes;
+        }
+        #endregion
+
+        #region IEquatable implementation
+        public bool Equals(LODLevel other)
+        {
+            return screenRelativeTransitionHeight == other.screenRelativeTransitionHeight &&
+                fadeTransitionWidth == other.fadeTransitionWidth &&
+                quality == other.quality &&
+                combineMeshes == other.combineMeshes &&
+                combineSubMeshes == other.combineSubMeshes &&
+                skinQuality == other.skinQuality &&
+                shadowCastingMode == other.shadowCastingMode &&
+                receiveShadows == other.receiveShadows &&
+                motionVectorGenerationMode == other.motionVectorGenerationMode &&
+                skinnedMotionVectors == other.skinnedMotionVectors &&
+                lightProbeUsage == other.lightProbeUsage &&
+                reflectionProbeUsage == other.reflectionProbeUsage;
+        }
+        public override bool Equals(object obj) => obj is LODLevel other && Equals(other);
+        public override int GetHashCode()
+        {
+            return (screenRelativeTransitionHeight,
+                fadeTransitionWidth,
+                quality,
+                combineMeshes,
+                combineSubMeshes,
+                skinQuality,
+                shadowCastingMode,
+                receiveShadows,
+                motionVectorGenerationMode,
+                skinnedMotionVectors,
+                lightProbeUsage,
+                reflectionProbeUsage).GetHashCode();
         }
         #endregion
     }
