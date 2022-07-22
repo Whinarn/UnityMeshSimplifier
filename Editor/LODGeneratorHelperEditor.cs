@@ -35,6 +35,8 @@ namespace UnityMeshSimplifier.Editor
     [CustomEditor(typeof(LODGeneratorHelper))]
     internal sealed class LODGeneratorHelperEditor : UnityEditor.Editor
     {
+        private const string LodGeneratorPresetFieldName = "lodGeneratorPreset";
+        private const string CustomizeSettingsFieldName = "customizeSettings";
         private const string FadeModeFieldName = "fadeMode";
         private const string AnimateCrossFadingFieldName = "animateCrossFading";
         private const string AutoCollectRenderersFieldName = "autoCollectRenderers";
@@ -54,6 +56,8 @@ namespace UnityMeshSimplifier.Editor
         private const float RendererButtonWidth = 60f;
         private const float RemoveRendererButtonSize = 20f;
 
+        private SerializedProperty lodGeneratorPresetProperty = null;
+        private SerializedProperty customizeSettingsProperty = null;
         private SerializedProperty fadeModeProperty = null;
         private SerializedProperty animateCrossFadingProperty = null;
         private SerializedProperty autoCollectRenderersProperty = null;
@@ -82,6 +86,8 @@ namespace UnityMeshSimplifier.Editor
 
         private void OnEnable()
         {
+            lodGeneratorPresetProperty = serializedObject.FindProperty(LodGeneratorPresetFieldName);
+            customizeSettingsProperty = serializedObject.FindProperty(CustomizeSettingsFieldName);
             fadeModeProperty = serializedObject.FindProperty(FadeModeFieldName);
             animateCrossFadingProperty = serializedObject.FindProperty(AnimateCrossFadingFieldName);
             autoCollectRenderersProperty = serializedObject.FindProperty(AutoCollectRenderersFieldName);
@@ -128,6 +134,9 @@ namespace UnityMeshSimplifier.Editor
 
         private void DrawNotGeneratedView()
         {
+            EditorGUILayout.ObjectField(lodGeneratorPresetProperty, typeof(LODGeneratorPreset));
+            EditorGUILayout.PropertyField(customizeSettingsProperty);
+
             EditorGUILayout.PropertyField(fadeModeProperty);
             var fadeMode = (LODFadeMode)fadeModeProperty.intValue;
 
@@ -631,7 +640,7 @@ namespace UnityMeshSimplifier.Editor
 
             if (prefabGameObjects.Any())
             {
-                EditorUtility.DisplayDialog("Invalid GameObjects", "Some objects are not children of the LODGenerator GameObject," + 
+                EditorUtility.DisplayDialog("Invalid GameObjects", "Some objects are not children of the LODGenerator GameObject," +
                     " as well as being part of a prefab. They will not be added.", "OK");
             }
 #endif
