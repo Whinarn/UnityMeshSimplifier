@@ -135,22 +135,28 @@ namespace UnityMeshSimplifier.Editor
         private void DrawNotGeneratedView()
         {
             EditorGUI.BeginDisabledGroup(customizeSettingsProperty.boolValue == true);
-            EditorGUILayout.ObjectField(lodGeneratorPresetProperty, typeof(LODGeneratorPreset));
+            {
+                EditorGUILayout.ObjectField(lodGeneratorPresetProperty, typeof(LODGeneratorPreset));
+            }
             EditorGUI.EndDisabledGroup();
 
             EditorGUILayout.PropertyField(customizeSettingsProperty);
 
             EditorGUI.BeginDisabledGroup(customizeSettingsProperty.boolValue == false);
-            EditorGUILayout.PropertyField(fadeModeProperty);
+            {
+                EditorGUILayout.PropertyField(fadeModeProperty);
+            }
             EditorGUI.EndDisabledGroup();
             var fadeMode = (LODFadeMode)fadeModeProperty.intValue;
 
             bool hasCrossFade = (fadeMode == LODFadeMode.CrossFade || fadeMode == LODFadeMode.SpeedTree);
 
             EditorGUI.BeginDisabledGroup(customizeSettingsProperty.boolValue == false);
-            if (hasCrossFade)
             {
-                EditorGUILayout.PropertyField(animateCrossFadingProperty);
+                if (hasCrossFade)
+                {
+                    EditorGUILayout.PropertyField(animateCrossFadingProperty);
+                }
             }
             EditorGUI.EndDisabledGroup();
 
@@ -196,9 +202,11 @@ namespace UnityMeshSimplifier.Editor
             }
 
             EditorGUI.BeginDisabledGroup(customizeSettingsProperty.boolValue == false);
-            if (GUILayout.Button(createLevelButtonContent))
             {
-                CreateLevel();
+                if (GUILayout.Button(createLevelButtonContent))
+                {
+                    CreateLevel();
+                }
             }
             EditorGUI.EndDisabledGroup();
 
@@ -231,72 +239,75 @@ namespace UnityMeshSimplifier.Editor
 
         private void DrawLevel(int index, SerializedProperty levelProperty, bool hasCrossFade)
         {
+            var renderersProperty = levelProperty.FindPropertyRelative(LevelRenderersFieldName);
+
             EditorGUI.BeginDisabledGroup(customizeSettingsProperty.boolValue == false);
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
-            GUILayout.Label(string.Format("Level {0}", index + 1), EditorStyles.boldLabel);
-
-            var previousBackgroundColor = GUI.backgroundColor;
-            GUI.backgroundColor = removeColor;
-            if (GUILayout.Button(deleteLevelButtonContent, GUILayout.Width(RemoveLevelButtonSize)))
             {
-                DeleteLevel(index);
-            }
-            GUI.backgroundColor = previousBackgroundColor;
-            EditorGUILayout.EndHorizontal();
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
+                GUILayout.Label(string.Format("Level {0}", index + 1), EditorStyles.boldLabel);
 
-            ++EditorGUI.indentLevel;
+                var previousBackgroundColor = GUI.backgroundColor;
+                GUI.backgroundColor = removeColor;
+                if (GUILayout.Button(deleteLevelButtonContent, GUILayout.Width(RemoveLevelButtonSize)))
+                {
+                    DeleteLevel(index);
+                }
+                GUI.backgroundColor = previousBackgroundColor;
+                EditorGUILayout.EndHorizontal();
 
-            var screenRelativeHeightProperty = levelProperty.FindPropertyRelative(LevelScreenRelativeHeightFieldName);
-            EditorGUILayout.PropertyField(screenRelativeHeightProperty);
-
-            var qualityProperty = levelProperty.FindPropertyRelative(LevelQualityFieldName);
-            EditorGUILayout.PropertyField(qualityProperty);
-
-            bool animateCrossFading = (hasCrossFade ? animateCrossFadingProperty.boolValue : false);
-            settingsExpanded[index] = EditorGUILayout.Foldout(settingsExpanded[index], settingsContent);
-            if (settingsExpanded[index])
-            {
                 ++EditorGUI.indentLevel;
 
-                var combineMeshesProperty = levelProperty.FindPropertyRelative(LevelCombineMeshesFieldName);
-                EditorGUILayout.PropertyField(combineMeshesProperty);
+                var screenRelativeHeightProperty = levelProperty.FindPropertyRelative(LevelScreenRelativeHeightFieldName);
+                EditorGUILayout.PropertyField(screenRelativeHeightProperty);
 
-                if (combineMeshesProperty.boolValue)
-                {
-                    var combineSubMeshesProperty = levelProperty.FindPropertyRelative(LevelCombineSubMeshesFieldName);
-                    EditorGUILayout.PropertyField(combineSubMeshesProperty);
-                }
+                var qualityProperty = levelProperty.FindPropertyRelative(LevelQualityFieldName);
+                EditorGUILayout.PropertyField(qualityProperty);
 
-                var childProperties = levelProperty.GetChildProperties();
-                foreach (var childProperty in childProperties)
+                bool animateCrossFading = (hasCrossFade ? animateCrossFadingProperty.boolValue : false);
+                settingsExpanded[index] = EditorGUILayout.Foldout(settingsExpanded[index], settingsContent);
+                if (settingsExpanded[index])
                 {
-                    if (string.Equals(childProperty.name, LevelScreenRelativeHeightFieldName) || string.Equals(childProperty.name, LevelQualityFieldName) ||
-                        string.Equals(childProperty.name, LevelCombineMeshesFieldName) || string.Equals(childProperty.name, LevelCombineSubMeshesFieldName) ||
-                        string.Equals(childProperty.name, LevelRenderersFieldName))
+                    ++EditorGUI.indentLevel;
+
+                    var combineMeshesProperty = levelProperty.FindPropertyRelative(LevelCombineMeshesFieldName);
+                    EditorGUILayout.PropertyField(combineMeshesProperty);
+
+                    if (combineMeshesProperty.boolValue)
                     {
-                        continue;
-                    }
-                    else if ((!hasCrossFade || !animateCrossFading) && string.Equals(childProperty.name, LevelFadeTransitionWidthFieldName))
-                    {
-                        continue;
+                        var combineSubMeshesProperty = levelProperty.FindPropertyRelative(LevelCombineSubMeshesFieldName);
+                        EditorGUILayout.PropertyField(combineSubMeshesProperty);
                     }
 
-                    EditorGUILayout.PropertyField(childProperty, true);
+                    var childProperties = levelProperty.GetChildProperties();
+                    foreach (var childProperty in childProperties)
+                    {
+                        if (string.Equals(childProperty.name, LevelScreenRelativeHeightFieldName) || string.Equals(childProperty.name, LevelQualityFieldName) ||
+                            string.Equals(childProperty.name, LevelCombineMeshesFieldName) || string.Equals(childProperty.name, LevelCombineSubMeshesFieldName) ||
+                            string.Equals(childProperty.name, LevelRenderersFieldName))
+                        {
+                            continue;
+                        }
+                        else if ((!hasCrossFade || !animateCrossFading) && string.Equals(childProperty.name, LevelFadeTransitionWidthFieldName))
+                        {
+                            continue;
+                        }
+
+                        EditorGUILayout.PropertyField(childProperty, true);
+                    }
+
+                    --EditorGUI.indentLevel;
                 }
 
-                --EditorGUI.indentLevel;
-            }
-
-            // Remove any null renderers
-            var renderersProperty = levelProperty.FindPropertyRelative(LevelRenderersFieldName);
-            for (int rendererIndex = renderersProperty.arraySize - 1; rendererIndex >= 0; rendererIndex--)
-            {
-                var rendererProperty = renderersProperty.GetArrayElementAtIndex(rendererIndex);
-                var renderer = rendererProperty.objectReferenceValue as Renderer;
-                if (renderer == null)
+                // Remove any null renderers
+                for (int rendererIndex = renderersProperty.arraySize - 1; rendererIndex >= 0; rendererIndex--)
                 {
-                    renderersProperty.DeleteArrayElementAtIndex(rendererIndex);
+                    var rendererProperty = renderersProperty.GetArrayElementAtIndex(rendererIndex);
+                    var renderer = rendererProperty.objectReferenceValue as Renderer;
+                    if (renderer == null)
+                    {
+                        renderersProperty.DeleteArrayElementAtIndex(rendererIndex);
+                    }
                 }
             }
             EditorGUI.EndDisabledGroup();
