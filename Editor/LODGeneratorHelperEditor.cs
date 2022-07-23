@@ -134,6 +134,27 @@ namespace UnityMeshSimplifier.Editor
 
         private void DrawNotGeneratedView()
         {
+            EditorGUILayout.PropertyField(autoCollectRenderersProperty);
+
+            bool newOverrideSaveAssetsPath = EditorGUILayout.Toggle(overrideSaveAssetsPathContent, overrideSaveAssetsPath);
+            if (newOverrideSaveAssetsPath != overrideSaveAssetsPath)
+            {
+                overrideSaveAssetsPath = newOverrideSaveAssetsPath;
+                saveAssetsPathProperty.stringValue = string.Empty;
+                serializedObject.ApplyModifiedProperties();
+                GUIUtility.ExitGUI();
+            }
+
+            if (overrideSaveAssetsPath)
+            {
+                EditorGUI.BeginChangeCheck();
+                EditorGUILayout.PropertyField(saveAssetsPathProperty);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    saveAssetsPathProperty.stringValue = IOUtils.MakeSafeRelativePath(saveAssetsPathProperty.stringValue);
+                }
+            }
+
             EditorGUI.BeginDisabledGroup(customizeSettingsProperty.boolValue == true);
             {
                 EditorGUILayout.ObjectField(lodGeneratorPresetProperty, typeof(LODGeneratorPreset));
@@ -160,30 +181,9 @@ namespace UnityMeshSimplifier.Editor
             }
             EditorGUI.EndDisabledGroup();
 
-            EditorGUILayout.PropertyField(autoCollectRenderersProperty);
-
             EditorGUI.BeginDisabledGroup(customizeSettingsProperty.boolValue == false);
             DrawSimplificationOptions();
             EditorGUI.EndDisabledGroup();
-
-            bool newOverrideSaveAssetsPath = EditorGUILayout.Toggle(overrideSaveAssetsPathContent, overrideSaveAssetsPath);
-            if (newOverrideSaveAssetsPath != overrideSaveAssetsPath)
-            {
-                overrideSaveAssetsPath = newOverrideSaveAssetsPath;
-                saveAssetsPathProperty.stringValue = string.Empty;
-                serializedObject.ApplyModifiedProperties();
-                GUIUtility.ExitGUI();
-            }
-
-            if (overrideSaveAssetsPath)
-            {
-                EditorGUI.BeginChangeCheck();
-                EditorGUILayout.PropertyField(saveAssetsPathProperty);
-                if (EditorGUI.EndChangeCheck())
-                {
-                    saveAssetsPathProperty.stringValue = IOUtils.MakeSafeRelativePath(saveAssetsPathProperty.stringValue);
-                }
-            }
 
             if (settingsExpanded == null || settingsExpanded.Length != levelsProperty.arraySize)
             {
