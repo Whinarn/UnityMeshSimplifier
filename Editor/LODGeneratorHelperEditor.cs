@@ -544,6 +544,7 @@ namespace UnityMeshSimplifier.Editor
             try
             {
                 EditorUtility.DisplayProgressBar("Generating LODs", "Generating LODs...", 0f);
+                lodGeneratorHelper?.TryUpdateSettingsFromPreset();
                 var lodGroup = LODGenerator.GenerateLODs(lodGeneratorHelper);
                 if (lodGroup != null)
                 {

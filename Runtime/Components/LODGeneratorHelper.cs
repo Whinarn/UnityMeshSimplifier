@@ -195,10 +195,7 @@ namespace UnityMeshSimplifier
 
         private void OnValidate()
         {
-            if (!customizeSettings)
-            {
-                UpdateSettingsFromPreset();
-            }
+            TryUpdateSettingsFromPreset();
         }
         #endregion
 
@@ -215,8 +212,14 @@ namespace UnityMeshSimplifier
             levels = LODLevel.GetDefaultLevels();
         }
 
-        private void UpdateSettingsFromPreset()
+        public void TryUpdateSettingsFromPreset()
         {
+            // Don't stomp customized settings
+            if (customizeSettings)
+            {
+                return;
+            }
+
             // Retain copy of levels so any specified renderers can survive reset
             LODLevel[] previousLevels = (LODLevel[])levels.Clone();
 
