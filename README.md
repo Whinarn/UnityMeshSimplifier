@@ -11,6 +11,14 @@ Mesh simplification for [Unity](https://unity3d.com/). The project is deeply bas
 
 Because of the fact that this project is entirely in C# it *should* work on all platforms that Unity officially supports, as well as both in the editor and at runtime in builds.
 
+## Up for adoption
+
+Hello there! Are you interested in mesh simplification and would like to take this package further?
+
+I'm currently looking for someone to take over this repository since I feel like I'm not the right person to do it, nor do I have enough time to spend on it. Or if you'd just like to be a maintainer. Preferably someone with a better knowledge and interest in mesh simplification.
+
+If you think that's you or your organization, please open up an issue to start a discussion.
+
 ## Compatibility
 
 Because this project is now using Unity packages, you should use a Unity version from 2018.1 and beyond.
