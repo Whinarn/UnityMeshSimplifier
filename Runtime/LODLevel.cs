@@ -34,7 +34,7 @@ namespace UnityMeshSimplifier
     /// A LOD (level of detail) level.
     /// </summary>
     [Serializable]
-    public struct LODLevel
+    public struct LODLevel : IEquatable<LODLevel>
     {
         #region Fields
         [SerializeField, Range(0f, 1f), Tooltip("The screen relative height to use for the transition.")]
@@ -242,5 +242,84 @@ namespace UnityMeshSimplifier
             this.reflectionProbeUsage = ReflectionProbeUsage.BlendProbes;
         }
         #endregion
+
+        #region IEquatable implementation
+        public bool Equals(LODLevel other)
+        {
+            return screenRelativeTransitionHeight == other.screenRelativeTransitionHeight &&
+                fadeTransitionWidth == other.fadeTransitionWidth &&
+                quality == other.quality &&
+                combineMeshes == other.combineMeshes &&
+                combineSubMeshes == other.combineSubMeshes &&
+                skinQuality == other.skinQuality &&
+                shadowCastingMode == other.shadowCastingMode &&
+                receiveShadows == other.receiveShadows &&
+                motionVectorGenerationMode == other.motionVectorGenerationMode &&
+                skinnedMotionVectors == other.skinnedMotionVectors &&
+                lightProbeUsage == other.lightProbeUsage &&
+                reflectionProbeUsage == other.reflectionProbeUsage;
+        }
+        public override bool Equals(object obj) => obj is LODLevel other && Equals(other);
+        public override int GetHashCode()
+        {
+            return (screenRelativeTransitionHeight,
+                fadeTransitionWidth,
+                quality,
+                combineMeshes,
+                combineSubMeshes,
+                skinQuality,
+                shadowCastingMode,
+                receiveShadows,
+                motionVectorGenerationMode,
+                skinnedMotionVectors,
+                lightProbeUsage,
+                reflectionProbeUsage).GetHashCode();
+        }
+        #endregion
+
+        /// <summary>
+        /// Gets default LOD levels.
+        /// </summary>
+        /// <returns>Default LOD levels.</returns>
+        public static LODLevel[] GetDefaultLevels()
+        {
+            // TODO: Expose default levels as a project setting, rather than hard-coding values.
+            return new LODLevel[]
+            {
+                new LODLevel(0.5f, 1f)
+                {
+                    CombineMeshes = false,
+                    CombineSubMeshes = false,
+                    SkinQuality = SkinQuality.Auto,
+                    ShadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On,
+                    ReceiveShadows = true,
+                    SkinnedMotionVectors = true,
+                    LightProbeUsage = UnityEngine.Rendering.LightProbeUsage.BlendProbes,
+                    ReflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.BlendProbes,
+                },
+                new LODLevel(0.17f, 0.65f)
+                {
+                    CombineMeshes = true,
+                    CombineSubMeshes = false,
+                    SkinQuality = SkinQuality.Auto,
+                    ShadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On,
+                    ReceiveShadows = true,
+                    SkinnedMotionVectors = true,
+                    LightProbeUsage = UnityEngine.Rendering.LightProbeUsage.BlendProbes,
+                    ReflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Simple
+                },
+                new LODLevel(0.02f, 0.4225f)
+                {
+                    CombineMeshes = true,
+                    CombineSubMeshes = true,
+                    SkinQuality = SkinQuality.Bone2,
+                    ShadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off,
+                    ReceiveShadows = false,
+                    SkinnedMotionVectors = false,
+                    LightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off,
+                    ReflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Off
+                }
+            };
+        }
     }
 }
