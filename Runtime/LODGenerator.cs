@@ -761,42 +761,41 @@ namespace UnityMeshSimplifier
         }
 
         private static void DestroyLODMaterialAsset(Material material)
-{
-    if (material == null)
-        return;
-
-    var shader = material.shader;
-    if (shader == null)
-        return;
-
-    // Find all texture properties of materials and delete those assets also
-    #if UNITY_2021_2_OR_NEWER
-        int propertyCount = shader.GetPropertyCount();
-        for (int propertyIndex = 0; propertyIndex < propertyCount; propertyIndex++)
         {
-            if (shader.GetPropertyType(propertyIndex) == UnityEngine.Rendering.ShaderPropertyType.Texture)
-            {
-                string propertyName = shader.GetPropertyName(propertyIndex);
-                var texture = material.GetTexture(propertyName);
-                DestroyLODAsset(texture);
-            }
-        }
-    #else
-        int propertyCount = UnityEditor.ShaderUtil.GetPropertyCount(shader);
-        for (int propertyIndex = 0; propertyIndex < propertyCount; propertyIndex++)
-        {
-            if (UnityEditor.ShaderUtil.GetPropertyType(shader, propertyIndex) == UnityEditor.ShaderUtil.ShaderPropertyType.TexEnv)
-            {
-                string propertyName = UnityEditor.ShaderUtil.GetPropertyName(shader, propertyIndex);
-                var texture = material.GetTexture(propertyName);
-                DestroyLODAsset(texture);
-            }
-        }
-    #endif
+            if (material == null)
+                return;
 
-    DestroyLODAsset(material);
-}
+            var shader = material.shader;
+            if (shader == null)
+                return;
 
+            // Find all texture properties of materials and delete those assets also
+#if UNITY_2021_2_OR_NEWER
+            int propertyCount = shader.GetPropertyCount();
+            for (int propertyIndex = 0; propertyIndex < propertyCount; propertyIndex++)
+            {
+                if (shader.GetPropertyType(propertyIndex) == UnityEngine.Rendering.ShaderPropertyType.Texture)
+                {
+                    string propertyName = shader.GetPropertyName(propertyIndex);
+                    var texture = material.GetTexture(propertyName);
+                    DestroyLODAsset(texture);
+                }
+            }
+#else
+            int propertyCount = UnityEditor.ShaderUtil.GetPropertyCount(shader);
+            for (int propertyIndex = 0; propertyIndex < propertyCount; propertyIndex++)
+            {
+                if (UnityEditor.ShaderUtil.GetPropertyType(shader, propertyIndex) == UnityEditor.ShaderUtil.ShaderPropertyType.TexEnv)
+                {
+                    string propertyName = UnityEditor.ShaderUtil.GetPropertyName(shader, propertyIndex);
+                    var texture = material.GetTexture(propertyName);
+                    DestroyLODAsset(texture);
+                }
+            }
+#endif
+
+            DestroyLODAsset(material);
+        }
 
         private static void DestroyLODAsset(Object asset)
         {
