@@ -9,7 +9,15 @@
 
 Mesh simplification for [Unity](https://unity3d.com/). The project is deeply based on the [Fast Quadric Mesh Simplification](https://github.com/sp4cerat/Fast-Quadric-Mesh-Simplification) algorithm, but rewritten entirely in C# and released under the MIT license.
 
+In Unity, the primary goal of mesh simplification is to improve the performance and efficiency of rendering meshes. This allows developers to reduce memory usage, improve loading times for scenes and assets, as well as enhance collision detections.
+
 Because of the fact that this project is entirely in C# it *should* work on all platforms that Unity officially supports, as well as both in the editor and at runtime in builds.
+
+## Main Features
+
+- Automatic LOD Generation: Simplifies the LOD development process with mesh collection and simplification.
+- Adjustable LOD Settings: Configure the LOD settings with simplification options, LOD levels, and preservation options.
+- Mesh Simplification: Reduces the triangle count of a mesh.
 
 ## Up for adoption
 
@@ -66,6 +74,10 @@ The most probable cause for this is that you have objects that are parented unde
 ### The Unity-generated Visual Studio solution file appears broken
 
 This can be a problem because of an assembly definition provided with this repository, if you are using Unity 2017.3 or above. Make sure that you have the latest version of [Visual Studio Tools for Unity](https://www.visualstudio.com/vs/unity-tools/). If you are using Visual Studio 2017, make sure that Visual Studio is up to date and that you have installed the *Game development with Unity* component. For other versions of Visual Studio you would have to download a separate installer. Please go to the [Microsoft Documentation](https://docs.microsoft.com/en-us/visualstudio/cross-platform/getting-started-with-visual-studio-tools-for-unity) for more information.
+
+### My project is experiencing performance degradation
+
+There are several strategies to mitigate this issue. First, you can consider optimizing the meshes before performing mesh simplification on them. This can minimize the computational overhead during the simplification process and improve the overall performance. Next, carefully review the mesh simplification options chosen in UnityMeshSimplifier. In our [documentation](https://github.com/Whinarn/UnityMeshSimplifier/wiki/Mesh-Simplifier-API#simplificationoptions), we recommend a few things: lower MaxIterationCount, lower Agressiveness, and setting PreserveSurfaceCurvature to false. Other settings to consider are setting EnableSmartLink to false, using ManualUVComponent instead of auto detection, and disabling preservation settings. Depending on your project, some settings will work better than others. An important tool that you can use is Unity's built-in profiling tools that can analyze CPU and GPU usage. This can help to identify inefficient code, poor rendering techniques, or taxing operations that may be affecting performance. Based on this, you can adjust your mesh simplification settings and test what improves performance.
 
 ## How to contribute
 
