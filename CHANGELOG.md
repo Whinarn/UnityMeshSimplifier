@@ -1,3 +1,10 @@
+## [3.1.1](https://github.com/Whinarn/UnityMeshSimplifier/compare/v3.1.0...v3.1.1) (2026-01-07)
+
+
+### Bug Fixes
+
+* **lods:** fix obsolete ShaderUtil usage in LODGenerator for Unity 2021.2+ ([#74](https://github.com/Whinarn/UnityMeshSimplifier/issues/74)) ([314eeb2](https://github.com/Whinarn/UnityMeshSimplifier/commit/314eeb2ce7b44c7e5802e2d85e9196d28852d2ff))
+
 # [3.1.0](https://github.com/Whinarn/UnityMeshSimplifier/compare/v3.0.1...v3.1.0) (2022-02-25)
 
 
