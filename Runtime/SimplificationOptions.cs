@@ -35,7 +35,7 @@ namespace UnityMeshSimplifier
     /// </summary>
     [Serializable]
     [StructLayout(LayoutKind.Auto)]
-    public struct SimplificationOptions
+    public struct SimplificationOptions  : IEquatable<SimplificationOptions>
     {
         /// <summary>
         /// The default simplification options.
@@ -118,5 +118,35 @@ namespace UnityMeshSimplifier
         /// </summary>
         [Range(0, 4), Tooltip("The UV component count. The same UV component count will be used on all UV channels.")]
         public int UVComponentCount;
+
+        #region IEquatable implementation
+        public bool Equals(SimplificationOptions other)
+        {
+            return PreserveBorderEdges == other.PreserveBorderEdges &&
+                PreserveUVSeamEdges == other.PreserveUVSeamEdges &&
+                PreserveUVFoldoverEdges == other.PreserveUVFoldoverEdges &&
+                PreserveSurfaceCurvature == other.PreserveSurfaceCurvature &&
+                EnableSmartLink == other.EnableSmartLink &&
+                VertexLinkDistance == other.VertexLinkDistance &&
+                MaxIterationCount == other.MaxIterationCount &&
+                Agressiveness == other.Agressiveness &&
+                ManualUVComponentCount == other.ManualUVComponentCount &&
+                UVComponentCount == other.UVComponentCount;
+        }
+        public override bool Equals(object obj) => obj is SimplificationOptions other && Equals(other);
+        public override int GetHashCode()
+        {
+            return (PreserveBorderEdges,
+                PreserveUVSeamEdges,
+                PreserveUVFoldoverEdges,
+                PreserveSurfaceCurvature,
+                EnableSmartLink,
+                VertexLinkDistance,
+                MaxIterationCount,
+                Agressiveness,
+                ManualUVComponentCount,
+                UVComponentCount).GetHashCode();
+        }
+        #endregion
     }
 }

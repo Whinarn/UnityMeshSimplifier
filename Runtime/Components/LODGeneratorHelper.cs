@@ -35,6 +35,12 @@ namespace UnityMeshSimplifier
     public sealed class LODGeneratorHelper : MonoBehaviour
     {
         #region Fields
+        [SerializeField, Tooltip("The LOD Generator preset to use.")]
+        private LODGeneratorPreset lodGeneratorPreset = null;
+
+        [SerializeField, Tooltip("Whether to enable customization of preset-derived generation settings.")]
+        private bool customizeSettings = true;
+
         [SerializeField, Tooltip("The fade mode used by the created LOD group.")]
         private LODFadeMode fadeMode = LODFadeMode.None;
         [SerializeField, Tooltip("If the cross-fading should be animated by time.")]
@@ -58,12 +64,40 @@ namespace UnityMeshSimplifier
 
         #region Properties
         /// <summary>
+        /// Gets or sets a LOD generator preset. Presets can be used to drive simplification options and levels in a sharable way.
+        /// </summary>
+        public LODGeneratorPreset LodGeneratorPreset
+        {
+            get { return lodGeneratorPreset; }
+            set { lodGeneratorPreset = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets if the simplification options and levels should be customizable, versus driven by the specified preset.
+        /// </summary>
+        public bool CustomizeSettings
+        {
+            get { return customizeSettings; }
+            set { customizeSettings = value; }
+        }
+
+        /// <summary>
         /// Gets or sets the fade mode used by the created LOD group.
         /// </summary>
         public LODFadeMode FadeMode
         {
             get { return fadeMode; }
-            set { fadeMode = value; }
+            set
+            {
+                if (!customizeSettings)
+                {
+                    fadeMode = value;
+                }
+                else
+                {
+                    WarnDisabledCustomization();
+                }
+            }
         }
 
         /// <summary>
@@ -73,7 +107,17 @@ namespace UnityMeshSimplifier
         public bool AnimateCrossFading
         {
             get { return animateCrossFading; }
-            set { animateCrossFading = value; }
+            set
+            {
+                if (!customizeSettings)
+                {
+                    animateCrossFading = value;
+                }
+                else
+                {
+                    WarnDisabledCustomization();
+                }
+            }
         }
 
         /// <summary>
@@ -91,7 +135,17 @@ namespace UnityMeshSimplifier
         public SimplificationOptions SimplificationOptions
         {
             get { return simplificationOptions; }
-            set { simplificationOptions = value; }
+            set
+            {
+                if (!customizeSettings)
+                {
+                    simplificationOptions = value;
+                }
+                else
+                {
+                    WarnDisabledCustomization();
+                }
+            }
         }
 
         /// <summary>
@@ -110,7 +164,17 @@ namespace UnityMeshSimplifier
         public LODLevel[] Levels
         {
             get { return levels; }
-            set { levels = value; }
+            set
+            {
+                if (!customizeSettings)
+                {
+                    levels = value;
+                }
+                else
+                {
+                    WarnDisabledCustomization();
+                }
+            }
         }
 
         /// <summary>
@@ -125,48 +189,59 @@ namespace UnityMeshSimplifier
         #region Unity Events
         private void Reset()
         {
-            fadeMode = LODFadeMode.None;
-            animateCrossFading = false;
             autoCollectRenderers = true;
-            simplificationOptions = SimplificationOptions.Default;
+            ResetPresetDerivedSettings();
+        }
 
-            levels = new LODLevel[]
-            {
-                new LODLevel(0.5f, 1f)
-                {
-                    CombineMeshes = false,
-                    CombineSubMeshes = false,
-                    SkinQuality = SkinQuality.Auto,
-                    ShadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On,
-                    ReceiveShadows = true,
-                    SkinnedMotionVectors = true,
-                    LightProbeUsage = UnityEngine.Rendering.LightProbeUsage.BlendProbes,
-                    ReflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.BlendProbes,
-                },
-                new LODLevel(0.17f, 0.65f)
-                {
-                    CombineMeshes = true,
-                    CombineSubMeshes = false,
-                    SkinQuality = SkinQuality.Auto,
-                    ShadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On,
-                    ReceiveShadows = true,
-                    SkinnedMotionVectors = true,
-                    LightProbeUsage = UnityEngine.Rendering.LightProbeUsage.BlendProbes,
-                    ReflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Simple
-                },
-                new LODLevel(0.02f, 0.4225f)
-                {
-                    CombineMeshes = true,
-                    CombineSubMeshes = true,
-                    SkinQuality = SkinQuality.Bone2,
-                    ShadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off,
-                    ReceiveShadows = false,
-                    SkinnedMotionVectors = false,
-                    LightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off,
-                    ReflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Off
-                }
-            };
+        private void OnValidate()
+        {
+            TryUpdateSettingsFromPreset();
         }
         #endregion
+
+        private void WarnDisabledCustomization()
+        {
+            Debug.LogWarning($"Attempted to set a preset-driven property on a {typeof(LODGeneratorHelper)} while customization is disabled. Enable customization first.");
+        }
+
+        private void ResetPresetDerivedSettings()
+        {
+            fadeMode = LODFadeMode.None;
+            animateCrossFading = false;
+            simplificationOptions = SimplificationOptions.Default;
+            levels = LODLevel.GetDefaultLevels();
+        }
+
+        public void TryUpdateSettingsFromPreset()
+        {
+            // Don't stomp customized settings
+            if (customizeSettings)
+            {
+                return;
+            }
+
+            // Retain copy of levels so any specified renderers can survive reset
+            LODLevel[] previousLevels = (LODLevel[])levels.Clone();
+
+            // Copy settings from preset, or use defaults if no preset specified
+            if (lodGeneratorPreset != null)
+            {
+                fadeMode = lodGeneratorPreset.FadeMode;
+                animateCrossFading = lodGeneratorPreset.AnimateCrossFading;
+                simplificationOptions = lodGeneratorPreset.SimplificationOptions;
+                levels = (LODLevel[])lodGeneratorPreset.Levels.Clone();
+            }
+            else
+            {
+                ResetPresetDerivedSettings();
+            }
+
+            // Copy specified renderers over
+            int rendererCopyCount = Mathf.Min(levels.Length, previousLevels.Length);
+            for(int idx = 0; idx < rendererCopyCount; idx++)
+            {
+                levels[idx].Renderers = (Renderer[])previousLevels[idx].Renderers.Clone();
+            }
+        }
     }
 }
